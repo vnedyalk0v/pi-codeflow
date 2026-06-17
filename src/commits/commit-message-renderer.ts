@@ -45,10 +45,13 @@ export async function renderCommitMessage(
     context: payload.context,
     changesList: formatMarkdownBulletList(payload.changes, 'No changes provided.'),
     verificationList: formatMarkdownBulletList(
-      payload.verification,
+      payload.verification ?? [],
       'Not provided; unverified commit payload was explicitly allowed.',
     ),
-    risk: payload.risk,
+    risk:
+      payload.risk && payload.risk.length > 0
+        ? payload.risk
+        : 'Not provided; risk was explicitly allowed to be omitted.',
     refsList: formatRefsList(payload),
     breakingChange: payload.breakingChange ?? '',
     breakingChangeLine: payload.breakingChange

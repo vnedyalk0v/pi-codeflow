@@ -68,7 +68,7 @@ export function normalizeCommitPayload(payload: CodeflowCommitPayload): Codeflow
     verification: (payload.verification ?? [])
       .map((verification) => verification.trim())
       .filter(Boolean),
-    risk: payload.risk.trim(),
+    risk: payload.risk?.trim() ?? '',
     refs: (payload.refs ?? []).map((ref) => ref.trim()).filter(Boolean),
   };
 
@@ -138,7 +138,7 @@ function validateSemanticPayloadRules(
     });
   }
 
-  if (config.commits.requireVerification && !allowUnverified && payload.verification.length === 0) {
+  if (config.commits.requireVerification && !allowUnverified && (payload.verification?.length ?? 0) === 0) {
     errors.push({
       path: '/verification',
       keyword: 'minItems',
@@ -146,7 +146,7 @@ function validateSemanticPayloadRules(
     });
   }
 
-  if (config.commits.requireRisk && payload.risk.length === 0) {
+  if (config.commits.requireRisk && (payload.risk?.length ?? 0) === 0) {
     errors.push({ path: '/risk', keyword: 'required', message: '/risk is required' });
   }
 
@@ -181,8 +181,12 @@ function collectCommitPayloadWarnings(
     warnings.push('Commit summary should be lower-case where natural.');
   }
 
-  if (!config.commits.requireVerification && payload.verification.length === 0) {
+  if (!config.commits.requireVerification && (payload.verification?.length ?? 0) === 0) {
     warnings.push('Commit payload does not include verification; config allows unverified commit payloads.');
+  }
+
+  if (!config.commits.requireRisk && (payload.risk?.length ?? 0) === 0) {
+    warnings.push('Commit payload does not include risk; config allows risk to be omitted.');
   }
 
   return warnings;

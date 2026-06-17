@@ -41,7 +41,12 @@ export async function createGitCommitFromPayload(
   const templateCwd = options.templateCwd ?? cwd;
   const config = options.config ?? getDefaultCodeflowConfig();
   const gitClient = options.gitClient ?? new GitClient({ cwd });
-  const validation = validateCommitPayload(options.payload, { config });
+  const allowUnverifiedPayload =
+    options.allowUnverified === true || config.commits.allowUnverifiedCommits;
+  const validation = validateCommitPayload(options.payload, {
+    config,
+    allowUnverified: allowUnverifiedPayload,
+  });
 
   if (!validation.valid) {
     throw new CodeflowCommitError({

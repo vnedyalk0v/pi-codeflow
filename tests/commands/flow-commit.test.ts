@@ -168,6 +168,21 @@ describe('runFlowCommit', () => {
     });
   });
 
+  it('honors allowUnverified for payloads with no verification entries', async () => {
+    const repo = await makeRepo();
+    await stageChange(repo);
+    const result = await runFlowCommit({
+      cwd: repo,
+      payload: payload({ verification: [] }),
+      allowUnverified: true,
+    });
+
+    expect(result.status).toBe('committed');
+    expect(result.message).toContain(
+      '- Not provided; unverified commit payload was explicitly allowed.',
+    );
+  });
+
   it('leaves unstaged changes uncommitted and returns a warning', async () => {
     const repo = await makeRepo();
     await stageChange(repo, 'staged.txt', 'staged\n');

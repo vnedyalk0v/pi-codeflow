@@ -9,8 +9,8 @@ export interface CodeflowCommitPayload {
   summary: string;
   context: string;
   changes: string[];
-  verification: string[];
-  risk: string;
+  verification?: string[];
+  risk?: string;
   refs?: string[];
   breakingChange?: string;
   footers?: Record<string, string | string[]>;

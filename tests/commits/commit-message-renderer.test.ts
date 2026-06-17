@@ -66,6 +66,17 @@ describe('renderCommitMessage', () => {
     expect(result.message).toContain('CoAuthoredBy: Codeflow Bot <bot@example.test>');
   });
 
+  it('renders explicit fallback text when verification or risk are allowed to be omitted', async () => {
+    const result = await renderCommitMessage(payload({ verification: [], risk: undefined }));
+
+    expect(result.message).toContain(
+      '- Not provided; unverified commit payload was explicitly allowed.',
+    );
+    expect(result.message).toContain(
+      'Risk:\nNot provided; risk was explicitly allowed to be omitted.',
+    );
+  });
+
   it('does not leave unresolved placeholders', async () => {
     const result = await renderCommitMessage(payload());
 

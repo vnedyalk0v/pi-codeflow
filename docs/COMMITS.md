@@ -58,8 +58,8 @@ The schema also supports optional `breakingChange` and `footers` fields.
 | `summary` | Concise imperative phrase, no trailing punctuation, default title max 72 characters. |
 | `context` | Explains why the change is needed. |
 | `changes` | Non-empty list of concrete changes. |
-| `verification` | Non-empty list unless config disables `commits.requireVerification`. |
-| `risk` | Human-readable risk level and rationale. |
+| `verification` | Non-empty list unless config disables `commits.requireVerification` or unverified commit override is explicit. |
+| `risk` | Human-readable risk level and rationale unless config disables `commits.requireRisk`. |
 
 ## Optional fields
 
@@ -94,8 +94,9 @@ The schema also supports optional `breakingChange` and `footers` fields.
 - `summary` must not end with trailing punctuation.
 - `changes` must be an array with at least one item.
 - `verification` must be an array and must contain at least one item unless the
-  resolved config explicitly disables the requirement.
-- `risk` is required by default config and must be non-empty.
+  resolved config or explicit unverified override disables the requirement.
+- `risk` is required by default config and must be non-empty unless
+  `commits.requireRisk` is false.
 - Payloads must not include secrets, tokens, or private credentials.
 
 ## Conventional Commits compatibility

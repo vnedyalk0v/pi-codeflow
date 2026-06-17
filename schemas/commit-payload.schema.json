@@ -8,8 +8,7 @@
     "type",
     "summary",
     "context",
-    "changes",
-    "risk"
+    "changes"
   ],
   "properties": {
     "type": {

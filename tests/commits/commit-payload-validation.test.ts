@@ -81,6 +81,34 @@ describe('validateCommitPayload', () => {
     );
   });
 
+  it('allows empty verification when explicitly allowing an unverified commit', () => {
+    const result = validateCommitPayload(validPayload({ verification: [] }), {
+      allowUnverified: true,
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('allows missing risk when config explicitly disables risk requirement', () => {
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      commits: {
+        requireRisk: false,
+      },
+    } as Record<string, unknown>);
+    const input = { ...validPayload() } as Record<string, unknown>;
+    delete input.risk;
+
+    const result = validateCommitPayload(input, { config });
+
+    expect(result.valid).toBe(true);
+    if (result.valid) {
+      expect(result.payload.risk).toBe('');
+      expect(result.warnings).toContain(
+        'Commit payload does not include risk; config allows risk to be omitted.',
+      );
+    }
+  });
+
   it.each(['update', 'changes', 'fix stuff', 'misc', 'wip'])(
     'rejects generic summary %s',
     (summary) => {

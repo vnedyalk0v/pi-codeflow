@@ -15,11 +15,20 @@
     "github-actions"
   ],
   "scripts": {
-    "check": "node -e \"console.log('No implementation checks yet')\""
+    "check": "npm run check:json && npm run check:text && npm run check:docs",
+    "check:json": "node scripts/check-json.mjs",
+    "check:text": "node scripts/check-text-safety.mjs",
+    "check:docs": "node scripts/check-docs-format.mjs"
   },
   "pi": {
-    "extensions": ["./extensions"],
-    "skills": ["./skills"],
-    "prompts": ["./prompts"]
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
   }
 }

@@ -1,15 +1,19 @@
 # pi-codeflow
+
 Pi package for consistent AI coding workflows.
 
-**Project status: planning / pre-MVP.**
+**Project status:** planning / pre-MVP.
 
-> Warning: this repository is not ready for production use yet. It currently contains planning documents, templates, schemas, and project setup only. Do not rely on it to enforce workflow safety in real projects.
+> Warning: this repository is not ready for production use yet. It currently
+> contains planning documents, templates, schemas, and project setup only. Do
+> not rely on it to enforce workflow safety in real projects.
 
-pi-codeflow is intended to guide Pi Coding Agent through a consistent coding lifecycle:
+pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
+lifecycle:
 
 - semantic branch creation
 - implementation planning
-- configured checks
+- configured local checks
 - self-review
 - templated commits
 - templated pull requests
@@ -21,33 +25,39 @@ pi-codeflow is intended to guide Pi Coding Agent through a consistent coding lif
 ## What this package will do
 
 - Provide model-neutral workflow guidance for AI coding agents.
-- Standardize branch names, commit payloads, PR payloads, review replies, and final reports.
-- Load project-specific workflow configuration from a future `.pi/codeflow.json` file.
+- Standardize branch names, commit payloads, PR payloads, review replies, and
+  final reports.
+- Load project-specific workflow configuration from a future `.pi/codeflow.json`
+  file.
 - Run configured local checks and summarize results.
-- Help agents triage GitHub review comments and only resolve comments that were addressed or proven stale.
+- Help agents triage GitHub review comments and only resolve comments that were
+  addressed or proven stale/already fixed.
 - Keep safety rules visible, auditable, and conservative by default.
 
 ## What this package will not do
 
 - Replace human product, security, or code review decisions.
-- Force-push, delete branches, rewrite history, or perform destructive git operations by default.
+- Force-push, delete branches, rewrite history, or perform destructive git
+  operations by default.
 - Require access to secrets for normal operation.
 - Generate production implementation code without an issue and accepted plan.
 - Hide model-specific instructions or depend on one model provider.
 
 ## Proposed command surface
 
-- `/flow-start` — classify a task and prepare branch metadata.
-- `/flow-plan` — produce an implementation plan.
-- `/flow-status` — show current lifecycle state.
-- `/flow-check` — run configured checks.
-- `/flow-review` — self-review the current diff.
-- `/flow-commit` — render a commit from a structured payload.
-- `/flow-pr` — render and open a templated pull request.
-- `/flow-watch` — watch GitHub checks.
-- `/flow-comments` — list unresolved reviewer comments.
-- `/flow-fix-comments` — fix valid reviewer comments.
-- `/flow-report` — produce a final delivery report.
+| Command | Purpose |
+| --- | --- |
+| `/flow-start` | Classify a task and prepare branch metadata. |
+| `/flow-plan` | Produce an implementation plan. |
+| `/flow-status` | Show current lifecycle state. |
+| `/flow-check` | Run configured checks. |
+| `/flow-review` | Self-review the current diff. |
+| `/flow-commit` | Render a commit from a structured payload. |
+| `/flow-pr` | Render and open a templated pull request. |
+| `/flow-watch` | Watch GitHub checks. |
+| `/flow-comments` | List unresolved reviewer comments. |
+| `/flow-fix-comments` | Fix valid reviewer comments. |
+| `/flow-report` | Produce a final delivery report. |
 
 ## Intended package structure
 
@@ -65,12 +75,23 @@ pi-codeflow/
 
 ## Documentation
 
+- [MVP specification](docs/MVP.md)
 - [Product Requirements Document](docs/PRD.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Workflow](docs/WORKFLOW.md)
+- [Lifecycle state machine](docs/STATE_MACHINE.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Branching](docs/BRANCHING.md)
+- [Commits](docs/COMMITS.md)
+- [Pull Requests](docs/PULL_REQUESTS.md)
+- [Review Comments](docs/REVIEW_COMMENTS.md)
+- [Emergency Flow](docs/EMERGENCY_FLOW.md)
 - [Security Model](docs/SECURITY_MODEL.md)
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
 
 ## Development note
 
-This repository intentionally does not include production extension logic yet. The first milestone is to agree on scope, behavior, safety boundaries, and project management before implementation begins.
+This repository intentionally does not include production extension logic yet.
+The first milestone is to agree on scope, behavior, safety boundaries, and
+project management before implementation begins.

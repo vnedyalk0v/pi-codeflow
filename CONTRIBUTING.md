@@ -4,9 +4,11 @@ Thanks for considering a contribution to pi-codeflow.
 
 ## Before opening a PR
 
-- Use GitHub Issues before PRs for behavior changes, implementation work, or large documentation changes.
+- Use GitHub Issues before PRs for behavior changes, implementation work, or
+  large documentation changes.
 - Work from `dev` unless a maintainer says otherwise.
-- Use semantic branches such as `feat/<ticket-or-slug>`, `fix/<ticket-or-slug>`, or `docs/<slug>`.
+- Use semantic branches such as `feat/<ticket-or-slug>`,
+  `fix/<ticket-or-slug>`, or `docs/<slug>`.
 - Keep changes small and focused.
 - Update documentation whenever behavior changes.
 
@@ -19,4 +21,6 @@ Thanks for considering a contribution to pi-codeflow.
 
 ## Current phase
 
-This project is in planning / pre-MVP. Production extension code should be tied to an issue and an accepted plan.
+This project is in planning / pre-MVP.
+
+Production extension code should be tied to an issue and an accepted plan.

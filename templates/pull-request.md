@@ -1,25 +1,37 @@
 # {{title}}
 
 ## Summary
+
 {{summary}}
 
 ## Context
+
 {{context}}
 
 ## Changes
-{{changes}}
+
+{{changesList}}
 
 ## Verification
-{{verification}}
+
+{{verificationList}}
 
 ## Self-review
-{{selfReview}}
+
+{{selfReviewList}}
 
 ## Risk
+
 {{risk}}
 
 ## Rollback
+
 {{rollback}}
 
+## Reviewer notes
+
+{{reviewerNotes}}
+
 ## Linked issues
-{{linkedIssues}}
+
+{{linkedIssuesList}}

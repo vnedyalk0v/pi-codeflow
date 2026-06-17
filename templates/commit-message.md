@@ -1,15 +1,15 @@
-{{type}}{{scope}}: {{summary}}
+{{type}}{{scopeSuffix}}: {{summary}}
 
 Context:
 {{context}}
 
 Changes:
-{{changes}}
+{{changesList}}
 
 Verification:
-{{verification}}
+{{verificationList}}
 
 Risk:
 {{risk}}
 
-Refs: {{refs}}
+Refs: {{refsList}}

@@ -2,24 +2,64 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/review-comment-triage.schema.json",
   "title": "Codeflow review comment triage",
+  "description": "Structured classification of unresolved review comments.",
   "type": "object",
-  "required": ["comments"],
+  "required": [
+    "comments"
+  ],
   "properties": {
     "comments": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "classification", "rationale", "action"],
+        "required": [
+          "id",
+          "classification",
+          "rationale",
+          "action",
+          "mayResolveAfterVerification"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "url": { "type": "string" },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
           "classification": {
             "type": "string",
-            "enum": ["valid", "invalid", "stale", "already_fixed", "needs_human"]
+            "enum": [
+              "valid",
+              "invalid",
+              "stale",
+              "already_fixed",
+              "needs_human"
+            ]
           },
-          "rationale": { "type": "string" },
-          "action": { "type": "string" },
-          "mayResolveAfterVerification": { "type": "boolean" }
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "fix_then_resolve",
+              "reply_only",
+              "resolve_as_stale",
+              "resolve_as_already_fixed",
+              "escalate_to_human",
+              "do_not_resolve"
+            ]
+          },
+          "mayResolveAfterVerification": {
+            "type": "boolean"
+          }
         },
         "additionalProperties": false
       }

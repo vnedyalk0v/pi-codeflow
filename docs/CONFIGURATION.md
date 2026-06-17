@@ -1,9 +1,9 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.2
+The project-level configuration file is `.pi/codeflow.json`. The v0.3
 foundation loads package defaults, optionally loads project config, merges the
-two layers, and validates the resolved config before future workflow commands
-mutate repository state.
+two layers, validates the resolved config, and uses the resolved config to build
+before-agent Codeflow guidance.
 
 ## Config resolution order
 
@@ -19,7 +19,9 @@ When no project config is found, the loader returns `usedDefaultConfig: true`
 and `configPath: null`. When a project config is found, it returns
 `usedDefaultConfig: false` and the absolute path to that config file.
 
-Command-specific overrides are reserved for a future milestone.
+Command-specific overrides are reserved for a future milestone. The current
+Guidance Engine reads the resolved config but does not persist state or mutate
+branches, commits, pull requests, or GitHub resources.
 
 ## Default config
 
@@ -173,6 +175,20 @@ Pull request base outside allowed base branches:
 | `templates` | Named template paths. |
 | `guidance` | Proactive guidance and structured-output behavior. |
 | `safety` | Fallback safety boundaries. |
+
+## Guidance policy
+
+The guidance generator honors the resolved `guidance` flags:
+
+- `proactive` controls whether the injected guidance tells agents to proactively
+  steer toward the next lifecycle step.
+- `requireStructuredPayloads` controls whether structured payload instructions
+  are injected as mandatory guidance.
+- `renderOutputsFromTemplates` controls whether template-rendered output
+  instructions are injected as mandatory guidance.
+- `stopForHumanDecisions` controls whether guidance tells agents to stop when
+  product, security, legal, credential, merge, release, or ambiguous review
+  decisions are required.
 
 ## Checks
 

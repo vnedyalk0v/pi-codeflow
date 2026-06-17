@@ -1,9 +1,10 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. The v0.2 foundation
-starts production implementation with config loading, conservative merging, and
-schema validation.
+prompts, templates, config, schemas, and documentation. The v0.3 foundation
+includes config loading, conservative merging, schema validation, proactive
+guidance generation, before-agent guidance injection, and a small in-memory
+lifecycle state model.
 
 ## Components
 
@@ -17,10 +18,15 @@ schema validation.
 
 ### Guidance Engine
 
-- **Responsibility:** inject active Codeflow guidance into agent context.
-- **Inputs:** policy decisions, lifecycle phase, and task metadata.
-- **Outputs:** agent instructions and next-step guidance.
-- **Must not:** hide provider-specific instructions or bypass templates.
+- **Status:** implemented foundation in v0.3.
+- **Responsibility:** generate proactive, model-neutral Codeflow guidance from
+  the resolved config and inject it before agent runs.
+- **Inputs:** resolved config, lifecycle phase, branch context, config metadata,
+  and task/session context when available.
+- **Outputs:** system prompt appendix, visible guidance message, summary of
+  reserved branches, base branch, active phase, expected tools, and warnings.
+- **Must not:** hide provider-specific instructions, mention a specific model,
+  include secrets or local environment details, or bypass templates.
 
 ### Tooling Layer
 
@@ -58,8 +64,10 @@ schema validation.
 
 ### State Store
 
+- **Status:** lifecycle state helper foundation exists in v0.3; persistent state
+  storage is not implemented yet.
 - **Responsibility:** track lifecycle phase, task metadata, check results,
-  payloads, and reports.
+  payloads, and reports in future milestones.
 - **Inputs:** tool results and guidance decisions.
 - **Outputs:** session state and status summaries.
 - **Must not:** store secrets or transient state in repository files by default.
@@ -108,17 +116,23 @@ schema validation.
 
 1. Config Loader reads defaults and project config.
 2. Schema Validator validates the resolved config.
-3. Policy Engine derives allowed actions.
-4. Guidance Engine tells the agent the current lifecycle expectations.
-5. Tooling Layer receives commands and structured payloads.
-6. Git and GitHub integrations perform approved operations.
-7. Template Renderer creates final user-visible artifacts.
-8. State Store records phase, evidence, and output summaries.
-9. Safety Boundary blocks off-path behavior when needed.
+3. Lifecycle helpers provide the active phase and next expected actions.
+4. Guidance Engine tells the agent the current lifecycle expectations before the
+   agent starts.
+5. Future Policy Engine derives allowed actions.
+6. Future Tooling Layer receives commands and structured payloads.
+7. Future Git and GitHub integrations perform approved operations.
+8. Future Template Renderer creates final user-visible artifacts.
+9. Future State Store records phase, evidence, and output summaries.
+10. Safety Boundary blocks off-path behavior when needed.
 
 ## Implementation boundary
 
 v0.1 defined the contracts that future implementation PRs should follow. v0.2
-implements only the config loader and config schema validator foundation.
-Guidance injection, lifecycle hooks, flow commands, git automation, and GitHub
-automation remain future implementation work.
+implemented the config loader and config schema validator foundation. v0.3
+implements the guidance generation and before-agent injection foundation plus a
+minimal lifecycle state helper.
+
+Flow commands, semantic branch creation, check running, commit automation, PR
+automation, persistent lifecycle storage, and GitHub automation remain future
+implementation work.

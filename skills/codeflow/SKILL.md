@@ -1,6 +1,8 @@
 ---
 name: codeflow
-description: Guides AI coding agents through semantic branching, checks, self-review, templated commits, templated PRs, review comment triage, and final reporting.
+description: >-
+  Guides AI coding agents through semantic branching, checks, self-review,
+  templated commits, templated PRs, review comment triage, and final reporting.
 ---
 
 # Codeflow
@@ -25,10 +27,14 @@ Rules:
 
 - Use Codeflow tools when available.
 - Avoid raw git workflow operations when Codeflow tools exist.
-- Do not manually invent branch, commit, PR, review reply, or final report formats.
-- Provide structured payloads for branches, commits, PRs, review triage, and final reports.
+- Do not manually invent branch, commit, PR, review reply, or final report
+  formats.
+- Provide structured payloads for branches, commits, PRs, review triage, and
+  final reports.
 - Let templates render final outputs.
 - Follow configured checks and report failures clearly.
 - Treat safety boundaries as fallback protection, not the normal workflow.
-- Do not work directly on reserved branches unless an explicit emergency override exists.
-- Stop for human decision when product, security, legal, merge, release, or ambiguous reviewer judgment is needed.
+- Do not work directly on reserved branches unless an explicit emergency
+  override exists.
+- Stop for human decision when product, security, legal, merge, release, or
+  ambiguous reviewer judgment is needed.

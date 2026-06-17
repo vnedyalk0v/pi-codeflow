@@ -153,13 +153,18 @@ not included in the PR until committed and pushed.
 
 ## Draft PR behavior
 
-Draft selection order:
+Draft selection order for new PRs:
 
 1. explicit `/flow-pr --draft` or `/flow-pr --ready` option;
 2. `payload.draft`;
 3. `config.pullRequest.draftByDefault`.
 
 The default is conservative and opens draft PRs.
+
+When updating an existing PR, explicit command draft/ready flags or
+`payload.draft` apply the requested transition through `gh pr ready` or
+`gh pr ready --undo`. The configured default does not silently change an
+existing PR's draft state.
 
 ## Check-state and commit-state policy
 

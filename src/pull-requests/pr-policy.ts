@@ -70,6 +70,7 @@ export async function createCodeflowPullRequestFromPayload(
   });
   const rendered = await renderPrBody(validation.payload, { cwd: templateCwd, config });
   const draft = resolveDraftFlag(options.draft, validation.payload.draft, config);
+  const draftOverride = resolveDraftOverride(options.draft, validation.payload.draft);
   const warnings = [
     ...validation.warnings,
     ...safety.warnings,
@@ -106,6 +107,7 @@ export async function createCodeflowPullRequestFromPayload(
     title: rendered.title,
     body: rendered.body,
     draft,
+    draftOverride,
     updateExisting: config.pullRequest.updateExisting,
     ghClient: options.ghClient,
   });
@@ -526,6 +528,13 @@ function resolveDraftFlag(
   config: Pick<CodeflowConfig, 'pullRequest'>,
 ): boolean {
   return optionDraft ?? payloadDraft ?? config.pullRequest.draftByDefault;
+}
+
+function resolveDraftOverride(
+  optionDraft: boolean | undefined,
+  payloadDraft: boolean | undefined,
+): boolean | undefined {
+  return optionDraft ?? payloadDraft;
 }
 
 function resolvePushFlag(pushOption: boolean | undefined, config: Pick<CodeflowConfig, 'pullRequest'>): boolean {

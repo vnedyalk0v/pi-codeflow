@@ -149,6 +149,149 @@ describe('createGitHubPullRequest', () => {
     expect(calls.some((args) => args[0] === 'pr' && args[1] === 'edit')).toBe(true);
   });
 
+  it('applies ready and draft overrides when updating existing PRs', async () => {
+    const readyCalls: string[][] = [];
+    const readyResult = await createGitHubPullRequest({
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr',
+      title: 'feat: add flow pr',
+      body: 'body',
+      draft: true,
+      draftOverride: false,
+      updateExisting: true,
+      ghClient: ghClient(async (args) => {
+        readyCalls.push(args);
+
+        if (args[0] === 'pr' && args[1] === 'create') {
+          throw new GithubCliError({
+            code: 'gh_command_failed',
+            message: 'a pull request already exists for this branch',
+            args,
+            stderr: 'a pull request already exists for this branch',
+          });
+        }
+
+        if (args[0] === 'pr' && args[1] === 'list') {
+          return {
+            args,
+            stdout: JSON.stringify([
+              {
+                url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/33',
+                number: 33,
+                baseRefName: 'dev',
+                headRefName: 'feat/flow-pr',
+                isDraft: true,
+              },
+            ]),
+            stderr: '',
+          };
+        }
+
+        return { args, stdout: '', stderr: '' };
+      }),
+    });
+
+    expect(readyResult.draft).toBe(false);
+    expect(readyCalls).toEqual(
+      expect.arrayContaining([
+        ['pr', 'ready', 'https://github.com/vnedyalk0v/pi-codeflow/pull/33'],
+      ]),
+    );
+
+    const draftCalls: string[][] = [];
+    const draftResult = await createGitHubPullRequest({
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr',
+      title: 'feat: add flow pr',
+      body: 'body',
+      draft: false,
+      draftOverride: true,
+      updateExisting: true,
+      ghClient: ghClient(async (args) => {
+        draftCalls.push(args);
+
+        if (args[0] === 'pr' && args[1] === 'create') {
+          throw new GithubCliError({
+            code: 'gh_command_failed',
+            message: 'a pull request already exists for this branch',
+            args,
+            stderr: 'a pull request already exists for this branch',
+          });
+        }
+
+        if (args[0] === 'pr' && args[1] === 'list') {
+          return {
+            args,
+            stdout: JSON.stringify([
+              {
+                url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/34',
+                number: 34,
+                baseRefName: 'dev',
+                headRefName: 'feat/flow-pr',
+                isDraft: false,
+              },
+            ]),
+            stderr: '',
+          };
+        }
+
+        return { args, stdout: '', stderr: '' };
+      }),
+    });
+
+    expect(draftResult.draft).toBe(true);
+    expect(draftCalls).toEqual(
+      expect.arrayContaining([
+        ['pr', 'ready', 'https://github.com/vnedyalk0v/pi-codeflow/pull/34', '--undo'],
+      ]),
+    );
+  });
+
+  it('does not apply the configured default draft state when updating existing PRs', async () => {
+    const calls: string[][] = [];
+    const result = await createGitHubPullRequest({
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr',
+      title: 'feat: add flow pr',
+      body: 'body',
+      draft: true,
+      updateExisting: true,
+      ghClient: ghClient(async (args) => {
+        calls.push(args);
+
+        if (args[0] === 'pr' && args[1] === 'create') {
+          throw new GithubCliError({
+            code: 'gh_command_failed',
+            message: 'a pull request already exists for this branch',
+            args,
+            stderr: 'a pull request already exists for this branch',
+          });
+        }
+
+        if (args[0] === 'pr' && args[1] === 'list') {
+          return {
+            args,
+            stdout: JSON.stringify([
+              {
+                url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/35',
+                number: 35,
+                baseRefName: 'dev',
+                headRefName: 'feat/flow-pr',
+                isDraft: false,
+              },
+            ]),
+            stderr: '',
+          };
+        }
+
+        return { args, stdout: '', stderr: '' };
+      }),
+    });
+
+    expect(result.draft).toBe(false);
+    expect(calls.some((args) => args[0] === 'pr' && args[1] === 'ready')).toBe(false);
+  });
+
   it('returns a clear error for existing PRs when updates are disabled', async () => {
     await expect(
       createGitHubPullRequest({

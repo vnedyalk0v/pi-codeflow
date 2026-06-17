@@ -12,6 +12,7 @@ export interface CreateGitHubPullRequestOptions {
   title: string;
   body: string;
   draft?: boolean;
+  draftOverride?: boolean;
   updateExisting?: boolean;
   ghClient?: GhClientLike;
 }
@@ -156,6 +157,16 @@ async function handleGithubCreateError(
 
   const existing = await viewExistingPullRequest(ghClient, options.headBranch, existingUrl);
   await editExistingPullRequest(ghClient, existing.url, options.title, bodyFilePath);
+  const draftUpdate = await updateExistingPullRequestDraftState(
+    ghClient,
+    existing.url,
+    existing.isDraft,
+    options.draftOverride,
+  );
+  const warnings = [
+    `Pull request already exists for ${options.headBranch}; updated title/body on ${existing.url}.`,
+    ...draftUpdate.warnings,
+  ];
 
   return {
     url: existing.url,
@@ -163,10 +174,10 @@ async function handleGithubCreateError(
     baseBranch: existing.baseRefName ?? options.baseBranch,
     headBranch: existing.headRefName ?? options.headBranch,
     title: options.title,
-    draft: existing.isDraft ?? options.draft === true,
+    draft: draftUpdate.draft ?? existing.isDraft ?? options.draft === true,
     created: false,
     updatedExisting: true,
-    warnings: [`Pull request already exists for ${options.headBranch}; updated title/body on ${existing.url}.`],
+    warnings,
   };
 }
 
@@ -239,6 +250,51 @@ async function editExistingPullRequest(
 
     throw error;
   }
+}
+
+async function updateExistingPullRequestDraftState(
+  ghClient: GhClientLike,
+  url: string,
+  currentDraft: boolean | undefined,
+  draftOverride: boolean | undefined,
+): Promise<{ draft?: boolean; warnings: string[] }> {
+  if (draftOverride === undefined) {
+    return { draft: currentDraft, warnings: [] };
+  }
+
+  if (currentDraft === draftOverride) {
+    return { draft: draftOverride, warnings: [] };
+  }
+
+  const args = ['pr', 'ready', url];
+
+  if (draftOverride) {
+    args.push('--undo');
+  }
+
+  try {
+    await ghClient.run(args);
+  } catch (error) {
+    if (error instanceof GithubCliError) {
+      throw new CodeflowPrError({
+        code: 'gh_pr_update_failed',
+        message: `gh pr ready failed: ${error.message}`,
+        details: githubErrorDetails(error),
+        cause: error,
+      });
+    }
+
+    throw error;
+  }
+
+  return {
+    draft: draftOverride,
+    warnings: [
+      draftOverride
+        ? `Converted existing PR ${url} to draft.`
+        : `Marked existing PR ${url} ready for review.`,
+    ],
+  };
 }
 
 function looksLikeExistingPrError(value: string): boolean {

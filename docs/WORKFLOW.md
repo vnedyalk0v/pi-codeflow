@@ -4,6 +4,16 @@ Codeflow defines a named lifecycle for AI-assisted coding work. The lifecycle is
 a guidance path first and a safety boundary second: agents should be steered into
 valid next steps before unsafe actions become possible.
 
+## Implementation status
+
+The v0.3 foundation exposes lifecycle phase types, initial in-memory lifecycle
+state creation, and next expected action guidance. It injects guidance before
+agent runs so the agent knows the current Codeflow expectations.
+
+The command names in this document describe the intended workflow surface.
+Command-driven transitions, persistent state, semantic branch creation, check
+running, commit rendering, PR rendering, and GitHub automation are later work.
+
 ## Phase reference
 
 | Phase | Purpose | Command or tool |

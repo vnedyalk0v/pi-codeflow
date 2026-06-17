@@ -26,6 +26,8 @@ Follow the Codeflow lifecycle:
 Rules:
 
 - Use Codeflow tools when available.
+- If a Codeflow tool is not implemented yet, explain the limitation instead of
+  pretending it exists.
 - Avoid raw git workflow operations when Codeflow tools exist.
 - Do not manually invent branch, commit, PR, review reply, or final report
   formats.

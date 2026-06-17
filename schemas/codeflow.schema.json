@@ -415,6 +415,7 @@
     },
     "guidance": {
       "type": "object",
+      "description": "Controls before-agent Codeflow guidance and structured output expectations.",
       "required": [
         "proactive",
         "requireStructuredPayloads",

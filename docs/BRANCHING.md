@@ -46,7 +46,8 @@ error and are not rewritten.
 
 When `--type` is omitted, `/flow-start` uses deterministic inference only. It
 recognizes strong task cues for `fix`, `hotfix`, `docs`, `test`, `refactor`,
-`perf`, `ci`, `build`, and `chore`; otherwise it defaults to `feat`.
+`perf`, `ci`, `build`, and `chore`; otherwise it falls back to
+`branching.defaultType`. The package default is `feat`.
 
 ## Slug format
 

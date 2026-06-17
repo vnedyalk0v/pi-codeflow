@@ -4,6 +4,7 @@ import {
   BranchPolicyError,
   getDefaultCodeflowConfig,
   inferBranchType,
+  mergeCodeflowConfig,
 } from '../../src/index';
 
 describe('inferBranchType', () => {
@@ -33,5 +34,16 @@ describe('inferBranchType', () => {
     const config = getDefaultCodeflowConfig();
 
     expect(inferBranchType({ task, config })).toBe(expectedType);
+  });
+
+  it('uses the configured default type when no inference rule matches', () => {
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      branching: {
+        allowedTypes: ['docs'],
+        defaultType: 'docs',
+      },
+    } as Record<string, unknown>);
+
+    expect(inferBranchType({ task: 'Add Google OAuth login', config })).toBe('docs');
   });
 });

@@ -3,6 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { CodeflowConfig } from '../config/codeflow-config';
+import { getDefaultCodeflowConfig } from '../config/default-config';
+import { BranchPolicyError } from './branch-errors';
 import { fileExists } from '../utils/fs';
 
 export interface BranchTemplateContext {
@@ -37,7 +39,7 @@ export async function loadBranchTemplatePattern(
   config: Pick<CodeflowConfig, 'branching' | 'templates'>,
   cwd: string,
 ): Promise<string> {
-  const templatePath = config.templates.branchName || config.branching.template;
+  const templatePath = getConfiguredBranchTemplatePath(config);
   const candidates = getBranchTemplateCandidates(templatePath, cwd);
 
   for (const candidate of candidates) {
@@ -47,7 +49,11 @@ export async function loadBranchTemplatePattern(
     }
   }
 
-  return DEFAULT_BRANCH_TEMPLATE_PATTERN;
+  throw new BranchPolicyError({
+    code: 'branch_template_not_found',
+    message: `Branch name template was not found: ${templatePath}`,
+    details: { templatePath, searchedPaths: candidates },
+  });
 }
 
 export function renderBranchTemplate(
@@ -63,6 +69,18 @@ export function renderBranchTemplate(
     .replaceAll('{{ticket}}', ticket)
     .replaceAll('{{ticketPrefix}}', ticketPrefix)
     .replaceAll('{{ticketSegment}}', ticketPrefix);
+}
+
+function getConfiguredBranchTemplatePath(
+  config: Pick<CodeflowConfig, 'branching' | 'templates'>,
+): string {
+  const defaultConfig = getDefaultCodeflowConfig();
+
+  if (config.branching.template !== defaultConfig.branching.template) {
+    return config.branching.template;
+  }
+
+  return config.templates.branchName;
 }
 
 function getBranchTemplateCandidates(templatePath: string, cwd: string): string[] {

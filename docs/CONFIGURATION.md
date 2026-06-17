@@ -204,14 +204,16 @@ continue according to future policy. Each check includes:
 ## Template resolution
 
 Template paths are resolved from the repository root unless a future config key
-explicitly changes the base directory. Missing templates should block rendering.
+explicitly changes the base directory. For branch names, a non-default
+`branching.template` takes precedence over `templates.branchName`; otherwise the
+named branch template is used. Missing templates block rendering.
 
 ## Branch policy configuration
 
 Branching config controls:
 
 - allowed branch types;
-- default branch type;
+- default branch type, which must also be listed in `allowedTypes`;
 - branch name template;
 - slug case;
 - slug length;

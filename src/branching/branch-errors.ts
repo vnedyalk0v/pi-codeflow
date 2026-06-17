@@ -1,6 +1,7 @@
 export type BranchPolicyErrorCode =
   | 'invalid_branch_type'
   | 'invalid_ticket_pattern'
+  | 'branch_template_not_found'
   | 'empty_branch_slug'
   | 'branch_name_collision'
   | 'reserved_branch';

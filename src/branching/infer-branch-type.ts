@@ -74,7 +74,7 @@ export function inferBranchType(input: InferBranchTypeInput): BranchType {
     }
   }
 
-  return validateBranchType('feat', input.config);
+  return validateBranchType(input.config.branching.defaultType, input.config);
 }
 
 function normalizeTask(task: string): string {

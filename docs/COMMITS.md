@@ -25,7 +25,8 @@ resolve review comments, or merge branches.
 
 `--dry-run` renders and validates the message without creating a commit.
 `--allow-unverified` allows a commit when the latest `/flow-check` state failed
-or is missing, but it still records a warning. It does not push or open a PR.
+or is missing, and it also explicitly permits an empty verification payload. It
+still records warnings and does not push or open a PR.
 
 ## Required payload shape
 
@@ -94,7 +95,8 @@ The schema also supports optional `breakingChange` and `footers` fields.
 - `summary` must not end with trailing punctuation.
 - `changes` must be an array with at least one item.
 - `verification` must be an array and must contain at least one item unless the
-  resolved config or explicit unverified override disables the requirement.
+  resolved config disables `commits.requireVerification` or the command uses the
+  explicit `--allow-unverified` override.
 - `risk` is required by default config and must be non-empty unless
   `commits.requireRisk` is false.
 - Payloads must not include secrets, tokens, or private credentials.
@@ -179,6 +181,8 @@ allows reserved-branch work. The default config does not allow it.
 - Passed checks allow the commit.
 - Failed checks block by default.
 - `--allow-unverified` permits the commit with a warning.
+- `commits.allowUnverifiedCommits` affects check-state policy only; it does not
+  waive payload verification when `commits.requireVerification` remains true.
 - Missing, skipped, or `no_checks` state warns by default.
 - If `commits.requirePassedChecksBeforeCommit` is true, missing or non-passed
   check state blocks unless unverified commits are explicitly allowed.

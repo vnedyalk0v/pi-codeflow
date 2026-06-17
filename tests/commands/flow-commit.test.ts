@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CodeflowCommitError,
   getDefaultCodeflowConfig,
+  mergeCodeflowConfig,
   parseFlowCommitArguments,
   readFlowCommitPayloadFile,
   runFlowCommit,
@@ -183,6 +184,22 @@ describe('runFlowCommit', () => {
     );
   });
 
+  it('does not use config allowUnverifiedCommits to waive payload verification', async () => {
+    const repo = await makeRepo();
+    await stageChange(repo);
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      commits: { allowUnverifiedCommits: true },
+    } as Record<string, unknown>);
+
+    await expect(
+      runFlowCommit({
+        cwd: repo,
+        payload: payload({ verification: [] }),
+        config,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_payload' });
+  });
+
   it('leaves unstaged changes uncommitted and returns a warning', async () => {
     const repo = await makeRepo();
     await stageChange(repo, 'staged.txt', 'staged\n');
@@ -236,6 +253,21 @@ describe('runFlowCommit', () => {
       allowUnverified: true,
     });
     expect(missingResult.warnings.join('\n')).toContain('No latest /flow-check state found');
+
+    const configAllowedRepo = await makeRepo();
+    await stageChange(configAllowedRepo);
+    const allowUnverifiedConfig = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      commits: { allowUnverifiedCommits: true },
+    } as Record<string, unknown>);
+    const configAllowedResult = await runFlowCommit({
+      cwd: configAllowedRepo,
+      payload: payload(),
+      config: allowUnverifiedConfig,
+    });
+    expect(configAllowedResult.status).toBe('committed');
+    expect(configAllowedResult.warnings.join('\n')).toContain(
+      'No latest /flow-check state found',
+    );
 
     const dryRepo = await makeRepo();
     await stageChange(dryRepo);

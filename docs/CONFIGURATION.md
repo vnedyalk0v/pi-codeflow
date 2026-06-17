@@ -200,7 +200,7 @@ rendering, and local commit safety.
 | `maxTitleLength` | Maximum rendered title length; default is 72. |
 | `titleLengthPolicy` | `error` blocks overlong titles; `warning` reports but allows them. |
 | `useBreakingChangeMarker` | Adds `!` to Conventional Commit titles when `breakingChange` exists. |
-| `allowUnverifiedCommits` | Lets failed or missing check-state proceed with warnings. |
+| `allowUnverifiedCommits` | Lets failed or missing check-state proceed with warnings; it does not waive payload verification. |
 | `requirePassedChecksBeforeCommit` | Requires latest `/flow-check` state to be `passed`. |
 
 Default behavior is conservative: structured payloads, body, verification, risk,

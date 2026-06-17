@@ -2,11 +2,11 @@
 
 Pi package for consistent AI coding workflows.
 
-**Project status:** planning / pre-MVP.
+**Project status:** early implementation / pre-MVP.
 
-> Warning: this repository is not ready for production use yet. It currently
-> contains planning documents, templates, schemas, and project setup only. Do
-> not rely on it to enforce workflow safety in real projects.
+> Warning: this repository is not ready for production use yet. It now contains
+> the first config loading and validation foundation, but it does not enforce
+> workflow safety in real projects.
 
 pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
 lifecycle:
@@ -27,8 +27,7 @@ lifecycle:
 - Provide model-neutral workflow guidance for AI coding agents.
 - Standardize branch names, commit payloads, PR payloads, review replies, and
   final reports.
-- Load project-specific workflow configuration from a future `.pi/codeflow.json`
-  file.
+- Load project-specific workflow configuration from `.pi/codeflow.json`.
 - Run configured local checks and summarize results.
 - Help agents triage GitHub review comments and only resolve comments that were
   addressed or proven stale/already fixed.
@@ -64,6 +63,8 @@ lifecycle:
 ```text
 pi-codeflow/
 ├── docs/          # product specs, workflow docs, release notes, decisions
+├── src/           # TypeScript config loading and validation foundation
+├── tests/         # unit tests and config fixtures
 ├── extensions/    # future Pi extension implementation entry points
 ├── skills/        # Pi skills that teach agents when to use Codeflow
 ├── prompts/       # prompt templates for lifecycle phases
@@ -92,6 +93,7 @@ pi-codeflow/
 
 ## Development note
 
-This repository intentionally does not include production extension logic yet.
-The first milestone is to agree on scope, behavior, safety boundaries, and
-project management before implementation begins.
+This repository intentionally does not include production extension logic,
+guidance injection, flow commands, or workflow automation yet. The first
+implementation layer is limited to configuration loading, merging, validation,
+and tests.

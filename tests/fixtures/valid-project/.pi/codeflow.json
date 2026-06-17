@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schemas/codeflow.schema.json",
+  "baseBranches": {
+    "default": "main",
+    "allowed": ["main"],
+    "missingDefaultBehavior": "block"
+  },
+  "branching": {
+    "defaultType": "feat",
+    "slug": {
+      "maxLength": 40
+    }
+  },
+  "checks": [
+    {
+      "name": "unit tests",
+      "command": "npm test",
+      "timeoutSeconds": 120
+    }
+  ],
+  "templates": {
+    "pullRequest": "docs/custom-pr-template.md"
+  }
+}

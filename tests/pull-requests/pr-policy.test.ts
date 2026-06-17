@@ -214,6 +214,32 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
     expect(result.warnings.join('\n')).toContain('No latest /flow-commit state found');
   });
 
+  it('compares the resolved remote PR head when push is disabled', async () => {
+    const state = passedState();
+    state.commits.lastCommit!.branch = 'feat/requested-head';
+    const compared: Array<[string, string]> = [];
+    const result = await createCodeflowPullRequestFromPayload({
+      payload: payload({ headBranch: 'feat/requested-head' }),
+      dryRun: true,
+      push: false,
+      gitClient: gitClient({
+        getCurrentBranch: async () => 'feat/current-checkout',
+        remoteBranchExists: async (branchName: string) =>
+          branchName === 'dev' || branchName === 'feat/requested-head',
+        getAheadCount: async (baseRef: string, headRef = 'HEAD') => {
+          compared.push([baseRef, headRef]);
+          return headRef === 'origin/feat/requested-head' ? 0 : 1;
+        },
+      }),
+      sessionState: state,
+    });
+
+    expect(compared).toEqual([['origin/dev', 'origin/feat/requested-head']]);
+    expect(result.warnings.join('\n')).toContain(
+      'PR head feat/requested-head has no commits ahead of origin/dev',
+    );
+  });
+
   it('uses configured base branch and explicit base override', async () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       pullRequest: { baseBranch: 'develop' },

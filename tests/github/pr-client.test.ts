@@ -79,6 +79,23 @@ describe('createGitHubPullRequest', () => {
     expect(result.number).toBe(12);
   });
 
+  it('extracts PR numbers from trailing-slash PR URLs', async () => {
+    const result = await createGitHubPullRequest({
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr',
+      title: 'feat: add flow pr',
+      body: '## Summary\n\nBody',
+      ghClient: ghClient(async (args) => ({
+        args,
+        stdout: 'https://github.company.com/org/repo/pull/12/\n',
+        stderr: '',
+      })),
+    });
+
+    expect(result.url).toBe('https://github.company.com/org/repo/pull/12/');
+    expect(result.number).toBe(12);
+  });
+
   it('handles missing gh and auth failures clearly', async () => {
     await expect(
       createGitHubPullRequest({

@@ -44,6 +44,7 @@ export async function createCodeflowPullRequestFromPayload(
   const templateCwd = options.templateCwd ?? cwd;
   const config = options.config ?? getDefaultCodeflowConfig();
   const gitClient = options.gitClient ?? new GitClient({ cwd });
+  const push = resolvePushFlag(options.push, config);
   const validation = validatePrPayload(options.payload, {
     config,
     allowUnverified: options.allowUnverified === true,
@@ -67,6 +68,7 @@ export async function createCodeflowPullRequestFromPayload(
     allowUnverified: options.allowUnverified === true,
     dryRun: options.dryRun === true,
     sessionState: options.sessionState,
+    push,
   });
   const rendered = await renderPrBody(validation.payload, { cwd: templateCwd, config });
   const draft = resolveDraftFlag(options.draft, validation.payload.draft, config);
@@ -97,7 +99,7 @@ export async function createCodeflowPullRequestFromPayload(
     config,
     headBranch: safety.headBranch,
     currentBranch: safety.currentBranch,
-    push: resolvePushFlag(options.push, config),
+    push,
   });
 
   const pr = await createGitHubPullRequest({
@@ -138,6 +140,7 @@ async function evaluatePrSafety(options: {
   allowUnverified: boolean;
   dryRun: boolean;
   sessionState?: CodeflowSessionState;
+  push: boolean;
 }): Promise<PrSafetyResult> {
   const warnings: string[] = [];
   const currentBranch = await getCurrentBranchOrThrow(options.gitClient);
@@ -179,6 +182,9 @@ async function evaluatePrSafety(options: {
   await collectAheadWarnings({
     gitClient: options.gitClient,
     baseBranch,
+    headBranch,
+    currentBranch,
+    push: options.push,
     warnings,
   });
 
@@ -424,29 +430,38 @@ function validateCommitState(
 async function collectAheadWarnings(options: {
   gitClient: GitClient;
   baseBranch: string;
+  headBranch: string;
+  currentBranch: string | null;
+  push: boolean;
   warnings: string[];
 }): Promise<void> {
   const baseRef = await resolveBaseRefForAheadCount(options.gitClient, options.baseBranch);
+  const headRef = await resolveHeadRefForAheadCount({
+    gitClient: options.gitClient,
+    headBranch: options.headBranch,
+    currentBranch: options.currentBranch,
+    push: options.push,
+  });
 
-  if (baseRef === null) {
+  if (baseRef === null || headRef === null) {
     options.warnings.push(
-      `Could not compare HEAD against base branch ${options.baseBranch}; confirm the PR contains intended commits.`,
+      `Could not compare PR head ${options.headBranch} against base branch ${options.baseBranch}; confirm the PR contains intended commits.`,
     );
     return;
   }
 
   try {
-    const aheadCount = await options.gitClient.getAheadCount(baseRef, 'HEAD');
+    const aheadCount = await options.gitClient.getAheadCount(baseRef, headRef);
 
     if (aheadCount === 0) {
       options.warnings.push(
-        `Current branch has no commits ahead of ${baseRef}; confirm the PR has intended changes.`,
+        `PR head ${options.headBranch} has no commits ahead of ${baseRef}; confirm the PR has intended changes.`,
       );
     }
   } catch (error) {
     if (error instanceof GitError) {
       options.warnings.push(
-        `Could not compare HEAD against ${baseRef}; confirm the PR contains intended commits.`,
+        `Could not compare PR head ${options.headBranch} (${headRef}) against ${baseRef}; confirm the PR contains intended commits.`,
       );
       return;
     }
@@ -466,6 +481,47 @@ async function resolveBaseRefForAheadCount(
 
     if (await gitClient.branchExists(baseBranch)) {
       return baseBranch;
+    }
+  } catch (error) {
+    if (error instanceof GitError) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  return null;
+}
+
+async function resolveHeadRefForAheadCount(options: {
+  gitClient: GitClient;
+  headBranch: string;
+  currentBranch: string | null;
+  push: boolean;
+}): Promise<string | null> {
+  try {
+    if (options.push && options.currentBranch === options.headBranch) {
+      return 'HEAD';
+    }
+
+    if (await options.gitClient.remoteBranchExists(options.headBranch)) {
+      return `origin/${options.headBranch}`;
+    }
+
+    if (
+      !options.push &&
+      (await options.gitClient.remoteHeadExists(options.headBranch)) &&
+      (await options.gitClient.fetchBranch(options.headBranch))
+    ) {
+      return `origin/${options.headBranch}`;
+    }
+
+    if (options.currentBranch === options.headBranch) {
+      return 'HEAD';
+    }
+
+    if (await options.gitClient.branchExists(options.headBranch)) {
+      return options.headBranch;
     }
   } catch (error) {
     if (error instanceof GitError) {

@@ -182,6 +182,9 @@ when available.
   created through `/flow-commit`.
 - `/flow-commit` metadata from a different branch than the resolved PR head
   warns that the PR may include commits not created through `/flow-commit`.
+- Ahead-of-base warnings compare the resolved PR head, not always the current
+  checkout. When Codeflow will push the current head branch, it compares `HEAD`;
+  when pushing is disabled, it compares the remote PR head branch.
 
 ## GitHub CLI integration
 
@@ -198,7 +201,7 @@ If a PR already exists for the branch and `pullRequest.updateExisting` is true,
 Codeflow discovers the existing PR and updates title/body with `gh pr edit`. If
 updates are disabled, it returns a clear error and includes the existing PR URL
 when discoverable. PR URLs returned by `gh` may use `github.com` or a GitHub
-Enterprise hostname.
+Enterprise hostname and may include a trailing slash.
 
 ## Out of scope
 

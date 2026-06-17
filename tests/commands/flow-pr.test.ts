@@ -302,6 +302,28 @@ describe('runFlowPr', () => {
     expect(pushed).toEqual(['feat/flow-pr-generated-title-body']);
     expect(calls.flat()).not.toEqual(expect.arrayContaining(['merge', 'review', 'delete-branch']));
   });
+
+  it('stores PR metadata when gh returns a trailing-slash PR URL', async () => {
+    const result = await runFlowPr({
+      payload: payload(),
+      gitClient: gitClient(),
+      ghClient: {
+        run: async (args) => ({
+          args,
+          stdout: 'https://github.company.com/org/repo/pull/12/\n',
+          stderr: '',
+        }),
+      },
+      sessionState: state(),
+    });
+
+    expect(result.prNumber).toBe(12);
+    expect(result.sessionState.lifecycle.phase).toBe('pr_opened');
+    expect(result.sessionState.pullRequests.lastPullRequest).toMatchObject({
+      number: 12,
+      url: 'https://github.company.com/org/repo/pull/12/',
+    });
+  });
 });
 
 describe('/flow-pr command registration', () => {

@@ -322,8 +322,14 @@ function parsePullRequestUrl(value: string): string | null {
 }
 
 function parsePullRequestNumber(url: string): number | null {
-  const value = url.match(/\/pull\/(\d+)(?:$|[?#])/)?.[1];
-  return value ? Number.parseInt(value, 10) : null;
+  try {
+    const parsed = new URL(url);
+    const value = parsed.pathname.match(/\/pull\/(\d+)\/?$/u)?.[1];
+    return value ? Number.parseInt(value, 10) : null;
+  } catch {
+    const value = url.match(/\/pull\/(\d+)\/?(?:$|[?#])/)?.[1];
+    return value ? Number.parseInt(value, 10) : null;
+  }
 }
 
 function githubErrorDetails(error: GithubCliError): Record<string, unknown> {

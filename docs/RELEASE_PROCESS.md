@@ -10,3 +10,12 @@ The release process is planned for a future milestone.
 6. Package publishing may be added later; it is not part of the bootstrap.
 
 No automated publishing should be added until implementation, CI, and security review are ready.
+
+## Release gates
+
+Before publishing is automated, maintainers should confirm:
+
+- implementation code exists and is covered by CI;
+- package contents are reviewed for secrets and generated artifacts;
+- release notes describe compatibility and migration expectations;
+- rollback instructions are documented for failed releases.

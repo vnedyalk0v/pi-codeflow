@@ -7,4 +7,10 @@ Inputs:
 
 - `type`
 - `slug`
+
+Output rules:
+
+- keep the type lowercase
+- keep the slug kebab-case
+- do not include spaces
 -->

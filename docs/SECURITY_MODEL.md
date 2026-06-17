@@ -12,7 +12,7 @@ The normal user experience should guide agents into safe behavior:
 
 - create semantic branches with `/flow-start`;
 - plan before editing;
-- run configured checks when that tooling is implemented;
+- run configured checks with `/flow-check`;
 - provide structured payloads;
 - render outputs from templates when renderers are implemented;
 - ask humans for decisions when needed.
@@ -102,6 +102,28 @@ The extension should not automatically:
 - rotate or inspect secrets;
 - rewrite public history;
 - make product or security decisions on behalf of maintainers.
+
+## Local check execution
+
+`/flow-check` executes shell-like command strings from validated project-owned
+Codeflow config. It does not accept arbitrary command text from command
+arguments. Shell usage is isolated in the command execution wrapper because
+project configs commonly express checks as strings such as `npm run lint`.
+
+Safety expectations for local checks:
+
+- run only commands from resolved `config.checks`;
+- run sequentially, not in parallel;
+- support timeouts;
+- capture stdout and stderr without hiding stderr;
+- summarize large output with bounded display text;
+- store only bounded check metadata and summaries in session-state output;
+- never commit, push, open PRs, call GitHub automation, or resolve review
+  comments.
+
+Configured checks still run with the user's local permissions. Reviewers should
+focus on command execution safety, timeout behavior, output handling, and state
+storage whenever this layer changes.
 
 ## Extension risks
 

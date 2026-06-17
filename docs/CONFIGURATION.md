@@ -1,9 +1,10 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.4
+The project-level configuration file is `.pi/codeflow.json`. The v0.5
 foundation loads package defaults, optionally loads project config, merges the
 two layers, validates the resolved config, uses the resolved config to build
-before-agent Codeflow guidance, and applies branch policy in `/flow-start`.
+before-agent Codeflow guidance, applies branch policy in `/flow-start`, and
+runs configured local checks in `/flow-check`.
 
 ## Config resolution order
 
@@ -21,8 +22,9 @@ and `configPath: null`. When a project config is found, it returns
 
 Command-specific overrides are reserved for a future milestone. `/flow-start`
 reads the resolved config and may create or switch to a semantic work branch.
-It does not persist lifecycle state, commit, push, open pull requests, or mutate
-GitHub resources.
+`/flow-check` reads the resolved config and runs only configured local checks.
+Neither command commits, pushes, opens pull requests, or mutates GitHub
+resources.
 
 ## Default config
 
@@ -193,13 +195,54 @@ The guidance generator honors the resolved `guidance` flags:
 
 ## Checks
 
-`checks` is an ordered array. Codeflow must run checks in order and stop or
-continue according to future policy. Each check includes:
+`checks` is an ordered array of project-owned local commands. `/flow-check` runs
+configured checks in array order. It does not accept arbitrary command arguments
+from the user; command strings come only from validated Codeflow config.
 
-- `name`
-- `command`
-- optional `cwd`
-- optional `timeoutSeconds`
+Each check includes:
+
+- `name`: required display name used in summaries and stored state.
+- `command`: required shell-like command string, such as `npm run lint`.
+- `cwd`: optional working directory, resolved relative to the repository root or
+  command cwd.
+- `timeoutMs`: optional timeout in milliseconds.
+- `timeoutSeconds`: backward-compatible timeout in seconds; prefer `timeoutMs`
+  for new configs.
+- `required`: optional boolean; defaults to `true` when omitted.
+
+Example:
+
+```json
+{
+  "checks": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "timeoutMs": 120000,
+      "required": true
+    },
+    {
+      "name": "audit",
+      "command": "npm audit --audit-level=high",
+      "required": false
+    }
+  ]
+}
+```
+
+Execution policy:
+
+- checks run sequentially, never in parallel;
+- non-zero exits are `failed`;
+- timeouts are `timed_out`;
+- optional failed checks are summarized but do not fail the overall run;
+- the default command policy stops after the first failed required check;
+- `/flow-check --continue-on-failure` or `/flow-check --all` continues and
+  collects all results;
+- `/flow-check --stop-on-failure` makes the default stop policy explicit;
+- `/flow-check --dry-run` records planned checks as skipped and executes
+  nothing;
+- no configured checks record `no_checks` with a warning rather than failing.
 
 ## Template resolution
 

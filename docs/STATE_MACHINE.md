@@ -5,8 +5,8 @@ This document is the compact state-machine reference for Codeflow. See
 
 ## Implementation status
 
-The v0.4 implementation provides a small lifecycle foundation and the first
-command-driven transition:
+The v0.5 implementation provides a small lifecycle foundation and the first two
+command-driven transitions:
 
 - `createInitialLifecycleState()` creates an initial state and defaults to
   `idle`.
@@ -14,7 +14,9 @@ command-driven transition:
   phase and resolved config.
 - `/flow-start` prepares a semantic branch and returns phase
   `branch_prepared`.
-- Persistent state storage and later command-driven transitions are not
+- `/flow-check` runs configured checks, records the latest bounded check state,
+  and returns `local_checks` or `fixing_local_findings`.
+- Persistent external state storage and later command-driven transitions are not
   implemented yet.
 
 ## Lifecycle phases
@@ -40,9 +42,10 @@ command-driven transition:
 
 ## Next expected action summary
 
-The guidance layer maps phases to next expected actions. `/flow-start` now
-performs the `initialized` -> `branch_prepared` branch preparation mutation; the
-rest of the action text is proactive guidance, not a mutation engine.
+The guidance layer maps phases to next expected actions. `/flow-start` performs
+the `initialized` -> `branch_prepared` branch preparation mutation. `/flow-check`
+records local check results and returns the phase that should guide the next
+step. Other action text remains proactive guidance, not a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -51,7 +54,7 @@ rest of the action text is proactive guidance, not a mutation engine.
 | `branch_prepared` | Continue only on the prepared work branch and move to planning. |
 | `planning` | Produce an implementation plan before editing. |
 | `implementing` | Make focused changes and move toward checks or self-review. |
-| `local_checks` | Run configured checks when tooling is available, or record none configured. |
+| `local_checks` | Run configured checks with `/flow-check`, or record none configured with a warning. |
 | `self_review` | Review the diff and fix local findings before commit readiness. |
 | `fixing_local_findings` | Fix only local check or self-review findings, then re-check. |
 | `ready_to_commit` | Provide a structured commit payload for template rendering. |
@@ -79,8 +82,10 @@ rest of the action text is proactive guidance, not a mutation engine.
 | `planning` | `blocked` | Requirements unclear. |
 | `implementing` | `local_checks` | Changes are ready for verification. |
 | `implementing` | `self_review` | Checks intentionally skipped or not configured. |
-| `local_checks` | `self_review` | Checks pass or acceptable skips are recorded. |
-| `local_checks` | `fixing_local_findings` | Local checks fail. |
+| `local_checks` | `local_checks` | `/flow-check` passes and records latest local check evidence; next action is self-review. |
+| `local_checks` | `local_checks` | `/flow-check` records no configured checks with a warning and does not claim verification. |
+| `local_checks` | `fixing_local_findings` | Required local checks fail or time out. |
+| `local_checks` | `self_review` | Agent proceeds after acceptable local check evidence or an explicit no-checks note. |
 | `self_review` | `ready_to_commit` | Self-review finds no blockers. |
 | `self_review` | `fixing_local_findings` | Self-review finds issues. |
 | `fixing_local_findings` | `local_checks` | Fixes are ready for re-check. |
@@ -140,6 +145,20 @@ A workflow should enter `blocked` when:
 
 For `/flow-start`, these failures leave the repository unchanged except for any
 non-destructive fetch attempt made before base branch resolution.
+
+## `/flow-check` transition details
+
+- Passing required checks: `local_checks` -> `local_checks` with latest check
+  state recorded and next action toward self-review.
+- Failed required checks: `local_checks` -> `fixing_local_findings` with command,
+  exit code, duration, and relevant output summarized.
+- Timed-out required checks: `local_checks` -> `fixing_local_findings`; use
+  `blocked` only when a timeout needs human decision or policy clarification.
+- Optional check failures: remain non-blocking but are still captured and shown.
+- No checks configured: remain in `local_checks` with a warning and never claim
+  `verified`.
+- Dry-runs: remain in `local_checks`; skipped planned checks are not verification
+  evidence.
 
 ## Retry transitions
 

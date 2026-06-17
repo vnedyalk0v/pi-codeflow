@@ -73,19 +73,23 @@
   "checks": [
     {
       "name": "lint",
-      "command": "npm run lint"
+      "command": "npm run lint",
+      "timeoutMs": 120000
     },
     {
       "name": "typecheck",
-      "command": "npm run typecheck"
+      "command": "npm run typecheck",
+      "timeoutMs": 120000
     },
     {
       "name": "test",
-      "command": "npm test"
+      "command": "npm test",
+      "timeoutMs": 300000
     },
     {
       "name": "build",
-      "command": "npm run build"
+      "command": "npm run build",
+      "required": false
     }
   ],
   "reviewComments": {

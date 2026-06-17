@@ -288,9 +288,18 @@
             "type": "string",
             "minLength": 1
           },
-          "timeoutSeconds": {
+          "timeoutMs": {
             "type": "integer",
             "minimum": 1
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Backward-compatible timeout in seconds; prefer timeoutMs for new configs."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this check is required for overall local verification. Defaults to true."
           }
         },
         "additionalProperties": false

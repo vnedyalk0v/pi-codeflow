@@ -115,8 +115,8 @@ function getLocalCheckActions(config: CodeflowConfig): string[] {
   const checkNames = config.checks.map((check) => check.name).join(', ');
 
   return [
-    `Run configured checks in order with /flow-check when available: ${checkNames}.`,
-    'If /flow-check is not implemented, explain the limitation and do not pretend check automation ran.',
+    `Run configured checks in order with /flow-check: ${checkNames}.`,
+    'If checks fail, fix only the failing local findings and run /flow-check again.',
   ];
 }
 

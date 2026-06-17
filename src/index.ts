@@ -1,4 +1,4 @@
-export type { CodeflowConfig } from './config/codeflow-config';
+export type { CodeflowConfig, CodeflowCheckConfig } from './config/codeflow-config';
 export {
   inferBranchType,
   type InferBranchTypeInput,
@@ -27,6 +27,24 @@ export {
   type PrepareCodeflowBranchOptions,
   type PrepareCodeflowBranchResult,
 } from './commands/flow-start';
+export {
+  runFlowCheck,
+  parseFlowCheckArguments,
+  formatFlowCheckResult,
+  type FlowCheckOptions,
+  type FlowCheckResult,
+} from './commands/flow-check';
+export {
+  runCodeflowChecks,
+  type RunCodeflowChecksOptions,
+} from './checks/check-runner';
+export { summarizeCheckResults } from './checks/check-summary';
+export type {
+  CodeflowCheckResult,
+  CodeflowCheckRunResult,
+  CodeflowCheckStatus,
+} from './checks/check-result';
+export { CodeflowCheckError, type CodeflowCheckErrorCode } from './checks/check-errors';
 export { buildCodeflowGuidance } from './guidance/build-guidance';
 export type {
   CodeflowGuidanceContext,

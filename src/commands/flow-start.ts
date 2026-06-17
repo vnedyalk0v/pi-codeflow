@@ -131,7 +131,8 @@ export async function runFlowStart(
     templatePattern,
     branchExists: async (candidate) =>
       (await gitClient.branchExists(candidate)) ||
-      (await gitClient.remoteBranchExists(candidate)),
+      (await gitClient.remoteBranchExists(candidate)) ||
+      (await gitClient.remoteHeadExists(candidate)),
   });
   const prepared = await prepareCodeflowBranch({
     cwd,

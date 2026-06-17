@@ -156,6 +156,26 @@ describe('runFlowStart', () => {
     expect(result.workBranch).toBe('feat/add-google-oauth-login-2');
   });
 
+  it('uses a collision suffix when a branch only exists on the remote', async () => {
+    const repo = await makeRepo();
+    const remote = await mkdtemp(path.join(os.tmpdir(), 'codeflow-flow-start-remote-'));
+    await git(remote, ['init', '--bare']);
+    await git(repo, ['remote', 'add', 'origin', remote]);
+    await git(repo, ['push', 'origin', 'dev']);
+    await git(repo, ['push', 'origin', 'dev:refs/heads/feat/add-google-oauth-login']);
+    await git(repo, ['update-ref', '-d', 'refs/remotes/origin/feat/add-google-oauth-login']);
+
+    const result = await runFlowStart({
+      cwd: repo,
+      task: 'Add Google OAuth login',
+      type: 'feat',
+      dryRun: true,
+      config: getDefaultCodeflowConfig(),
+    });
+
+    expect(result.workBranch).toBe('feat/add-google-oauth-login-2');
+  });
+
   it('errors when the working tree is dirty', async () => {
     const repo = await makeRepo();
     await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');

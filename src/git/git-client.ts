@@ -51,6 +51,23 @@ export class GitClient {
     return this.refExists(`refs/remotes/${remote}/${branchName}`);
   }
 
+  async remoteHeadExists(branchName: string, remote = 'origin'): Promise<boolean> {
+    if (!(await this.remoteExists(remote))) {
+      return false;
+    }
+
+    try {
+      await this.run(['ls-remote', '--exit-code', '--heads', remote, branchName]);
+      return true;
+    } catch (error) {
+      if (error instanceof GitError && isExitCode(error.exitCode, 2)) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
   async fetchBranch(branchName: string, remote = 'origin'): Promise<boolean> {
     try {
       await this.run([
@@ -78,7 +95,20 @@ export class GitClient {
       await this.run(['show-ref', '--verify', '--quiet', ref]);
       return true;
     } catch (error) {
-      if (error instanceof GitError && error.exitCode === 1) {
+      if (error instanceof GitError && isExitCode(error.exitCode, 1)) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
+  private async remoteExists(remote: string): Promise<boolean> {
+    try {
+      await this.run(['remote', 'get-url', remote]);
+      return true;
+    } catch (error) {
+      if (error instanceof GitError && isExitCode(error.exitCode, 2)) {
         return false;
       }
 
@@ -105,6 +135,10 @@ export class GitClient {
       throw toGitError(error, args, options.errorCode);
     }
   }
+}
+
+function isExitCode(value: number | string | undefined, expected: number): boolean {
+  return value === expected || value === String(expected);
 }
 
 function toGitError(

@@ -18,6 +18,9 @@
       "timeoutSeconds": 120
     }
   ],
+  "pullRequest": {
+    "baseBranch": "main"
+  },
   "templates": {
     "pullRequest": "docs/custom-pr-template.md"
   }

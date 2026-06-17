@@ -13,7 +13,6 @@
       "items": {
         "type": "object",
         "required": [
-          "id",
           "classification",
           "rationale",
           "action",
@@ -26,7 +25,8 @@
           },
           "url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "minLength": 1
           },
           "classification": {
             "type": "string",
@@ -61,6 +61,18 @@
             "type": "boolean"
           }
         },
+        "anyOf": [
+          {
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "required": [
+              "url"
+            ]
+          }
+        ],
         "additionalProperties": false
       }
     }

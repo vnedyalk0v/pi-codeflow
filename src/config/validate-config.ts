@@ -34,9 +34,19 @@ export function validateCodeflowConfig(input: unknown): CodeflowConfigValidation
     };
   }
 
+  const config = cloneJson(input) as CodeflowConfig;
+  const semanticErrors = validateSemanticConfigRules(config);
+
+  if (semanticErrors.length > 0) {
+    return {
+      valid: false,
+      errors: semanticErrors,
+    };
+  }
+
   return {
     valid: true,
-    config: cloneJson(input) as CodeflowConfig,
+    config,
     warnings: collectValidationWarnings(input),
   };
 }
@@ -128,6 +138,26 @@ function getErrorMessage(error: ErrorObject, path: string): string {
   }
 
   return error.message ?? `${path} is invalid`;
+}
+
+function validateSemanticConfigRules(
+  config: CodeflowConfig,
+): CodeflowConfigValidationError[] {
+  const errors: CodeflowConfigValidationError[] = [];
+
+  if (!config.baseBranches.allowed.includes(config.pullRequest.baseBranch)) {
+    errors.push({
+      path: '/pullRequest/baseBranch',
+      keyword: 'allowedBaseBranch',
+      message: '/pullRequest/baseBranch must be listed in /baseBranches/allowed',
+      allowedValues: config.baseBranches.allowed,
+      details: {
+        baseBranch: config.pullRequest.baseBranch,
+      },
+    });
+  }
+
+  return errors;
 }
 
 function collectValidationWarnings(input: unknown): string[] {

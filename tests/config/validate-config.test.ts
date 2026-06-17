@@ -109,6 +109,26 @@ describe('validateCodeflowConfig', () => {
     }
   });
 
+  it('rejects a pull request base branch outside allowed base branches', () => {
+    const config = cloneDefault();
+    config.baseBranches.allowed = ['dev'];
+    config.pullRequest.baseBranch = 'production';
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/pullRequest/baseBranch',
+            keyword: 'allowedBaseBranch',
+            allowedValues: ['dev'],
+          }),
+        ]),
+      );
+    }
+  });
+
   it('rejects null used to remove a required object', () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       baseBranches: null,

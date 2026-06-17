@@ -125,10 +125,12 @@
           "type": "boolean"
         },
         "reason": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "backportPlan": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "allOf": [

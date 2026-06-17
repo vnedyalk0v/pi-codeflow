@@ -75,6 +75,7 @@ return a warning for `extends`, but it does not load extended files.
 
 - Parse JSON before any git mutation.
 - Validate against `schemas/codeflow.schema.json` using draft 2020-12.
+- Validate semantic config rules that JSON Schema cannot express by itself.
 - Validate the final merged config, not just the project patch.
 - Report all practical validation errors with config paths.
 - Return stable Codeflow error objects instead of raw validator errors.
@@ -133,6 +134,16 @@ Missing conditional fallback branch:
   "path": "/baseBranches/fallback",
   "keyword": "required",
   "message": "/baseBranches/fallback is required"
+}
+```
+
+Pull request base outside allowed base branches:
+
+```json
+{
+  "path": "/pullRequest/baseBranch",
+  "keyword": "allowedBaseBranch",
+  "message": "/pullRequest/baseBranch must be listed in /baseBranches/allowed"
 }
 ```
 

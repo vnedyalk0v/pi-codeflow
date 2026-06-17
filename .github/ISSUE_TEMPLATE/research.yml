@@ -1,0 +1,43 @@
+name: Research / Spec
+description: Explore and document a design decision.
+title: "[Spec] "
+labels: ["type:research", "status:needs-design"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: What needs to be decided?
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered
+      description: List known approaches or prior art.
+    validations:
+      required: false
+  - type: textarea
+    id: decision
+    attributes:
+      label: Expected decision artifact
+      description: Which doc, ADR, schema, or template should be updated?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true for this issue to be complete?
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Links, screenshots, prior art, or constraints.
+    validations:
+      required: false

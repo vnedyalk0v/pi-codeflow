@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/codeflow.schema.json",
+  "extends": "./default.codeflow.json",
+  "checks": [
+    {
+      "name": "lint",
+      "command": "npm run lint"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck"
+    },
+    {
+      "name": "test",
+      "command": "npm test"
+    },
+    {
+      "name": "build",
+      "command": "npm run build"
+    }
+  ]
+}

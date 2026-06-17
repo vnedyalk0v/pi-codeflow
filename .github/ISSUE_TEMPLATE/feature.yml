@@ -1,0 +1,57 @@
+name: Feature
+description: Propose a new Codeflow capability.
+title: "[Feature] "
+labels: ["type:feature", "status:needs-design"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for proposing a feature. Please keep scope focused."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should Codeflow do?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - workflow
+        - branching
+        - commits
+        - pull-requests
+        - checks
+        - github
+        - pi-extension
+        - skills-prompts
+        - config
+        - docs
+        - security
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true for this issue to be complete?
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Links, screenshots, prior art, or constraints.
+    validations:
+      required: false

@@ -1,0 +1,22 @@
+{
+  "$schema": "../schemas/codeflow.schema.json",
+  "extends": "./default.codeflow.json",
+  "baseBranches": {
+    "default": "dev",
+    "allowed": ["dev", "main"]
+  },
+  "checks": [
+    {
+      "name": "workspace lint",
+      "command": "<workspace-tool> run lint --changed"
+    },
+    {
+      "name": "workspace tests",
+      "command": "<workspace-tool> run test --changed"
+    },
+    {
+      "name": "workspace build",
+      "command": "<workspace-tool> run build --changed"
+    }
+  ]
+}

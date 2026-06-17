@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/final-report.schema.json",
+  "title": "Codeflow final report",
+  "type": "object",
+  "required": ["summary", "changedFiles", "checks", "issues", "risks"],
+  "properties": {
+    "summary": { "type": "string" },
+    "changedFiles": { "type": "array", "items": { "type": "string" } },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "result"],
+        "properties": {
+          "name": { "type": "string" },
+          "result": { "type": "string", "enum": ["passed", "failed", "skipped", "not_run"] },
+          "details": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "issues": { "type": "array", "items": { "type": "string" } },
+    "reviewComments": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "followUp": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

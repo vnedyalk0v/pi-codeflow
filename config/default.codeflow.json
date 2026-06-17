@@ -1,0 +1,55 @@
+{
+  "$schema": "../schemas/codeflow.schema.json",
+  "reservedBranches": [
+    "main",
+    "master",
+    "dev",
+    "develop",
+    "stage",
+    "staging",
+    "production"
+  ],
+  "baseBranches": {
+    "default": "dev",
+    "allowed": ["dev", "develop", "main"]
+  },
+  "branching": {
+    "allowedTypes": [
+      "feat",
+      "fix",
+      "hotfix",
+      "docs",
+      "chore",
+      "refactor",
+      "test",
+      "ci",
+      "build",
+      "perf"
+    ],
+    "template": "templates/branch-name.md"
+  },
+  "commits": {
+    "template": "templates/commit-message.md",
+    "conventional": true
+  },
+  "pullRequest": {
+    "template": "templates/pull-request.md",
+    "baseBranch": "dev"
+  },
+  "checks": [],
+  "reviewComments": {
+    "classifications": ["valid", "invalid", "stale", "already_fixed", "needs_human"],
+    "resolveOnlyWhenAddressed": true
+  },
+  "emergency": {
+    "requireReason": true,
+    "requireFinalReport": true
+  },
+  "templates": {
+    "branchName": "templates/branch-name.md",
+    "commitMessage": "templates/commit-message.md",
+    "pullRequest": "templates/pull-request.md",
+    "reviewReply": "templates/review-reply.md",
+    "finalReport": "templates/final-report.md"
+  }
+}

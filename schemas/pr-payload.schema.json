@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/pr-payload.schema.json",
+  "title": "Codeflow PR payload",
+  "type": "object",
+  "required": ["title", "summary", "changes", "verification", "risk", "rollback"],
+  "properties": {
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "context": { "type": "string" },
+    "changes": { "type": "array", "items": { "type": "string" } },
+    "verification": { "type": "array", "items": { "type": "string" } },
+    "selfReview": { "type": "array", "items": { "type": "string" } },
+    "risk": { "type": "string" },
+    "rollback": { "type": "string" },
+    "linkedIssues": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

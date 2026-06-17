@@ -1,0 +1,18 @@
+{
+  "$schema": "../schemas/codeflow.schema.json",
+  "extends": "./default.codeflow.json",
+  "checks": [
+    {
+      "name": "ruff",
+      "command": "ruff check ."
+    },
+    {
+      "name": "mypy",
+      "command": "mypy ."
+    },
+    {
+      "name": "pytest",
+      "command": "pytest"
+    }
+  ]
+}

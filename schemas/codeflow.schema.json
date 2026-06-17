@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
+  "title": "Codeflow configuration",
+  "type": "object",
+  "properties": {
+    "extends": { "type": "string" },
+    "reservedBranches": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "baseBranches": {
+      "type": "object",
+      "properties": {
+        "default": { "type": "string", "minLength": 1 },
+        "allowed": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "branching": {
+      "type": "object",
+      "properties": {
+        "allowedTypes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "template": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "commits": {
+      "type": "object",
+      "properties": {
+        "template": { "type": "string" },
+        "conventional": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "pullRequest": {
+      "type": "object",
+      "properties": {
+        "template": { "type": "string" },
+        "baseBranch": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "command"],
+        "properties": {
+          "name": { "type": "string" },
+          "command": { "type": "string" },
+          "cwd": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "reviewComments": { "type": "object" },
+    "emergency": { "type": "object" },
+    "templates": { "type": "object", "additionalProperties": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

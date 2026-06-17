@@ -1,0 +1,25 @@
+{
+  "name": "pi-codeflow",
+  "version": "0.1.0",
+  "description": "Pi package for consistent AI coding workflows",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "ai-coding-agent",
+    "coding-workflow",
+    "developer-tools",
+    "pull-request",
+    "conventional-commits",
+    "github-actions"
+  ],
+  "scripts": {
+    "check": "node -e \"console.log('No implementation checks yet')\""
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"],
+    "prompts": ["./prompts"]
+  }
+}

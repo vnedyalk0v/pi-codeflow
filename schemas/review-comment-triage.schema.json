@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/review-comment-triage.schema.json",
+  "title": "Codeflow review comment triage",
+  "type": "object",
+  "required": ["comments"],
+  "properties": {
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "classification", "rationale", "action"],
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string" },
+          "classification": {
+            "type": "string",
+            "enum": ["valid", "invalid", "stale", "already_fixed", "needs_human"]
+          },
+          "rationale": { "type": "string" },
+          "action": { "type": "string" },
+          "mayResolveAfterVerification": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

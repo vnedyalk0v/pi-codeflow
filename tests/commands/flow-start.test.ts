@@ -260,8 +260,9 @@ describe('/flow-start command registration', () => {
       {
         on() {},
         registerCommand(name, options) {
-          expect(name).toBe('flow-start');
-          handler = options.handler;
+          if (name === 'flow-start') {
+            handler = options.handler as typeof handler;
+          }
         },
       },
       {
@@ -315,8 +316,10 @@ describe('/flow-start command registration', () => {
     registerCodeflowExtension(
       {
         on() {},
-        registerCommand(_name, options) {
-          handler = options.handler;
+        registerCommand(name, options) {
+          if (name === 'flow-start') {
+            handler = options.handler as typeof handler;
+          }
         },
       },
       {

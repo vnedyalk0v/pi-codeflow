@@ -1,10 +1,11 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. The v0.4 foundation
+prompts, templates, config, schemas, and documentation. The v0.5 foundation
 includes config loading, conservative merging, schema validation, proactive
-guidance generation, before-agent guidance injection, a small in-memory
-lifecycle state model, and `/flow-start` semantic branch preparation.
+guidance generation, before-agent guidance injection, a small lifecycle state
+model, `/flow-start` semantic branch preparation, and `/flow-check` local check
+running.
 
 ## Components
 
@@ -30,8 +31,8 @@ lifecycle state model, and `/flow-start` semantic branch preparation.
 
 ### Tooling Layer
 
-- **Status:** `/flow-start` implemented foundation in v0.4; later commands are
-  future work.
+- **Status:** `/flow-start` implemented foundation in v0.4; `/flow-check`
+  implemented foundation in v0.5; later commands are future work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
   `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`.
 - **Inputs:** user commands, agent payloads, and state.
@@ -64,15 +65,29 @@ lifecycle state model, and `/flow-start` semantic branch preparation.
 - **Outputs:** PR URLs, CI summaries, and comment triage.
 - **Must not:** merge PRs or bypass human review.
 
+### Check Runner
+
+- **Status:** implemented foundation in v0.5.
+- **Responsibility:** run configured local checks sequentially, capture stdout,
+  stderr, exit code, signal, duration, timeout status, and summaries.
+- **Inputs:** resolved config `checks`, command cwd, dry-run flag, and failure
+  policy flags.
+- **Outputs:** `CodeflowCheckRunResult`, clear failure summaries, and bounded
+  check-state updates.
+- **Must not:** accept arbitrary user command arguments, run checks in parallel,
+  commit, push, open PRs, or call GitHub automation.
+
 ### State Store
 
-- **Status:** lifecycle state helper foundation exists in v0.3; persistent state
-  storage is not implemented yet.
+- **Status:** lifecycle state helper foundation exists in v0.3; bounded latest
+  check state is returned by `/flow-check` in v0.5; persistent external storage
+  is not implemented yet.
 - **Responsibility:** track lifecycle phase, task metadata, check results,
   payloads, and reports in future milestones.
 - **Inputs:** tool results and guidance decisions.
 - **Outputs:** session state and status summaries.
-- **Must not:** store secrets or transient state in repository files by default.
+- **Must not:** store secrets, unbounded stdout/stderr, or transient state in
+  repository files by default.
 
 ### Safety Boundary
 
@@ -121,12 +136,14 @@ lifecycle state model, and `/flow-start` semantic branch preparation.
 3. Lifecycle helpers provide the active phase and next expected actions.
 4. Guidance Engine tells the agent the current lifecycle expectations before the
    agent starts.
-5. Future Policy Engine derives allowed actions.
-6. Future Tooling Layer receives commands and structured payloads.
-7. Future Git and GitHub integrations perform approved operations.
-8. Future Template Renderer creates final user-visible artifacts.
-9. Future State Store records phase, evidence, and output summaries.
-10. Safety Boundary blocks off-path behavior when needed.
+5. `/flow-check` uses the resolved config to run project-owned local checks.
+6. The Check Runner summarizes pass, fail, timeout, dry-run, and no-check cases.
+7. Future Policy Engine derives allowed actions.
+8. Future Tooling Layer receives additional commands and structured payloads.
+9. Future Git and GitHub integrations perform approved operations.
+10. Future Template Renderer creates final user-visible artifacts.
+11. State Store records phase, evidence, and bounded output summaries.
+12. Safety Boundary blocks off-path behavior when needed.
 
 ## Implementation boundary
 
@@ -134,8 +151,8 @@ v0.1 defined the contracts that future implementation PRs should follow. v0.2
 implemented the config loader and config schema validator foundation. v0.3
 implements the guidance generation and before-agent injection foundation plus a
 minimal lifecycle state helper. v0.4 implements the first command layer and safe
-semantic branch creation foundation through `/flow-start`.
+semantic branch creation foundation through `/flow-start`. v0.5 implements the
+configured local check runner foundation through `/flow-check`.
 
-Check running, self-review automation, commit automation, PR automation,
-persistent lifecycle storage, and GitHub automation remain future implementation
-work.
+Self-review automation, commit automation, PR automation, persistent external
+lifecycle storage, and GitHub automation remain future implementation work.

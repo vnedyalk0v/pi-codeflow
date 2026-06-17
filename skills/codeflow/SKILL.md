@@ -27,6 +27,8 @@ Rules:
 
 - Use `/flow-start` to begin normal Codeflow work and prepare the semantic work
   branch.
+- Use `/flow-check` after implementation changes to run configured local checks
+  and record results.
 - Use other Codeflow tools when available.
 - If a Codeflow tool is not implemented yet, explain the limitation instead of
   pretending it exists.
@@ -36,7 +38,7 @@ Rules:
 - Provide structured payloads for branches, commits, PRs, review triage, and
   final reports.
 - Let templates render final outputs.
-- Follow configured checks and report failures clearly.
+- Follow configured checks through `/flow-check` and report failures clearly.
 - Treat safety boundaries as fallback protection, not the normal workflow.
 - Do not work directly on reserved branches unless an explicit emergency
   override exists; `/flow-start` may be invoked from a reserved branch only to

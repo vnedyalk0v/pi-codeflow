@@ -8,6 +8,13 @@ import {
   type FlowStartOptions,
   type FlowStartResult,
 } from './commands/flow-start';
+import {
+  formatFlowCheckResult,
+  parseFlowCheckArguments,
+  runFlowCheck,
+  type FlowCheckResult,
+} from './commands/flow-check';
+import { CodeflowCheckError } from './checks/check-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -40,6 +47,7 @@ export interface CodeflowBeforeAgentStartResult {
 export interface RegisterCodeflowExtensionOptions {
   loadConfig?: typeof loadCodeflowConfig;
   runFlowStart?: typeof runFlowStart;
+  runFlowCheck?: typeof runFlowCheck;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -59,13 +67,13 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start',
+    name: 'flow-start' | 'flow-check',
     options: {
       description: string;
       handler: (
         args: string,
         context: CodeflowExtensionCommandContext,
-      ) => Promise<FlowStartResult>;
+      ) => Promise<FlowStartResult | FlowCheckResult>;
     },
   ): void;
 }
@@ -106,6 +114,12 @@ export function registerCodeflowExtension(
     handler: async (args, context) =>
       handleFlowStartCommand(args, context, options.runFlowStart ?? runFlowStart),
   });
+
+  pi.registerCommand?.('flow-check', {
+    description: 'Run configured Codeflow local checks and record results',
+    handler: async (args, context) =>
+      handleFlowCheckCommand(args, context, options.runFlowCheck ?? runFlowCheck),
+  });
 }
 
 export default registerCodeflowExtension;
@@ -132,6 +146,31 @@ async function handleFlowStartCommand(
   }
 }
 
+async function handleFlowCheckCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  checkFlow: typeof runFlowCheck,
+): Promise<FlowCheckResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowCheckArguments(args ?? '');
+    const result = await checkFlow({
+      cwd: context.cwd,
+      ...parsed,
+    });
+
+    context.ui.notify(
+      formatFlowCheckResult(result),
+      result.checkRun.status === 'failed' ? 'warning' : 'info',
+    );
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowCheckErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
 function getFlowStartErrorMessage(error: unknown): string {
   if (error instanceof FlowStartError) {
     return `/flow-start failed: ${error.message}`;
@@ -142,6 +181,18 @@ function getFlowStartErrorMessage(error: unknown): string {
   }
 
   return '/flow-start failed.';
+}
+
+function getFlowCheckErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowCheckError) {
+    return `/flow-check failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-check failed: ${error.message}`;
+  }
+
+  return '/flow-check failed.';
 }
 
 async function loadGuidance(

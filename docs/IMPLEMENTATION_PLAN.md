@@ -7,11 +7,12 @@ at a time.
 
 Target issue:
 
-- #9 Implement `/flow-start` and semantic branch creation.
+- #10 Implement `/flow-check`.
 
-This PR implements the v0.4 semantic branch creation foundation. It consumes the
-validated config layer from #7 and guidance/lifecycle foundation from #8, then
-adds the first safe workflow-mutating command. Check running, self-review,
+This PR implements the v0.5 configured local check runner foundation. It consumes
+the validated config layer from #7, guidance/lifecycle foundation from #8, and
+semantic branch command foundation from #9, then adds ordered check execution,
+result capture, failure summaries, and bounded latest check state. Self-review,
 commit generation, PR generation, GitHub checks watching, and review comment
 automation remain out of scope.
 
@@ -48,21 +49,33 @@ automation remain out of scope.
 - Return lifecycle phase `branch_prepared` with next expected actions.
 - Add tests for branching, command behavior, git integration, and safety cases.
 
-## Non-goals for #9
+## Implemented #10 scope
 
-- `/flow-check` implementation.
+- Add `/flow-check` command registration.
+- Run configured checks in order from validated config.
+- Capture status, exit code, signal, stdout, stderr, duration, and summaries.
+- Support dry-run, stop-on-failure, continue-on-failure, timeout, optional
+  checks, and empty-check behavior.
+- Store latest bounded check results in Codeflow session-state output.
+- Move failed required checks toward `fixing_local_findings`.
+- Add tests and docs for check runner behavior.
+
+## Non-goals for #10
+
 - Self-review automation.
 - Commit generation or commit execution.
 - PR generation or PR opening.
 - GitHub checks watcher.
 - Review comment automation.
-- Persistent lifecycle storage.
+- Merge automation.
+- Persistent external lifecycle storage.
 
 ## Next intended implementation issue
 
-#10 Implement `/flow-check` is the next intended implementation issue after #9.
-It should build on the prepared branch and lifecycle state result from
-`/flow-start` rather than reimplementing config resolution or branch policy.
+#11 Implement `/flow-commit` is the next numbered implementation issue after
+#10. There is not currently a dedicated self-review issue; self-review remains
+future work within or after v0.5 before Codeflow should claim full pre-commit
+verification automation.
 
 ## Verification expectations
 
@@ -72,5 +85,9 @@ It should build on the prepared branch and lifecycle state result from
 - Unit tests for branch type inference, branch name rendering, branch policy,
   reserved branch behavior, base branch behavior, dirty tree protection, and the
   `/flow-start` command registration.
-- Manual check that `/flow-check`, self-review, commit generation, PR generation,
-  GitHub automation, and review comment automation remain out of scope.
+- Unit tests for ordered check execution, stdout/stderr capture, exit codes,
+  durations, failure policy, timeouts, dry-run, empty-check behavior, summaries,
+  command registration, lifecycle phase selection, and bounded state storage.
+- Manual check that self-review, commit generation, PR generation, GitHub
+  automation, review comment automation, and merge automation remain out of
+  scope.

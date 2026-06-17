@@ -131,6 +131,25 @@
           "type": "string"
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "used": {
+                "const": true
+              }
+            },
+            "required": [
+              "used"
+            ]
+          },
+          "then": {
+            "required": [
+              "backportPlan"
+            ]
+          }
+        }
+      ],
       "additionalProperties": false
     }
   },

@@ -51,6 +51,7 @@ This document is the compact state-machine reference for Codeflow. See
 | `pr_opened` | `verified` | No CI or review blockers remain. |
 | `ci_waiting` | `verified` | CI passes. |
 | `ci_waiting` | `fixing_local_findings` | CI fails. |
+| `ci_waiting` | `review_triage` | Review comments arrive while CI is pending. |
 | `ci_waiting` | `blocked` | CI status cannot be determined and policy requires it. |
 | `review_triage` | `fixing_review_findings` | Valid comments require fixes. |
 | `review_triage` | `verified` | Comments are stale, already fixed, or no action needed. |

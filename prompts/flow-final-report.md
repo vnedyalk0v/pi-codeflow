@@ -15,7 +15,9 @@ The package renders the final report from a template. Include:
 - `decisions` made
 - `risks` that remain
 - `followUp` work, if any
-- `emergencyOverride` reason, if applicable
+- `emergencyOverride.used`, when emergency flow or reserved-branch override was used
+- `emergencyOverride.reason`, when emergency flow or reserved-branch override was used
+- `emergencyOverride.backportPlan`, when emergency flow or reserved-branch override was used
 
 For completed normal work, `finalPhase` should usually be `final_reported`.
 Use `blocked` only when the report explains why Codeflow could not safely

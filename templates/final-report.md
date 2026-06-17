@@ -35,3 +35,11 @@
 ## Follow-up
 
 {{followUpList}}
+
+## Emergency override
+
+{{emergencyOverrideDetails}}
+
+## Backport or cherry-pick plan
+
+{{emergencyBackportPlan}}

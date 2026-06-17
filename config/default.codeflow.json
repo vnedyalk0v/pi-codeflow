@@ -7,43 +7,95 @@
     "develop",
     "stage",
     "staging",
+    "release",
     "production"
   ],
   "baseBranches": {
     "default": "dev",
-    "allowed": ["dev", "develop", "main"]
+    "allowed": [
+      "dev",
+      "develop",
+      "main"
+    ],
+    "fallback": "main",
+    "missingDefaultBehavior": "block"
   },
   "branching": {
     "allowedTypes": [
       "feat",
       "fix",
       "hotfix",
-      "docs",
-      "chore",
       "refactor",
+      "perf",
+      "docs",
       "test",
+      "chore",
       "ci",
       "build",
-      "perf"
+      "revert"
     ],
-    "template": "templates/branch-name.md"
+    "defaultType": "chore",
+    "template": "templates/branch-name.md",
+    "slug": {
+      "case": "kebab",
+      "maxLength": 60,
+      "ticketPrefixAllowed": true,
+      "collisionSuffix": "increment"
+    }
   },
   "commits": {
     "template": "templates/commit-message.md",
-    "conventional": true
+    "conventional": true,
+    "allowedTypes": [
+      "feat",
+      "fix",
+      "hotfix",
+      "refactor",
+      "perf",
+      "docs",
+      "test",
+      "chore",
+      "ci",
+      "build",
+      "revert"
+    ],
+    "requireStructuredPayload": true,
+    "performCommit": true
   },
   "pullRequest": {
     "template": "templates/pull-request.md",
-    "baseBranch": "dev"
+    "baseBranch": "dev",
+    "draftByDefault": true,
+    "requireSelfReview": true,
+    "openWhenChecksFail": false,
+    "updateExisting": true
   },
   "checks": [],
   "reviewComments": {
-    "classifications": ["valid", "invalid", "stale", "already_fixed", "needs_human"],
-    "resolveOnlyWhenAddressed": true
+    "classifications": [
+      "valid",
+      "invalid",
+      "stale",
+      "already_fixed",
+      "needs_human"
+    ],
+    "autoResolveWhen": [
+      "fixed",
+      "stale",
+      "already_fixed"
+    ],
+    "resolveValidOnlyAfterFix": true,
+    "invalidRequiresHumanReview": true,
+    "needsHumanBlocks": true
   },
   "emergency": {
+    "enabled": true,
+    "defaultPath": "hotfix_branch",
+    "allowReservedBranchWork": false,
     "requireReason": true,
-    "requireFinalReport": true
+    "requireFinalReport": true,
+    "requireStructuredCommitAndPr": true,
+    "documentBackportToDev": true
   },
   "templates": {
     "branchName": "templates/branch-name.md",
@@ -51,5 +103,39 @@
     "pullRequest": "templates/pull-request.md",
     "reviewReply": "templates/review-reply.md",
     "finalReport": "templates/final-report.md"
+  },
+  "guidance": {
+    "proactive": true,
+    "requireStructuredPayloads": true,
+    "renderOutputsFromTemplates": true,
+    "stopForHumanDecisions": true,
+    "trackedPhases": [
+      "idle",
+      "initialized",
+      "branch_prepared",
+      "planning",
+      "implementing",
+      "local_checks",
+      "self_review",
+      "fixing_local_findings",
+      "ready_to_commit",
+      "committed",
+      "pr_opened",
+      "ci_waiting",
+      "review_triage",
+      "fixing_review_findings",
+      "verified",
+      "final_reported",
+      "blocked",
+      "emergency"
+    ]
+  },
+  "safety": {
+    "blockDirectWorkOnReservedBranches": true,
+    "allowDestructiveGitOperations": false,
+    "allowForcePush": false,
+    "allowDirectPushToRemote": false,
+    "requireCleanWorkingTreeForStart": true,
+    "redactSecretsFromReports": true
   }
 }

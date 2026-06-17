@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../schemas/codeflow.schema.json",
+  "branching": {
+    "defaultType": "feature"
+  }
+}

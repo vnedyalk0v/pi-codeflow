@@ -4,7 +4,8 @@ pi-codeflow follows a concise Contributor Covenant-style standard.
 
 ## Our pledge
 
-We aim to make participation welcoming, respectful, and harassment-free for everyone.
+We aim to make participation welcoming, respectful, and harassment-free for
+everyone.
 
 ## Expected behavior
 
@@ -15,8 +16,15 @@ We aim to make participation welcoming, respectful, and harassment-free for ever
 
 ## Unacceptable behavior
 
-Harassment, discriminatory language, personal attacks, trolling, or publishing private information are not acceptable.
+The following are not acceptable:
+
+- harassment;
+- discriminatory language;
+- personal attacks;
+- trolling;
+- publishing private information.
 
 ## Enforcement
 
-Maintainers may remove comments, close issues, restrict participation, or take other reasonable action to protect the community.
+Maintainers may remove comments, close issues, restrict participation, or take
+other reasonable action to protect the community.

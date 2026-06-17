@@ -1,9 +1,73 @@
 {
   "$schema": "../schemas/codeflow.schema.json",
-  "extends": "./default.codeflow.json",
+  "reservedBranches": [
+    "main",
+    "master",
+    "dev",
+    "develop",
+    "stage",
+    "staging",
+    "release",
+    "production"
+  ],
   "baseBranches": {
     "default": "dev",
-    "allowed": ["dev", "main"]
+    "allowed": [
+      "dev",
+      "main"
+    ],
+    "fallback": "main",
+    "missingDefaultBehavior": "block"
+  },
+  "branching": {
+    "allowedTypes": [
+      "feat",
+      "fix",
+      "hotfix",
+      "refactor",
+      "perf",
+      "docs",
+      "test",
+      "chore",
+      "ci",
+      "build",
+      "revert"
+    ],
+    "defaultType": "chore",
+    "template": "templates/branch-name.md",
+    "slug": {
+      "case": "kebab",
+      "maxLength": 60,
+      "ticketPrefixAllowed": true,
+      "collisionSuffix": "increment"
+    }
+  },
+  "commits": {
+    "template": "templates/commit-message.md",
+    "conventional": true,
+    "allowedTypes": [
+      "feat",
+      "fix",
+      "hotfix",
+      "refactor",
+      "perf",
+      "docs",
+      "test",
+      "chore",
+      "ci",
+      "build",
+      "revert"
+    ],
+    "requireStructuredPayload": true,
+    "performCommit": true
+  },
+  "pullRequest": {
+    "template": "templates/pull-request.md",
+    "baseBranch": "dev",
+    "draftByDefault": true,
+    "requireSelfReview": true,
+    "openWhenChecksFail": false,
+    "updateExisting": true
   },
   "checks": [
     {
@@ -18,5 +82,72 @@
       "name": "workspace build",
       "command": "<workspace-tool> run build --changed"
     }
-  ]
+  ],
+  "reviewComments": {
+    "classifications": [
+      "valid",
+      "invalid",
+      "stale",
+      "already_fixed",
+      "needs_human"
+    ],
+    "autoResolveWhen": [
+      "fixed",
+      "stale",
+      "already_fixed"
+    ],
+    "resolveValidOnlyAfterFix": true,
+    "invalidRequiresHumanReview": true,
+    "needsHumanBlocks": true
+  },
+  "emergency": {
+    "enabled": true,
+    "defaultPath": "hotfix_branch",
+    "allowReservedBranchWork": false,
+    "requireReason": true,
+    "requireFinalReport": true,
+    "requireStructuredCommitAndPr": true,
+    "documentBackportToDev": true
+  },
+  "templates": {
+    "branchName": "templates/branch-name.md",
+    "commitMessage": "templates/commit-message.md",
+    "pullRequest": "templates/pull-request.md",
+    "reviewReply": "templates/review-reply.md",
+    "finalReport": "templates/final-report.md"
+  },
+  "guidance": {
+    "proactive": true,
+    "requireStructuredPayloads": true,
+    "renderOutputsFromTemplates": true,
+    "stopForHumanDecisions": true,
+    "trackedPhases": [
+      "idle",
+      "initialized",
+      "branch_prepared",
+      "planning",
+      "implementing",
+      "local_checks",
+      "self_review",
+      "fixing_local_findings",
+      "ready_to_commit",
+      "committed",
+      "pr_opened",
+      "ci_waiting",
+      "review_triage",
+      "fixing_review_findings",
+      "verified",
+      "final_reported",
+      "blocked",
+      "emergency"
+    ]
+  },
+  "safety": {
+    "blockDirectWorkOnReservedBranches": true,
+    "allowDestructiveGitOperations": false,
+    "allowForcePush": false,
+    "allowDirectPushToRemote": false,
+    "requireCleanWorkingTreeForStart": true,
+    "redactSecretsFromReports": true
+  }
 }

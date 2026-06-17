@@ -2,67 +2,502 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "title": "Codeflow configuration",
+  "description": "Resolved pi-codeflow configuration for workflow guidance and safety policy.",
   "type": "object",
+  "required": [
+    "reservedBranches",
+    "baseBranches",
+    "branching",
+    "commits",
+    "pullRequest",
+    "checks",
+    "reviewComments",
+    "emergency",
+    "templates",
+    "guidance",
+    "safety"
+  ],
   "properties": {
-    "extends": { "type": "string" },
+    "$schema": {
+      "type": "string",
+      "description": "JSON schema reference."
+    },
+    "extends": {
+      "type": "string",
+      "description": "Optional config or preset to extend before applying this config."
+    },
     "reservedBranches": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "description": "Branches where normal AI work is not allowed.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "minItems": 1
     },
     "baseBranches": {
       "type": "object",
+      "required": [
+        "default",
+        "allowed",
+        "missingDefaultBehavior"
+      ],
       "properties": {
-        "default": { "type": "string", "minLength": 1 },
+        "default": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Default base branch for new work."
+        },
         "allowed": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "fallback": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fallback branch when default is missing and policy allows fallback."
+        },
+        "missingDefaultBehavior": {
+          "type": "string",
+          "enum": [
+            "block",
+            "fallback"
+          ],
+          "description": "Behavior when the default base branch is missing."
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "missingDefaultBehavior": {
+                "const": "fallback"
+              }
+            },
+            "required": [
+              "missingDefaultBehavior"
+            ]
+          },
+          "then": {
+            "required": [
+              "fallback"
+            ]
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "branching": {
       "type": "object",
+      "required": [
+        "allowedTypes",
+        "defaultType",
+        "template",
+        "slug"
+      ],
       "properties": {
         "allowedTypes": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "enum": [
+              "feat",
+              "fix",
+              "hotfix",
+              "refactor",
+              "perf",
+              "docs",
+              "test",
+              "chore",
+              "ci",
+              "build",
+              "revert"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
         },
-        "template": { "type": "string" }
+        "defaultType": {
+          "type": "string",
+          "enum": [
+            "feat",
+            "fix",
+            "hotfix",
+            "refactor",
+            "perf",
+            "docs",
+            "test",
+            "chore",
+            "ci",
+            "build",
+            "revert"
+          ]
+        },
+        "template": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "type": "object",
+          "required": [
+            "case",
+            "maxLength",
+            "ticketPrefixAllowed",
+            "collisionSuffix"
+          ],
+          "properties": {
+            "case": {
+              "type": "string",
+              "enum": [
+                "kebab"
+              ]
+            },
+            "maxLength": {
+              "type": "integer",
+              "minimum": 16,
+              "maximum": 120
+            },
+            "ticketPrefixAllowed": {
+              "type": "boolean"
+            },
+            "collisionSuffix": {
+              "type": "string",
+              "enum": [
+                "increment",
+                "short-sha",
+                "block"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },
     "commits": {
       "type": "object",
+      "required": [
+        "template",
+        "conventional",
+        "allowedTypes",
+        "requireStructuredPayload",
+        "performCommit"
+      ],
       "properties": {
-        "template": { "type": "string" },
-        "conventional": { "type": "boolean" }
+        "template": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conventional": {
+          "type": "boolean"
+        },
+        "allowedTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "feat",
+              "fix",
+              "hotfix",
+              "refactor",
+              "perf",
+              "docs",
+              "test",
+              "chore",
+              "ci",
+              "build",
+              "revert"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "requireStructuredPayload": {
+          "type": "boolean"
+        },
+        "performCommit": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
     "pullRequest": {
       "type": "object",
+      "required": [
+        "template",
+        "baseBranch",
+        "draftByDefault",
+        "requireSelfReview",
+        "openWhenChecksFail",
+        "updateExisting"
+      ],
       "properties": {
-        "template": { "type": "string" },
-        "baseBranch": { "type": "string" }
+        "template": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseBranch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "draftByDefault": {
+          "type": "boolean"
+        },
+        "requireSelfReview": {
+          "type": "boolean"
+        },
+        "openWhenChecksFail": {
+          "type": "boolean"
+        },
+        "updateExisting": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
     "checks": {
       "type": "array",
+      "description": "Ordered local checks.",
       "items": {
         "type": "object",
-        "required": ["name", "command"],
+        "required": [
+          "name",
+          "command"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "command": { "type": "string" },
-          "cwd": { "type": "string" }
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cwd": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "minimum": 1
+          }
         },
         "additionalProperties": false
       }
     },
-    "reviewComments": { "type": "object" },
-    "emergency": { "type": "object" },
-    "templates": { "type": "object", "additionalProperties": { "type": "string" } }
+    "reviewComments": {
+      "type": "object",
+      "required": [
+        "classifications",
+        "autoResolveWhen",
+        "resolveValidOnlyAfterFix",
+        "invalidRequiresHumanReview",
+        "needsHumanBlocks"
+      ],
+      "properties": {
+        "classifications": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalid",
+              "stale",
+              "already_fixed",
+              "needs_human"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "autoResolveWhen": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "stale",
+              "already_fixed"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "resolveValidOnlyAfterFix": {
+          "type": "boolean"
+        },
+        "invalidRequiresHumanReview": {
+          "type": "boolean"
+        },
+        "needsHumanBlocks": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "emergency": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "defaultPath",
+        "allowReservedBranchWork",
+        "requireReason",
+        "requireFinalReport",
+        "requireStructuredCommitAndPr",
+        "documentBackportToDev"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "defaultPath": {
+          "type": "string",
+          "enum": [
+            "hotfix_branch",
+            "human_only"
+          ]
+        },
+        "allowReservedBranchWork": {
+          "type": "boolean"
+        },
+        "requireReason": {
+          "type": "boolean"
+        },
+        "requireFinalReport": {
+          "type": "boolean"
+        },
+        "requireStructuredCommitAndPr": {
+          "type": "boolean"
+        },
+        "documentBackportToDev": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "templates": {
+      "type": "object",
+      "required": [
+        "branchName",
+        "commitMessage",
+        "pullRequest",
+        "reviewReply",
+        "finalReport"
+      ],
+      "properties": {
+        "branchName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commitMessage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullRequest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewReply": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finalReport": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "guidance": {
+      "type": "object",
+      "required": [
+        "proactive",
+        "requireStructuredPayloads",
+        "renderOutputsFromTemplates",
+        "stopForHumanDecisions",
+        "trackedPhases"
+      ],
+      "properties": {
+        "proactive": {
+          "type": "boolean"
+        },
+        "requireStructuredPayloads": {
+          "type": "boolean"
+        },
+        "renderOutputsFromTemplates": {
+          "type": "boolean"
+        },
+        "stopForHumanDecisions": {
+          "type": "boolean"
+        },
+        "trackedPhases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "initialized",
+              "branch_prepared",
+              "planning",
+              "implementing",
+              "local_checks",
+              "self_review",
+              "fixing_local_findings",
+              "ready_to_commit",
+              "committed",
+              "pr_opened",
+              "ci_waiting",
+              "review_triage",
+              "fixing_review_findings",
+              "verified",
+              "final_reported",
+              "blocked",
+              "emergency"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "required": [
+        "blockDirectWorkOnReservedBranches",
+        "allowDestructiveGitOperations",
+        "allowForcePush",
+        "allowDirectPushToRemote",
+        "requireCleanWorkingTreeForStart",
+        "redactSecretsFromReports"
+      ],
+      "properties": {
+        "blockDirectWorkOnReservedBranches": {
+          "type": "boolean"
+        },
+        "allowDestructiveGitOperations": {
+          "type": "boolean"
+        },
+        "allowForcePush": {
+          "type": "boolean"
+        },
+        "allowDirectPushToRemote": {
+          "type": "boolean"
+        },
+        "requireCleanWorkingTreeForStart": {
+          "type": "boolean"
+        },
+        "redactSecretsFromReports": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

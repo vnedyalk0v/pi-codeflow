@@ -6,11 +6,24 @@ Accepted
 
 ## Context
 
-A PR guard alone is too narrow. AI coding agents need guidance before the PR exists: task classification, branch selection, implementation planning, checks, self-review, commits, PR creation, CI tracking, review comment loops, and final reporting.
+A PR guard alone is too narrow. AI coding agents need guidance before the PR exists:
+
+- task classification;
+- branch selection;
+- implementation planning;
+- checks;
+- self-review;
+- commits;
+- PR creation;
+- CI tracking;
+- review comment loops;
+- final reporting.
 
 ## Decision
 
-pi-codeflow owns the full coding lifecycle for Pi Coding Agent workflows. It should provide extension behavior, skills, prompts, templates, schemas, configuration, and documentation that work together.
+pi-codeflow owns the full coding lifecycle for Pi Coding Agent workflows. It
+should provide extension behavior, skills, prompts, templates, schemas,
+configuration, and documentation that work together.
 
 ## Consequences
 

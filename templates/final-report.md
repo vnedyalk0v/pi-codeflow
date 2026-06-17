@@ -1,22 +1,45 @@
 # Final Report
 
 ## Summary
+
 {{summary}}
 
+## Final phase
+
+{{finalPhase}}
+
 ## Changed files
-{{changedFiles}}
+
+{{changedFilesList}}
 
 ## Checks
-{{checks}}
+
+{{checksList}}
 
 ## Issues and PRs
-{{issues}}
+
+{{issuesList}}
 
 ## Review comments
-{{reviewComments}}
+
+{{reviewCommentsList}}
+
+## Decisions
+
+{{decisionsList}}
 
 ## Risks
-{{risk}}
+
+{{risksList}}
 
 ## Follow-up
-{{followUp}}
+
+{{followUpList}}
+
+## Emergency override
+
+{{emergencyOverrideDetails}}
+
+## Backport or cherry-pick plan
+
+{{emergencyBackportPlan}}

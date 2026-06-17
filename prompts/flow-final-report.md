@@ -2,13 +2,23 @@
 description: Produce a Codeflow final delivery report
 argument-hint: "[context]"
 ---
-Produce a final delivery report.
+Return a structured final report payload.
 
-Include:
-- changed files
-- checks run and results
-- issues or PRs
-- review comments addressed
-- decisions made
-- residual risks
-- follow-up work
+The package renders the final report from a template. Include:
+
+- `summary`
+- `finalPhase`, using the current lifecycle phase enum value
+- `changedFiles`
+- `checks` with names, results, and useful details
+- `issues` or `pullRequest` references
+- `reviewComments` addressed, if any
+- `decisions` made
+- `risks` that remain
+- `followUp` work, if any
+- `emergencyOverride.used`, when emergency flow or reserved-branch override was used
+- `emergencyOverride.reason`, when emergency flow or reserved-branch override was used
+- `emergencyOverride.backportPlan`, when emergency flow or reserved-branch override was used
+
+For completed normal work, `finalPhase` should usually be `final_reported`.
+Use `blocked` only when the report explains why Codeflow could not safely
+complete the workflow.

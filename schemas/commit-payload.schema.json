@@ -2,17 +2,87 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/commit-payload.schema.json",
   "title": "Codeflow commit payload",
+  "description": "Structured payload supplied by the agent before Codeflow renders and performs a commit.",
   "type": "object",
-  "required": ["type", "summary", "changes", "verification", "risk"],
+  "required": [
+    "type",
+    "summary",
+    "context",
+    "changes",
+    "verification",
+    "risk",
+    "refs"
+  ],
   "properties": {
-    "type": { "type": "string" },
-    "scope": { "type": "string" },
-    "summary": { "type": "string" },
-    "context": { "type": "string" },
-    "changes": { "type": "array", "items": { "type": "string" } },
-    "verification": { "type": "array", "items": { "type": "string" } },
-    "risk": { "type": "string" },
-    "refs": { "type": "array", "items": { "type": "string" } }
+    "type": {
+      "type": "string",
+      "enum": [
+        "feat",
+        "fix",
+        "hotfix",
+        "refactor",
+        "perf",
+        "docs",
+        "test",
+        "chore",
+        "ci",
+        "build",
+        "revert"
+      ],
+      "description": "Conventional commit type."
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$",
+      "description": "Optional component scope."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 72,
+      "description": "Imperative summary without trailing period."
+    },
+    "context": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why this change is needed."
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "risk": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Risk level and rationale."
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   },
   "additionalProperties": false
 }

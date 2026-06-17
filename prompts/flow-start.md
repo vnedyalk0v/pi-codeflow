@@ -1,21 +1,31 @@
 ---
-description: Classify a task and produce Codeflow branch metadata
-argument-hint: "<task or issue>"
+description: Start a Codeflow task with deterministic branch preparation
+argument-hint: "[--type <type>] [--ticket <ticket>] [--emergency] [--dry-run] <task>"
 ---
-Classify the task and produce branch metadata.
+Start a Codeflow task using the `/flow-start` command when available.
 
 Input: $ARGUMENTS
 
-Return only a structured payload. Do not create the branch yourself when a
-Codeflow branch tool is available.
+Do not invent the final branch name manually. Codeflow deterministically
+validates or infers the branch type, detects or accepts a ticket, renders the
+semantic branch name from config/template rules, checks branch safety, and
+prepares the work branch.
 
-Required fields:
+Expected command examples:
+
+- `/flow-start --type feat "Add Google OAuth login"`
+- `/flow-start --ticket BILL-142 --type feat "Add Stripe webhook verification"`
+- `/flow-start "Fix checkout timeout"`
+- `/flow-start --emergency "Checkout is down in production"`
+
+If `/flow-start` is unavailable, return a structured branch payload only and
+explain that branch preparation tooling is unavailable.
+
+Required payload fields when tooling is unavailable:
 
 - type: one of feat, fix, hotfix, refactor, perf, docs, test, chore, ci, build, revert
-- scope: short optional scope
-- slug: kebab-case task slug, maximum recommended length 60 characters
+- task: original task description
+- ticket: optional issue or ticket reference
 - baseBranch: intended base branch
-- reason: one sentence explaining the classification
-- linkedRefs: issue or ticket references
 - emergency: boolean
 - emergencyReason: required only when emergency is true

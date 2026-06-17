@@ -10,7 +10,7 @@ user's local permissions. pi-codeflow must therefore be conservative by default.
 
 The normal user experience should guide agents into safe behavior:
 
-- create semantic branches when that tooling is implemented;
+- create semantic branches with `/flow-start`;
 - plan before editing;
 - run configured checks when that tooling is implemented;
 - provide structured payloads;

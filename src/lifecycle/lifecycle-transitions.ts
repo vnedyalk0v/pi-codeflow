@@ -17,12 +17,12 @@ export function getNextExpectedActions(
     case 'idle':
       return [
         'Wait for a task or issue before mutating files.',
-        'When work starts, use /flow-start if available; otherwise explain that Codeflow task start tooling is not implemented yet.',
+        'When work starts, use /flow-start to prepare a semantic work branch.',
       ];
     case 'initialized':
       return [
         `Confirm task scope, lifecycle constraints, and base branch ${baseBranch}.`,
-        'Prepare semantic branch metadata with /flow-start when available; do not invent branch format manually.',
+        'Prepare the semantic work branch with /flow-start; do not invent branch format manually.',
       ];
     case 'branch_prepared':
       return [

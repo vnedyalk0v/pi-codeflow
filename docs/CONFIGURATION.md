@@ -1,9 +1,9 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.3
+The project-level configuration file is `.pi/codeflow.json`. The v0.4
 foundation loads package defaults, optionally loads project config, merges the
-two layers, validates the resolved config, and uses the resolved config to build
-before-agent Codeflow guidance.
+two layers, validates the resolved config, uses the resolved config to build
+before-agent Codeflow guidance, and applies branch policy in `/flow-start`.
 
 ## Config resolution order
 
@@ -19,9 +19,10 @@ When no project config is found, the loader returns `usedDefaultConfig: true`
 and `configPath: null`. When a project config is found, it returns
 `usedDefaultConfig: false` and the absolute path to that config file.
 
-Command-specific overrides are reserved for a future milestone. The current
-Guidance Engine reads the resolved config but does not persist state or mutate
-branches, commits, pull requests, or GitHub resources.
+Command-specific overrides are reserved for a future milestone. `/flow-start`
+reads the resolved config and may create or switch to a semantic work branch.
+It does not persist lifecycle state, commit, push, open pull requests, or mutate
+GitHub resources.
 
 ## Default config
 
@@ -214,7 +215,8 @@ Branching config controls:
 - branch name template;
 - slug case;
 - slug length;
-- branch collision handling.
+- branch collision handling;
+- ticket detection through `branching.ticketPattern`.
 
 ## Emergency behavior configuration
 
@@ -274,8 +276,9 @@ a fix and verification. Invalid comments normally require human review.
       "build",
       "revert"
     ],
-    "defaultType": "chore",
+    "defaultType": "feat",
     "template": "templates/branch-name.md",
+    "ticketPattern": "\\b[A-Z][A-Z0-9]+-\\d+\\b",
     "slug": {
       "case": "kebab",
       "maxLength": 60,

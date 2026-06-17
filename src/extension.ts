@@ -1,5 +1,13 @@
 import type { LoadCodeflowConfigResult } from './config/load-config';
 import { loadCodeflowConfig } from './config/load-config';
+import {
+  FlowStartError,
+  formatFlowStartResult,
+  parseFlowStartArguments,
+  runFlowStart,
+  type FlowStartOptions,
+  type FlowStartResult,
+} from './commands/flow-start';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -31,6 +39,15 @@ export interface CodeflowBeforeAgentStartResult {
 
 export interface RegisterCodeflowExtensionOptions {
   loadConfig?: typeof loadCodeflowConfig;
+  runFlowStart?: typeof runFlowStart;
+}
+
+export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
+  cwd: string;
+  waitForIdle?: () => Promise<void>;
+  ui: {
+    notify(message: string, level: 'info' | 'warning' | 'error'): void;
+  };
 }
 
 interface CodeflowExtensionApi {
@@ -40,6 +57,16 @@ interface CodeflowExtensionApi {
       event: CodeflowBeforeAgentStartEvent,
       context: CodeflowExtensionContext,
     ) => Promise<CodeflowBeforeAgentStartResult>,
+  ): void;
+  registerCommand?(
+    name: 'flow-start',
+    options: {
+      description: string;
+      handler: (
+        args: string,
+        context: CodeflowExtensionCommandContext,
+      ) => Promise<FlowStartResult>;
+    },
   ): void;
 }
 
@@ -73,9 +100,49 @@ export function registerCodeflowExtension(
   pi.on('before_agent_start', async (event, context) =>
     buildCodeflowBeforeAgentStartResult(event, context, options),
   );
+
+  pi.registerCommand?.('flow-start', {
+    description: 'Start a Codeflow task and prepare a semantic work branch',
+    handler: async (args, context) =>
+      handleFlowStartCommand(args, context, options.runFlowStart ?? runFlowStart),
+  });
 }
 
 export default registerCodeflowExtension;
+
+async function handleFlowStartCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  startFlow: typeof runFlowStart,
+): Promise<FlowStartResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowStartArguments(args ?? '');
+    const result = await startFlow({
+      cwd: context.cwd,
+      ...parsed,
+    } satisfies FlowStartOptions);
+
+    context.ui.notify(formatFlowStartResult(result), 'info');
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowStartErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
+function getFlowStartErrorMessage(error: unknown): string {
+  if (error instanceof FlowStartError) {
+    return `/flow-start failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-start failed: ${error.message}`;
+  }
+
+  return '/flow-start failed.';
+}
 
 async function loadGuidance(
   loadConfig: typeof loadCodeflowConfig,

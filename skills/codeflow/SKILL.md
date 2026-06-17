@@ -25,7 +25,9 @@ Follow the Codeflow lifecycle:
 
 Rules:
 
-- Use Codeflow tools when available.
+- Use `/flow-start` to begin normal Codeflow work and prepare the semantic work
+  branch.
+- Use other Codeflow tools when available.
 - If a Codeflow tool is not implemented yet, explain the limitation instead of
   pretending it exists.
 - Avoid raw git workflow operations when Codeflow tools exist.
@@ -37,6 +39,7 @@ Rules:
 - Follow configured checks and report failures clearly.
 - Treat safety boundaries as fallback protection, not the normal workflow.
 - Do not work directly on reserved branches unless an explicit emergency
-  override exists.
+  override exists; `/flow-start` may be invoked from a reserved branch only to
+  move onto a semantic work branch.
 - Stop for human decision when product, security, legal, merge, release, or
   ambiguous reviewer judgment is needed.

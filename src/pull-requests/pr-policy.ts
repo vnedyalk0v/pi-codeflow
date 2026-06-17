@@ -175,7 +175,7 @@ async function evaluatePrSafety(options: {
     dryRun: options.dryRun,
     warnings,
   });
-  validateCommitState(options.sessionState, warnings);
+  validateCommitState(options.sessionState, headBranch, warnings);
   await collectAheadWarnings({
     gitClient: options.gitClient,
     baseBranch,
@@ -399,12 +399,23 @@ function handleCheckBlocker(options: {
   });
 }
 
-function validateCommitState(sessionState: CodeflowSessionState | undefined, warnings: string[]): void {
-  if (sessionState?.commits.lastCommit) {
+function validateCommitState(
+  sessionState: CodeflowSessionState | undefined,
+  headBranch: string,
+  warnings: string[],
+): void {
+  const lastCommit = sessionState?.commits.lastCommit ?? null;
+
+  if (!lastCommit) {
+    warnings.push('No latest /flow-commit state found; PR may include commits not created through /flow-commit.');
     return;
   }
 
-  warnings.push('No latest /flow-commit state found; PR may include commits not created through /flow-commit.');
+  if (lastCommit.branch && lastCommit.branch !== headBranch) {
+    warnings.push(
+      `Latest /flow-commit state is for branch ${lastCommit.branch}, but PR head is ${headBranch}; PR may include commits not created through /flow-commit.`,
+    );
+  }
 }
 
 async function collectAheadWarnings(options: {

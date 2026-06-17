@@ -180,6 +180,8 @@ when available.
   block.
 - Missing `/flow-commit` metadata warns that the PR may include commits not
   created through `/flow-commit`.
+- `/flow-commit` metadata from a different branch than the resolved PR head
+  warns that the PR may include commits not created through `/flow-commit`.
 
 ## GitHub CLI integration
 
@@ -195,7 +197,8 @@ gh pr create --base <base> --head <head> --title <title> --body-file <file>
 If a PR already exists for the branch and `pullRequest.updateExisting` is true,
 Codeflow discovers the existing PR and updates title/body with `gh pr edit`. If
 updates are disabled, it returns a clear error and includes the existing PR URL
-when discoverable.
+when discoverable. PR URLs returned by `gh` may use `github.com` or a GitHub
+Enterprise hostname.
 
 ## Out of scope
 

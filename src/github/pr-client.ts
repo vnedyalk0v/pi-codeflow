@@ -302,7 +302,23 @@ function looksLikeExistingPrError(value: string): boolean {
 }
 
 function parsePullRequestUrl(value: string): string | null {
-  return value.match(/https:\/\/github\.com\/[^\s]+\/pull\/\d+/)?.[0] ?? null;
+  const candidates = value.match(/https?:\/\/\S+/g) ?? [];
+
+  for (const rawCandidate of candidates) {
+    const candidate = rawCandidate.replace(/[),.;\]]+$/u, '');
+
+    try {
+      const url = new URL(candidate);
+
+      if (/\/pull\/\d+\/?$/u.test(url.pathname)) {
+        return candidate;
+      }
+    } catch {
+      // Ignore non-URL tokens and keep scanning gh output.
+    }
+  }
+
+  return null;
 }
 
 function parsePullRequestNumber(url: string): number | null {

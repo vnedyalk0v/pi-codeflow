@@ -266,6 +266,21 @@ describe('runFlowPr', () => {
     expect(result.warnings.join('\n')).toContain('No latest /flow-commit state found');
   });
 
+  it('warns when latest commit metadata belongs to a different branch', async () => {
+    const session = state();
+    session.commits.lastCommit!.branch = 'feat/other-branch';
+    const result = await runFlowPr({
+      payload: payload(),
+      dryRun: true,
+      gitClient: gitClient(),
+      sessionState: session,
+    });
+
+    expect(result.warnings.join('\n')).toContain(
+      'Latest /flow-commit state is for branch feat/other-branch, but PR head is feat/flow-pr-generated-title-body',
+    );
+  });
+
   it('creates a PR, stores metadata, and does not commit, merge, delete branches, or resolve comments', async () => {
     const calls: string[][] = [];
     const pushed: string[] = [];

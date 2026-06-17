@@ -62,6 +62,23 @@ describe('createGitHubPullRequest', () => {
     expect(result.number).toBe(12);
   });
 
+  it('accepts GitHub Enterprise pull request URLs from gh output', async () => {
+    const result = await createGitHubPullRequest({
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr',
+      title: 'feat: add flow pr',
+      body: '## Summary\n\nBody',
+      ghClient: ghClient(async (args) => ({
+        args,
+        stdout: 'https://github.company.com/org/repo/pull/12\n',
+        stderr: '',
+      })),
+    });
+
+    expect(result.url).toBe('https://github.company.com/org/repo/pull/12');
+    expect(result.number).toBe(12);
+  });
+
   it('handles missing gh and auth failures clearly', async () => {
     await expect(
       createGitHubPullRequest({
@@ -290,6 +307,30 @@ describe('createGitHubPullRequest', () => {
 
     expect(result.draft).toBe(false);
     expect(calls.some((args) => args[0] === 'pr' && args[1] === 'ready')).toBe(false);
+  });
+
+  it('includes GitHub Enterprise URLs in existing PR errors when updates are disabled', async () => {
+    await expect(
+      createGitHubPullRequest({
+        baseBranch: 'dev',
+        headBranch: 'feat/flow-pr',
+        title: 'feat: add flow pr',
+        body: 'body',
+        updateExisting: false,
+        ghClient: ghClient(async (args) => {
+          throw new GithubCliError({
+            code: 'gh_command_failed',
+            message: 'a pull request already exists: https://github.company.com/org/repo/pull/33',
+            args,
+            stderr: 'a pull request already exists: https://github.company.com/org/repo/pull/33',
+          });
+        }),
+      }),
+    ).rejects.toMatchObject({
+      code: 'pr_already_exists',
+      message: 'A pull request already exists for feat/flow-pr: https://github.company.com/org/repo/pull/33',
+      details: { existingUrl: 'https://github.company.com/org/repo/pull/33' },
+    });
   });
 
   it('returns a clear error for existing PRs when updates are disabled', async () => {

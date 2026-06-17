@@ -6,18 +6,21 @@ valid next steps before unsafe actions become possible.
 
 ## Implementation status
 
-The v0.5 foundation exposes lifecycle phase types, initial in-memory lifecycle
+The v0.6 foundation exposes lifecycle phase types, initial in-memory lifecycle
 state creation, next expected action guidance, before-agent guidance injection,
-`/flow-start` semantic branch preparation, and `/flow-check` local check
-running.
+`/flow-start` semantic branch preparation, `/flow-check` local check running,
+and `/flow-commit` template-rendered commit creation.
 
 `/flow-start` moves a clean repository from `initialized` to `branch_prepared`
 by validating or inferring the branch type, rendering the branch name, selecting
 the configured base branch, and creating or switching to the work branch.
 `/flow-check` then runs configured checks in order, captures result metadata,
 stores the latest bounded check state in the command result, and summarizes
-failures. Commit rendering, PR rendering, self-review automation, persistent
-external state storage, and GitHub automation are later work.
+failures. `/flow-commit` validates structured commit payloads, renders the final
+commit message from the configured template, commits staged changes with a
+message file, and stores bounded commit metadata. PR rendering, self-review
+automation, persistent external state storage, and GitHub automation are later
+work.
 
 ## Phase reference
 
@@ -68,6 +71,26 @@ Pass and failure behavior:
   presented as verified local evidence;
 - dry-runs show the planned checks as skipped and must not be presented as
   executed verification.
+
+## After `/flow-commit`
+
+After checks and self-review are acceptable, `/flow-commit` reads a structured
+payload, validates it, renders the final commit message from the configured
+commit template, and commits only staged changes. It never stages all files,
+pushes, opens a PR, watches GitHub checks, resolves review comments, or merges.
+
+Failure behavior:
+
+- invalid payload blocks with validation errors;
+- no staged changes blocks because Codeflow will not auto-stage files;
+- reserved branches block unless an explicit emergency override is configured;
+- failed latest check state blocks unless `--allow-unverified` or config allows
+  unverified commits;
+- missing or `no_checks` state warns by default and blocks only when config
+  requires passed checks before commit;
+- git commit failure blocks with exit code and stderr summary;
+- dry-run renders the message and reports warnings without moving to
+  `committed`.
 
 ## Phase details
 
@@ -177,20 +200,24 @@ Pass and failure behavior:
   commit payload only.
 - **Expected command/tool:** `/flow-commit`.
 - **Allowed transitions:** `committed`, `blocked`.
-- **Failure transitions:** `blocked` on dirty unstaged required changes or
-  invalid payload.
-- **Output artifacts:** commit payload and rendered message.
+- **Failure transitions:** `blocked` on invalid payload, no staged changes,
+  reserved branch, failed required check state, or git commit failure.
+- **Output artifacts:** commit payload, rendered message, commit SHA on success,
+  and bounded commit metadata. Dry-run returns a preview and remains
+  `ready_to_commit`.
 
 ### `committed`
 
 - **Purpose:** local commit exists.
-- **Entry conditions:** Codeflow rendered and performed the commit.
+- **Entry conditions:** Codeflow rendered and performed the commit from staged
+  changes.
 - **Expected agent behavior:** prepare PR payload; do not rewrite history by
   default.
-- **Expected command/tool:** `/flow-pr`.
+- **Expected command/tool:** future `/flow-pr`.
 - **Allowed transitions:** `pr_opened`, `local_checks`, `blocked`.
-- **Failure transitions:** `blocked` if no remote or invalid base.
-- **Output artifacts:** commit SHA.
+- **Failure transitions:** `blocked` if no remote or invalid base when PR support
+  is implemented.
+- **Output artifacts:** commit SHA and bounded commit metadata.
 
 ### `pr_opened`
 

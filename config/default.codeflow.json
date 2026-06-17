@@ -61,7 +61,15 @@
       "revert"
     ],
     "requireStructuredPayload": true,
-    "performCommit": true
+    "performCommit": true,
+    "requireBody": true,
+    "requireVerification": true,
+    "requireRisk": true,
+    "maxTitleLength": 72,
+    "titleLengthPolicy": "error",
+    "useBreakingChangeMarker": true,
+    "allowUnverifiedCommits": false,
+    "requirePassedChecksBeforeCommit": false
   },
   "pullRequest": {
     "template": "templates/pull-request.md",

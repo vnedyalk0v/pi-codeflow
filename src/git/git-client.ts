@@ -90,6 +90,15 @@ export class GitClient {
     await this.run(['checkout', branchName]);
   }
 
+  async commitWithMessageFile(messageFilePath: string): Promise<void> {
+    await this.run(['commit', '--file', messageFilePath]);
+  }
+
+  async getLatestCommitSha(): Promise<string> {
+    const result = await this.run(['rev-parse', 'HEAD']);
+    return result.stdout.trim();
+  }
+
   private async refExists(ref: string): Promise<boolean> {
     try {
       await this.run(['show-ref', '--verify', '--quiet', ref]);

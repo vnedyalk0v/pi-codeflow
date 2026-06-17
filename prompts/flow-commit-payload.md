@@ -6,16 +6,26 @@ Analyze the staged diff and return a structured commit payload only.
 
 Do not write the final commit message.
 Do not include prose outside the payload.
-The package renders the final commit message from the commit template.
+Do not invent a commit title or body.
+Codeflow renders the final commit message from the configured commit template.
 
-Payload fields:
+Return JSON with these fields:
 
-- type
-- scope
-- summary
-- context
-- changes
-- verification
-- risk
-- refs
-- riskLevel, optional: low, medium, or high
+- `type`
+- `scope`, optional
+- `summary`
+- `context`
+- `changes`
+- `verification`
+- `risk`
+- `refs`, optional
+- `breakingChange`, optional
+- `footers`, optional
+
+Rules:
+
+- `summary` must be concrete, concise, and have no trailing period.
+- `changes` must contain at least one item.
+- `verification` must contain commands run or explicit skipped-check reasons.
+- `risk` must explain the risk level and rationale.
+- The payload is not the final commit message.

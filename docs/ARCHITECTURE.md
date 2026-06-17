@@ -1,11 +1,11 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. The v0.5 foundation
+prompts, templates, config, schemas, and documentation. The v0.6 foundation
 includes config loading, conservative merging, schema validation, proactive
 guidance generation, before-agent guidance injection, a small lifecycle state
-model, `/flow-start` semantic branch preparation, and `/flow-check` local check
-running.
+model, `/flow-start` semantic branch preparation, `/flow-check` local check
+running, and `/flow-commit` generated commit messages.
 
 ## Components
 
@@ -32,7 +32,8 @@ running.
 ### Tooling Layer
 
 - **Status:** `/flow-start` implemented foundation in v0.4; `/flow-check`
-  implemented foundation in v0.5; later commands are future work.
+  implemented foundation in v0.5; `/flow-commit` implemented foundation in
+  v0.6; later commands are future work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
   `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`.
 - **Inputs:** user commands, agent payloads, and state.
@@ -41,6 +42,8 @@ running.
 
 ### Template Renderer
 
+- **Status:** branch template foundation exists in v0.4; commit message renderer
+  foundation is implemented in v0.6. PR rendering remains future work in #12.
 - **Responsibility:** render branch names, commit messages, PR bodies, review
   replies, and final reports.
 - **Inputs:** structured payloads and template files.
@@ -49,7 +52,8 @@ running.
 
 ### Git Integration
 
-- **Status:** safe branch-preparation subset implemented in v0.4.
+- **Status:** safe branch-preparation subset implemented in v0.4; staged-change
+  commit subset implemented in v0.6.
 - **Responsibility:** inspect status, create branches, stage/commit changes,
   and read diffs.
 - **Inputs:** repository path, branch policy, and commit payloads.
@@ -80,8 +84,9 @@ running.
 ### State Store
 
 - **Status:** lifecycle state helper foundation exists in v0.3; bounded latest
-  check state is returned by `/flow-check` in v0.5; persistent external storage
-  is not implemented yet.
+  check state is returned by `/flow-check` in v0.5; bounded latest commit
+  metadata is returned by `/flow-commit` in v0.6; persistent external storage is
+  not implemented yet.
 - **Responsibility:** track lifecycle phase, task metadata, check results,
   payloads, and reports in future milestones.
 - **Inputs:** tool results and guidance decisions.
@@ -138,11 +143,13 @@ running.
    agent starts.
 5. `/flow-check` uses the resolved config to run project-owned local checks.
 6. The Check Runner summarizes pass, fail, timeout, dry-run, and no-check cases.
-7. Future Policy Engine derives allowed actions.
-8. Future Tooling Layer receives additional commands and structured payloads.
-9. Future Git and GitHub integrations perform approved operations.
-10. Future Template Renderer creates final user-visible artifacts.
-11. State Store records phase, evidence, and bounded output summaries.
+7. `/flow-commit` validates a structured commit payload and check-state policy.
+8. The Commit Renderer creates the final commit message from the configured
+   template.
+9. Git integration commits staged changes through a message file.
+10. State Store records phase, evidence, bounded check summaries, and bounded
+    commit metadata.
+11. Future PR and GitHub integrations perform approved remote operations.
 12. Safety Boundary blocks off-path behavior when needed.
 
 ## Implementation boundary
@@ -152,7 +159,10 @@ implemented the config loader and config schema validator foundation. v0.3
 implements the guidance generation and before-agent injection foundation plus a
 minimal lifecycle state helper. v0.4 implements the first command layer and safe
 semantic branch creation foundation through `/flow-start`. v0.5 implements the
-configured local check runner foundation through `/flow-check`.
+configured local check runner foundation through `/flow-check`. v0.6 implements
+the commit renderer and commit command foundation through `/flow-commit`.
 
-Self-review automation, commit automation, PR automation, persistent external
-lifecycle storage, and GitHub automation remain future implementation work.
+Self-review automation, PR automation, persistent external lifecycle storage,
+GitHub checks watching, review comment automation, and merge automation remain
+future implementation work. `/flow-pr` and generated PR title/body rendering are
+next in #12.

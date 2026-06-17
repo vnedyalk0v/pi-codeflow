@@ -55,7 +55,7 @@ export function getNextExpectedActions(
       return [
         'Provide a structured commit payload instead of freeform commit text.',
         `Let Codeflow render the commit message from ${config.commits.template}.`,
-        'Use /flow-commit when available; if it is not implemented, explain that limitation.',
+        'Use /flow-commit to create a commit from staged changes; do not push or open a PR from this step.',
       ];
     case 'committed':
       return [

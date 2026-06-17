@@ -17,3 +17,4 @@ Implemented command prompts:
 
 - `flow-start.md`
 - `flow-check.md`
+- `flow-commit-payload.md`

@@ -192,7 +192,15 @@
         "conventional",
         "allowedTypes",
         "requireStructuredPayload",
-        "performCommit"
+        "performCommit",
+        "requireBody",
+        "requireVerification",
+        "requireRisk",
+        "maxTitleLength",
+        "titleLengthPolicy",
+        "useBreakingChangeMarker",
+        "allowUnverifiedCommits",
+        "requirePassedChecksBeforeCommit"
       ],
       "properties": {
         "template": {
@@ -228,6 +236,44 @@
         },
         "performCommit": {
           "type": "boolean"
+        },
+        "requireBody": {
+          "type": "boolean",
+          "description": "Whether rendered commit messages must include a non-empty body."
+        },
+        "requireVerification": {
+          "type": "boolean",
+          "description": "Whether commit payloads must include at least one verification item."
+        },
+        "requireRisk": {
+          "type": "boolean",
+          "description": "Whether commit payloads must include a risk section."
+        },
+        "maxTitleLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Maximum rendered commit title length."
+        },
+        "titleLengthPolicy": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning"
+          ],
+          "description": "Whether an overlong commit title blocks or warns."
+        },
+        "useBreakingChangeMarker": {
+          "type": "boolean",
+          "description": "Whether breaking changes add the Conventional Commits ! marker to the title."
+        },
+        "allowUnverifiedCommits": {
+          "type": "boolean",
+          "description": "Whether failed or missing check-state can proceed without --allow-unverified."
+        },
+        "requirePassedChecksBeforeCommit": {
+          "type": "boolean",
+          "description": "Whether /flow-commit requires latest /flow-check state to be passed."
         }
       },
       "additionalProperties": false

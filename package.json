@@ -15,10 +15,12 @@
     "github-actions"
   ],
   "scripts": {
-    "check": "npm run check:json && npm run check:text && npm run check:docs",
+    "check": "npm run check:json && npm run check:text && npm run check:docs && npm run typecheck && npm test",
     "check:json": "node scripts/check-json.mjs",
     "check:text": "node scripts/check-text-safety.mjs",
-    "check:docs": "node scripts/check-docs-format.mjs"
+    "check:docs": "node scripts/check-docs-format.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "pi": {
     "extensions": [
@@ -30,5 +32,13 @@
     "prompts": [
       "./prompts"
     ]
+  },
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }

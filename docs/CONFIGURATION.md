@@ -1,18 +1,25 @@
 # Configuration
 
-The future project-level configuration file is `.pi/codeflow.json`. Codeflow
-will merge it with the package defaults and validate the resolved config before
-workflow commands mutate repository state.
+The project-level configuration file is `.pi/codeflow.json`. The v0.2
+foundation loads package defaults, optionally loads project config, merges the
+two layers, and validates the resolved config before future workflow commands
+mutate repository state.
 
 ## Config resolution order
 
-1. Built-in package defaults.
-2. Optional package config files referenced by `extends`.
-3. Project config at `.pi/codeflow.json`.
-4. Command-specific overrides, if explicitly supported in a future milestone.
+The v0.2 loader implements this resolution order:
 
-Later layers override earlier layers. Arrays should replace by default unless a
-future implementation documents merge semantics for a specific key.
+1. If an explicit `configPath` is provided, load that file.
+2. Otherwise search for `.pi/codeflow.json` from the requested `cwd` upward.
+3. If no project config exists, use `config/default.codeflow.json`.
+4. If project config exists, merge it over `config/default.codeflow.json`.
+5. Validate the final resolved config against `schemas/codeflow.schema.json`.
+
+When no project config is found, the loader returns `usedDefaultConfig: true`
+and `configPath: null`. When a project config is found, it returns
+`usedDefaultConfig: false` and the absolute path to that config file.
+
+Command-specific overrides are reserved for a future milestone.
 
 ## Default config
 
@@ -37,21 +44,40 @@ Projects should use:
 The repository examples in `config/` are package examples, not active project
 config.
 
+## Merge behavior
+
+The v0.2 merge is conservative:
+
+- objects merge recursively;
+- arrays replace the default array;
+- scalar values replace the default scalar;
+- unknown properties are preserved so schema validation can reject them;
+- `null` values are not treated as delete operations.
+
+This means a project can replace `checks` or `reservedBranches` with a new
+array. A project can also override one nested field, such as
+`branching.slug.maxLength`, without repeating the rest of `branching.slug`.
+
+If a project sets a required object such as `baseBranches` to `null`, the merge
+keeps that `null` value and schema validation fails.
+
 ## Optional `extends` behavior
 
-A project config may optionally include `extends` to start from a named config
-file. The first implementation should keep this simple:
+`extends` is reserved for a later milestone. The schema accepts the field so
+future config files can keep a stable shape, but the v0.2 loader does not
+resolve it.
 
-- `extends` accepts a relative path or package preset name.
-- circular `extends` chains are invalid;
-- missing `extends` targets are invalid;
-- project values override extended values.
+If `.pi/codeflow.json` or an explicit config file contains `extends`, the loader
+returns a typed `unsupported_extends` load error. Direct schema validation may
+return a warning for `extends`, but it does not load extended files.
 
 ## Validation behavior
 
 - Parse JSON before any git mutation.
-- Validate against `schemas/codeflow.schema.json`.
+- Validate against `schemas/codeflow.schema.json` using draft 2020-12.
+- Validate the final merged config, not just the project patch.
 - Report all practical validation errors with config paths.
+- Return stable Codeflow error objects instead of raw validator errors.
 - Refuse to continue when safety-critical config is invalid.
 
 ## Error behavior
@@ -61,6 +87,54 @@ file. The first implementation should keep this simple:
 - Unknown branch or commit types are invalid.
 - Unknown review comment classifications are invalid.
 - Template paths that cannot be resolved are invalid before rendering.
+
+The v0.2 loader exposes typed load failures for missing explicit files, invalid
+JSON, unreadable files, unsupported `extends`, and schema validation failure.
+
+## Validation error examples
+
+Unknown top-level key:
+
+```json
+{
+  "path": "/unknownKey",
+  "keyword": "additionalProperties",
+  "message": "/unknownKey is not allowed"
+}
+```
+
+Invalid enum value:
+
+```json
+{
+  "path": "/branching/defaultType",
+  "keyword": "enum",
+  "message": "must be equal to one of the allowed values",
+  "allowedValues": [
+    "feat",
+    "fix",
+    "hotfix",
+    "refactor",
+    "perf",
+    "docs",
+    "test",
+    "chore",
+    "ci",
+    "build",
+    "revert"
+  ]
+}
+```
+
+Missing conditional fallback branch:
+
+```json
+{
+  "path": "/baseBranches/fallback",
+  "keyword": "required",
+  "message": "/baseBranches/fallback is required"
+}
+```
 
 ## Base branch fallback
 

@@ -1,9 +1,9 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. Production
-implementation is intentionally deferred until the v0.1 specification foundation
-is reviewed.
+prompts, templates, config, schemas, and documentation. The v0.2 foundation
+starts production implementation with config loading, conservative merging, and
+schema validation.
 
 ## Components
 
@@ -73,18 +73,22 @@ is reviewed.
 
 ### Config Loader
 
-- **Responsibility:** load defaults, optional `extends`, and project
-  `.pi/codeflow.json`.
+- **Status:** implemented in the v0.2 foundation.
+- **Responsibility:** load defaults and project `.pi/codeflow.json`, then merge
+  project values over defaults.
 - **Inputs:** package defaults and project config files.
-- **Outputs:** resolved config object.
-- **Must not:** mutate repository or run checks.
+- **Outputs:** resolved config object with config path metadata.
+- **Must not:** mutate repository, resolve `extends`, inject guidance, or run
+  checks.
 
 ### Schema Validator
 
+- **Status:** config validation is implemented in the v0.2 foundation.
 - **Responsibility:** validate config and payloads.
 - **Inputs:** JSON schemas, config, and structured payloads.
-- **Outputs:** validation result with paths and messages.
-- **Must not:** silently coerce unsafe values.
+- **Outputs:** validation result with paths, messages, keywords, and allowed
+  values when available.
+- **Must not:** silently coerce unsafe values or expose raw validator errors.
 
 ### Skills
 
@@ -114,5 +118,7 @@ is reviewed.
 
 ## Implementation boundary
 
-v0.1 does not implement these components. It defines the contracts that future
-implementation PRs should follow.
+v0.1 defined the contracts that future implementation PRs should follow. v0.2
+implements only the config loader and config schema validator foundation.
+Guidance injection, lifecycle hooks, flow commands, git automation, and GitHub
+automation remain future implementation work.

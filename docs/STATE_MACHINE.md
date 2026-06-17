@@ -72,6 +72,10 @@ This document is the compact state-machine reference for Codeflow. See
 `final_reported` is the normal terminal state for a completed task. The workflow
 then returns to `idle`.
 
+The final report payload records the reached phase in `finalPhase`. Completed
+normal work should usually use `final_reported`; blocked work should use
+`blocked` and include the blocker in the report.
+
 `blocked` may be terminal when the user cancels or does not provide the required
 human decision.
 

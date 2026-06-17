@@ -207,11 +207,15 @@ valid next steps before unsafe actions become possible.
 - **Purpose:** work is summarized for the user.
 - **Entry conditions:** verification evidence exists.
 - **Expected agent behavior:** report changed files, checks, issues, decisions,
-  and risks.
+  risks, and `finalPhase`.
 - **Expected command/tool:** `/flow-report`.
 - **Allowed transitions:** `idle`.
 - **Failure transitions:** none.
-- **Output artifacts:** final report.
+- **Output artifacts:** final report payload and rendered report.
+
+The final report payload must include `finalPhase`. Completed normal work should
+usually report `final_reported`; blocked work should report `blocked` and explain
+the blocker.
 
 ### `blocked`
 

@@ -7,20 +7,98 @@ is reviewed.
 
 ## Components
 
-| Component | Responsibility | Inputs | Outputs | Must not do |
-| --- | --- | --- | --- | --- |
-| Policy Engine | Own workflow rules such as branch policy, payload requirements, emergency rules, and safety settings. | Resolved config, lifecycle state, repository status. | Policy decisions, warnings, blockers. | Mutate git state directly. |
-| Guidance Engine | Inject active Codeflow guidance into agent context. | Policy decisions, lifecycle phase, task metadata. | Agent instructions and next-step guidance. | Hide provider-specific instructions or bypass templates. |
-| Tooling Layer | Expose future commands such as `/flow-start`, `/flow-check`, `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`. | User commands, agent payloads, state. | Tool results and state transitions. | Perform unsafe operations without policy approval. |
-| Template Renderer | Render branch names, commit messages, PR bodies, review replies, and final reports. | Structured payloads and template files. | Rendered text artifacts. | Ask the model to freeform final outputs. |
-| Git Integration | Inspect status, create branches, stage/commit changes, and read diffs. | Repository path, branch policy, commit payloads. | Branches, commits, git status summaries. | Force-push, discard changes, or work on reserved branches by default. |
-| GitHub Integration | Open/update PRs, watch checks, list review comments, and apply allowed replies/resolutions. | PR payloads, GitHub CLI/API output, review policy. | PR URLs, CI summaries, comment triage. | Merge PRs or bypass human review. |
-| State Store | Track lifecycle phase, task metadata, check results, payloads, and reports. | Tool results and guidance decisions. | Session state and status summaries. | Store secrets or transient state in repository files by default. |
-| Safety Boundary | Block or warn about off-path actions. | Git state, config, command intent, lifecycle phase. | Blockers, warnings, required confirmations. | Replace proactive guidance as the main UX. |
-| Config Loader | Load defaults, optional `extends`, and project `.pi/codeflow.json`. | Package defaults, project config files. | Resolved config object. | Mutate repository or run checks. |
-| Schema Validator | Validate config and payloads. | JSON schemas, config, structured payloads. | Validation result with paths and messages. | Silently coerce unsafe values. |
-| Skills | Teach agents when Codeflow applies and how to follow it. | User task and repository context. | Concise model-neutral guidance. | Contain production logic. |
-| Prompts | Request structured payloads for lifecycle steps. | Task context, diffs, checks, comments. | Structured payload drafts. | Render final commit messages or PR bodies. |
+### Policy Engine
+
+- **Responsibility:** own workflow rules such as branch policy, payload
+  requirements, emergency rules, and safety settings.
+- **Inputs:** resolved config, lifecycle state, and repository status.
+- **Outputs:** policy decisions, warnings, and blockers.
+- **Must not:** mutate git state directly.
+
+### Guidance Engine
+
+- **Responsibility:** inject active Codeflow guidance into agent context.
+- **Inputs:** policy decisions, lifecycle phase, and task metadata.
+- **Outputs:** agent instructions and next-step guidance.
+- **Must not:** hide provider-specific instructions or bypass templates.
+
+### Tooling Layer
+
+- **Responsibility:** expose future commands such as `/flow-start`,
+  `/flow-check`, `/flow-commit`, `/flow-pr`, `/flow-comments`, and
+  `/flow-report`.
+- **Inputs:** user commands, agent payloads, and state.
+- **Outputs:** tool results and state transitions.
+- **Must not:** perform unsafe operations without policy approval.
+
+### Template Renderer
+
+- **Responsibility:** render branch names, commit messages, PR bodies, review
+  replies, and final reports.
+- **Inputs:** structured payloads and template files.
+- **Outputs:** rendered text artifacts.
+- **Must not:** ask the model to freeform final outputs.
+
+### Git Integration
+
+- **Responsibility:** inspect status, create branches, stage/commit changes,
+  and read diffs.
+- **Inputs:** repository path, branch policy, and commit payloads.
+- **Outputs:** branches, commits, and git status summaries.
+- **Must not:** force-push, discard changes, or work on reserved branches by
+  default.
+
+### GitHub Integration
+
+- **Responsibility:** open/update PRs, watch checks, list review comments, and
+  apply allowed replies/resolutions.
+- **Inputs:** PR payloads, GitHub CLI/API output, and review policy.
+- **Outputs:** PR URLs, CI summaries, and comment triage.
+- **Must not:** merge PRs or bypass human review.
+
+### State Store
+
+- **Responsibility:** track lifecycle phase, task metadata, check results,
+  payloads, and reports.
+- **Inputs:** tool results and guidance decisions.
+- **Outputs:** session state and status summaries.
+- **Must not:** store secrets or transient state in repository files by default.
+
+### Safety Boundary
+
+- **Responsibility:** block or warn about off-path actions.
+- **Inputs:** git state, config, command intent, and lifecycle phase.
+- **Outputs:** blockers, warnings, and required confirmations.
+- **Must not:** replace proactive guidance as the main UX.
+
+### Config Loader
+
+- **Responsibility:** load defaults, optional `extends`, and project
+  `.pi/codeflow.json`.
+- **Inputs:** package defaults and project config files.
+- **Outputs:** resolved config object.
+- **Must not:** mutate repository or run checks.
+
+### Schema Validator
+
+- **Responsibility:** validate config and payloads.
+- **Inputs:** JSON schemas, config, and structured payloads.
+- **Outputs:** validation result with paths and messages.
+- **Must not:** silently coerce unsafe values.
+
+### Skills
+
+- **Responsibility:** teach agents when Codeflow applies and how to follow it.
+- **Inputs:** user task and repository context.
+- **Outputs:** concise model-neutral guidance.
+- **Must not:** contain production logic.
+
+### Prompts
+
+- **Responsibility:** request structured payloads for lifecycle steps.
+- **Inputs:** task context, diffs, checks, and comments.
+- **Outputs:** structured payload drafts.
+- **Must not:** render final commit messages or PR bodies.
 
 ## Data flow
 

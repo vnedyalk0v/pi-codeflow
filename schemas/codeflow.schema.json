@@ -72,6 +72,25 @@
           "description": "Behavior when the default base branch is missing."
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "missingDefaultBehavior": {
+                "const": "fallback"
+              }
+            },
+            "required": [
+              "missingDefaultBehavior"
+            ]
+          },
+          "then": {
+            "required": [
+              "fallback"
+            ]
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "branching": {

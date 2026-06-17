@@ -62,6 +62,17 @@ file. The first implementation should keep this simple:
 - Unknown review comment classifications are invalid.
 - Template paths that cannot be resolved are invalid before rendering.
 
+## Base branch fallback
+
+`baseBranches.missingDefaultBehavior` controls what happens when the configured
+`baseBranches.default` branch is missing.
+
+- Use `block` to stop in `blocked` and ask for maintainer guidance.
+- Use `fallback` only when `baseBranches.fallback` is also configured.
+- The schema requires `baseBranches.fallback` whenever fallback behavior is
+  selected, so validation cannot pass without a branch to use.
+- The fallback branch should also appear in `baseBranches.allowed`.
+
 ## Top-level keys
 
 | Key | Purpose |

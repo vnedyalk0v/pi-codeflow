@@ -4,6 +4,10 @@
 
 {{summary}}
 
+## Final phase
+
+{{finalPhase}}
+
 ## Changed files
 
 {{changedFilesList}}

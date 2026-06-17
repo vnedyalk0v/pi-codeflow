@@ -10,10 +10,17 @@ import {
   updateCheckStateWithRun,
   type CodeflowCheckState,
 } from './check-state';
+import {
+  createInitialCommitState,
+  updateCommitStateWithCommit,
+  type CodeflowCommitState,
+  type StoreCommitMetadataInput,
+} from './commit-state';
 
 export interface CodeflowSessionState {
   lifecycle: CodeflowLifecycleState;
   checks: CodeflowCheckState;
+  commits: CodeflowCommitState;
   updatedAt: string;
 }
 
@@ -30,6 +37,7 @@ export function createCodeflowSessionState(
   return {
     lifecycle: createInitialLifecycleState(options),
     checks: createInitialCheckState(),
+    commits: createInitialCommitState(),
     updatedAt: nowIso(),
   };
 }
@@ -46,6 +54,21 @@ export function updateSessionStateWithCheckRun(
       phase,
     },
     checks: updateCheckStateWithRun(state.checks, run),
+    updatedAt: nowIso(),
+  };
+}
+
+export function updateSessionStateWithCommit(
+  state: CodeflowSessionState,
+  input: StoreCommitMetadataInput,
+): CodeflowSessionState {
+  return {
+    ...state,
+    lifecycle: {
+      ...state.lifecycle,
+      phase: 'committed',
+    },
+    commits: updateCommitStateWithCommit(state.commits, input),
     updatedAt: nowIso(),
   };
 }

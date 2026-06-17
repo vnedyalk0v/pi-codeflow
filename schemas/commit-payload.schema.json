@@ -8,10 +8,7 @@
     "type",
     "summary",
     "context",
-    "changes",
-    "verification",
-    "risk",
-    "refs"
+    "changes"
   ],
   "properties": {
     "type": {
@@ -39,8 +36,7 @@
     "summary": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 72,
-      "description": "Imperative summary without trailing period."
+      "description": "Imperative summary without trailing punctuation."
     },
     "context": {
       "type": "string",
@@ -61,26 +57,44 @@
         "type": "string",
         "minLength": 1
       },
-      "minItems": 1
+      "description": "Commands run or explicit skipped-check reasons. Required by default Codeflow policy."
     },
     "risk": {
       "type": "string",
       "minLength": 1,
       "description": "Risk level and rationale."
     },
-    "riskLevel": {
-      "type": "string",
-      "enum": [
-        "low",
-        "medium",
-        "high"
-      ]
-    },
     "refs": {
       "type": "array",
       "items": {
         "type": "string",
         "minLength": 1
+      },
+      "description": "Optional issue or ticket references."
+    },
+    "breakingChange": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional breaking-change description."
+    },
+    "footers": {
+      "type": "object",
+      "description": "Optional additional commit footers.",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        ]
       }
     }
   },

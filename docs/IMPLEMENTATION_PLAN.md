@@ -7,14 +7,14 @@ at a time.
 
 Target issue:
 
-- #10 Implement `/flow-check`.
+- #11 Implement `/flow-commit` with generated commit messages.
 
-This PR implements the v0.5 configured local check runner foundation. It consumes
-the validated config layer from #7, guidance/lifecycle foundation from #8, and
-semantic branch command foundation from #9, then adds ordered check execution,
-result capture, failure summaries, and bounded latest check state. Self-review,
-commit generation, PR generation, GitHub checks watching, and review comment
-automation remain out of scope.
+This PR implements the v0.6 commit foundation. It consumes the validated config
+layer from #7, guidance/lifecycle foundation from #8, semantic branch command
+foundation from #9, and local check runner foundation from #10. It adds
+structured commit payload validation, deterministic commit message rendering,
+Conventional Commit-compatible titles, safe staged-change commit execution,
+check-state policy, dry-run previews, and bounded latest commit metadata.
 
 ## Implemented #7 scope
 
@@ -60,22 +60,40 @@ automation remain out of scope.
 - Move failed required checks toward `fixing_local_findings`.
 - Add tests and docs for check runner behavior.
 
-## Non-goals for #10
+## Implemented #11 scope
 
-- Self-review automation.
-- Commit generation or commit execution.
-- PR generation or PR opening.
+- Add `/flow-commit` command registration.
+- Validate structured commit payloads against schema and semantic rules.
+- Render commit messages from the configured commit template.
+- Generate Conventional Commit-compatible titles with optional scope and breaking
+  marker.
+- Require commit bodies with Context, Changes, Verification, and Risk sections.
+- Commit staged changes using a temporary rendered message file.
+- Refuse no-staged-change commits and reserved-branch commits by default.
+- Warn when unstaged or untracked files are present.
+- Apply latest `/flow-check` state policy before committing.
+- Support dry-run previews without creating commits.
+- Store bounded latest commit metadata in session state.
+- Add tests for validation, rendering, git behavior, command behavior, and state
+  updates.
+
+## Non-goals for #11
+
+- `/flow-pr` implementation.
+- PR title/body generation.
 - GitHub checks watcher.
 - Review comment automation.
 - Merge automation.
-- Persistent external lifecycle storage.
+- Broad branch protection or tool-call blocking beyond `/flow-commit` safety.
 
 ## Next intended implementation issue
 
-#11 Implement `/flow-commit` is the next numbered implementation issue after
-#10. There is not currently a dedicated self-review issue; self-review remains
-future work within or after v0.5 before Codeflow should claim full pre-commit
-verification automation.
+#12 Implement `/flow-pr` with generated PR title/body is next after #11. It
+should build on the structured payload and template-rendering pattern introduced
+by `/flow-commit` without changing `/flow-commit` scope.
+
+There is not currently a dedicated self-review issue; self-review remains future
+work before Codeflow should claim full pre-commit verification automation.
 
 ## Verification expectations
 
@@ -88,6 +106,8 @@ verification automation.
 - Unit tests for ordered check execution, stdout/stderr capture, exit codes,
   durations, failure policy, timeouts, dry-run, empty-check behavior, summaries,
   command registration, lifecycle phase selection, and bounded state storage.
-- Manual check that self-review, commit generation, PR generation, GitHub
-  automation, review comment automation, and merge automation remain out of
-  scope.
+- Unit tests for commit payload validation, template rendering, Conventional
+  Commit title generation, staged-change safety, check-state policy, command
+  registration, git commit execution, and bounded commit state.
+- Manual check that PR generation, GitHub automation, review comment automation,
+  and merge automation remain out of scope.

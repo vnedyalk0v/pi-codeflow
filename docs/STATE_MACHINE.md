@@ -5,7 +5,7 @@ This document is the compact state-machine reference for Codeflow. See
 
 ## Implementation status
 
-The v0.5 implementation provides a small lifecycle foundation and the first two
+The v0.6 implementation provides a small lifecycle foundation and three
 command-driven transitions:
 
 - `createInitialLifecycleState()` creates an initial state and defaults to
@@ -16,6 +16,8 @@ command-driven transitions:
   `branch_prepared`.
 - `/flow-check` runs configured checks, records the latest bounded check state,
   and returns `local_checks` or `fixing_local_findings`.
+- `/flow-commit` validates a structured payload, renders a commit message,
+  commits staged changes, and returns `committed` on success.
 - Persistent external state storage and later command-driven transitions are not
   implemented yet.
 
@@ -45,7 +47,10 @@ command-driven transitions:
 The guidance layer maps phases to next expected actions. `/flow-start` performs
 the `initialized` -> `branch_prepared` branch preparation mutation. `/flow-check`
 records local check results and returns the phase that should guide the next
-step. Other action text remains proactive guidance, not a full mutation engine.
+step. `/flow-commit` performs the `ready_to_commit` -> `committed` mutation only
+when payload validation, staged-change checks, branch safety, check-state policy,
+and `git commit` all succeed. Other action text remains proactive guidance, not
+a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -57,8 +62,8 @@ step. Other action text remains proactive guidance, not a full mutation engine.
 | `local_checks` | Run configured checks with `/flow-check`, or record none configured with a warning. |
 | `self_review` | Review the diff and fix local findings before commit readiness. |
 | `fixing_local_findings` | Fix only local check or self-review findings, then re-check. |
-| `ready_to_commit` | Provide a structured commit payload for template rendering. |
-| `committed` | Prepare a structured PR payload for the configured base branch. |
+| `ready_to_commit` | Provide a structured commit payload and use `/flow-commit`. |
+| `committed` | Prepare a structured PR payload for future `/flow-pr` support. |
 | `pr_opened` | Track CI and review state before final reporting. |
 | `ci_waiting` | Summarize remote check status and react to failures. |
 | `review_triage` | Classify comments before acting and stop for human decisions. |
@@ -140,6 +145,8 @@ A workflow should enter `blocked` when:
   path;
 - branch policy would be violated;
 - a payload fails validation;
+- `/flow-commit` has no staged changes, is on a reserved branch, has failed
+  required check state, or git commit fails;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
 
@@ -159,6 +166,25 @@ non-destructive fetch attempt made before base branch resolution.
   `verified`.
 - Dry-runs: remain in `local_checks`; skipped planned checks are not verification
   evidence.
+
+## `/flow-commit` transition details
+
+- Successful commit: `ready_to_commit` -> `committed` with commit SHA and
+  bounded metadata stored in session state.
+- Dry-run: remains `ready_to_commit`; rendered message preview is returned but
+  no commit is created.
+- Invalid payload: `ready_to_commit` -> `blocked` or remains unchanged when the
+  caller keeps state external.
+- No staged changes: `ready_to_commit` -> `blocked`; Codeflow does not
+  auto-stage files.
+- Reserved branch: `ready_to_commit` -> `blocked` unless explicit emergency
+  override policy allows it.
+- Failed latest check state: `ready_to_commit` -> `blocked` unless unverified
+  commit policy or `--allow-unverified` allows a warned commit.
+- Missing or `no_checks` state: warns by default and blocks only when config
+  requires passed checks before commit.
+- Git commit failure: `ready_to_commit` -> `blocked` with git exit code and
+  stderr summary.
 
 ## Retry transitions
 

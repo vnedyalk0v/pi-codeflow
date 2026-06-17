@@ -4,8 +4,8 @@ The project-level configuration file is `.pi/codeflow.json`. The v0.6
 foundation loads package defaults, optionally loads project config, merges the
 two layers, validates the resolved config, uses the resolved config to build
 before-agent Codeflow guidance, applies branch policy in `/flow-start`, runs
-configured local checks in `/flow-check`, and renders staged commits through
-`/flow-commit`.
+configured local checks in `/flow-check`, renders staged commits through
+`/flow-commit`, and renders/opens pull requests through `/flow-pr`.
 
 ## Config resolution order
 
@@ -25,9 +25,10 @@ Command-specific overrides are reserved for a future milestone. `/flow-start`
 reads the resolved config and may create or switch to a semantic work branch.
 `/flow-check` reads the resolved config and runs only configured local checks.
 `/flow-commit` reads the resolved config, validates structured commit payloads,
-renders the commit template, and commits staged changes only. These commands do
-not push, open pull requests, watch GitHub checks, resolve review comments, or
-merge.
+renders the commit template, and commits staged changes only. `/flow-pr` reads
+structured PR payloads, renders the PR title/body, safely pushes the current
+feature branch when configured, and opens or updates the GitHub PR. These
+commands do not watch GitHub checks, resolve review comments, approve, or merge.
 
 ## Default config
 
@@ -174,7 +175,7 @@ Pull request base outside allowed base branches:
 | `baseBranches` | Default, allowed, and fallback base branch policy. |
 | `branching` | Branch types, branch template, and slug rules. |
 | `commits` | Commit template and structured payload rules. |
-| `pullRequest` | PR template, base branch, draft, and self-review policy. |
+| `pullRequest` | PR title/body templates, base branch, draft, checks, push, and payload policy. |
 | `checks` | Ordered local checks. |
 | `reviewComments` | Review comment classifications and resolution policy. |
 | `emergency` | Emergency override and hotfix policy. |
@@ -212,6 +213,41 @@ default. Missing or `no_checks` state warns by default unless
 package root. If a configured template is missing, the bundled default commit
 template is used with a warning. If a configured template exists but cannot be
 read as a file, rendering fails.
+
+## Pull request policy
+
+The `pullRequest` object controls structured PR payload validation, title/body
+rendering, branch safety, GitHub CLI behavior, and bounded PR state.
+
+| Field | Purpose |
+| --- | --- |
+| `template` | PR body template path used when it differs from the package default. |
+| `titleTemplate` | Deterministic PR title template using `type`, `scopeSuffix`, `summary`, `ticket`, and `ticketPrefix`. |
+| `baseBranch` | Default PR base branch. |
+| `draftByDefault` | Opens draft PRs unless payload or command flags override it. |
+| `requireVerification` | Requires payload `body.verification` to contain at least one item. |
+| `requireSelfReview` | Requires payload `body.selfReview` to contain at least one item. |
+| `openWhenChecksFail` | Allows failed latest `/flow-check` state with a warning. |
+| `updateExisting` | Updates title/body on an existing branch PR when discoverable. |
+| `maxTitleLength` | Maximum rendered PR title length; default is 120. |
+| `titleLengthPolicy` | `error` blocks overlong titles; `warning` reports but allows them. |
+| `requirePassedChecksBeforePr` | Requires latest `/flow-check` state to be `passed`. |
+| `pushBeforeCreate` | Safely pushes the current feature branch before `gh pr create`. |
+| `linkKeyword` | Issue link keyword for default PR body rendering; default is `Refs`. |
+
+Default behavior is conservative: structured payloads, verification,
+self-review, draft PRs, explicit base/head, safe feature-branch push, and `Refs`
+linked issues. Failed latest check state blocks by default. Missing or
+`no_checks` state warns by default unless `requirePassedChecksBeforePr` is
+enabled.
+
+`/flow-pr` resolves template paths from the repository root and then the package
+root. If a configured PR template is missing, the bundled default PR template is
+used with a warning. If a configured template exists but cannot be read as a
+file, rendering fails.
+
+The implemented PR behavior does not watch GitHub checks, request reviews,
+resolve review comments, approve, merge, or delete branches.
 
 ## Guidance policy
 
@@ -394,11 +430,18 @@ a fix and verification. Invalid comments normally require human review.
   },
   "pullRequest": {
     "template": "templates/pull-request.md",
+    "titleTemplate": "{{ticketPrefix}}{{type}}{{scopeSuffix}}: {{summary}}",
     "baseBranch": "dev",
     "draftByDefault": true,
+    "requireVerification": true,
     "requireSelfReview": true,
     "openWhenChecksFail": false,
-    "updateExisting": true
+    "updateExisting": true,
+    "maxTitleLength": 120,
+    "titleLengthPolicy": "warning",
+    "requirePassedChecksBeforePr": false,
+    "pushBeforeCreate": true,
+    "linkKeyword": "Refs"
   },
   "checks": [],
   "reviewComments": {

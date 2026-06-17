@@ -125,7 +125,7 @@ function getWorkflowGuidance(config: CodeflowConfig): string[] {
 
   if (config.guidance.renderOutputsFromTemplates) {
     lines.push(
-      'Let Codeflow render final branch names, commit messages, PR bodies, review replies, and reports from templates.',
+      'Let Codeflow render final branch names, commit messages, PR titles/bodies, review replies, and reports from templates.',
     );
   }
 

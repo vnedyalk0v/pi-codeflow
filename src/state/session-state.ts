@@ -16,11 +16,18 @@ import {
   type CodeflowCommitState,
   type StoreCommitMetadataInput,
 } from './commit-state';
+import {
+  createInitialPrState,
+  updatePrStateWithPullRequest,
+  type CodeflowPrState,
+  type StorePullRequestMetadataInput,
+} from './pr-state';
 
 export interface CodeflowSessionState {
   lifecycle: CodeflowLifecycleState;
   checks: CodeflowCheckState;
   commits: CodeflowCommitState;
+  pullRequests: CodeflowPrState;
   updatedAt: string;
 }
 
@@ -38,6 +45,7 @@ export function createCodeflowSessionState(
     lifecycle: createInitialLifecycleState(options),
     checks: createInitialCheckState(),
     commits: createInitialCommitState(),
+    pullRequests: createInitialPrState(),
     updatedAt: nowIso(),
   };
 }
@@ -69,6 +77,21 @@ export function updateSessionStateWithCommit(
       phase: 'committed',
     },
     commits: updateCommitStateWithCommit(state.commits, input),
+    updatedAt: nowIso(),
+  };
+}
+
+export function updateSessionStateWithPullRequest(
+  state: CodeflowSessionState,
+  input: StorePullRequestMetadataInput,
+): CodeflowSessionState {
+  return {
+    ...state,
+    lifecycle: {
+      ...state.lifecycle,
+      phase: 'pr_opened',
+    },
+    pullRequests: updatePrStateWithPullRequest(state.pullRequests, input),
     updatedAt: nowIso(),
   };
 }

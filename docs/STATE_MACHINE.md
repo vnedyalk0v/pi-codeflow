@@ -18,8 +18,10 @@ command-driven transitions:
   and returns `local_checks` or `fixing_local_findings`.
 - `/flow-commit` validates a structured payload, renders a commit message,
   commits staged changes, and returns `committed` on success.
-- Persistent external state storage and later command-driven transitions are not
-  implemented yet.
+- `/flow-pr` validates a structured PR payload, renders the PR title/body, opens
+  or updates a GitHub PR, and returns `pr_opened` on success.
+- Persistent external state storage and later command-driven transitions beyond
+  PR creation are not implemented yet.
 
 ## Lifecycle phases
 
@@ -49,8 +51,10 @@ the `initialized` -> `branch_prepared` branch preparation mutation. `/flow-check
 records local check results and returns the phase that should guide the next
 step. `/flow-commit` performs the `ready_to_commit` -> `committed` mutation only
 when payload validation, staged-change checks, branch safety, check-state policy,
-and `git commit` all succeed. Other action text remains proactive guidance, not
-a full mutation engine.
+and `git commit` all succeed. `/flow-pr` performs the `committed` ->
+`pr_opened` mutation only when PR payload validation, base/head safety,
+check-state policy, branch push policy, and GitHub CLI PR creation all succeed.
+Other action text remains proactive guidance, not a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -63,7 +67,7 @@ a full mutation engine.
 | `self_review` | Review the diff and fix local findings before commit readiness. |
 | `fixing_local_findings` | Fix only local check or self-review findings, then re-check. |
 | `ready_to_commit` | Provide a structured commit payload and use `/flow-commit`. |
-| `committed` | Prepare a structured PR payload for future `/flow-pr` support. |
+| `committed` | Prepare a structured PR payload and use `/flow-pr`. |
 | `pr_opened` | Track CI and review state before final reporting. |
 | `ci_waiting` | Summarize remote check status and react to failures. |
 | `review_triage` | Classify comments before acting and stop for human decisions. |
@@ -147,6 +151,9 @@ A workflow should enter `blocked` when:
 - a payload fails validation;
 - `/flow-commit` has no staged changes, is on a reserved branch, has failed
   required check state, or git commit fails;
+- `/flow-pr` has an invalid payload, missing remote base branch, reserved head branch,
+  base=head, failed required check state, missing GitHub CLI/authentication,
+  unpushed branch when pushing is disabled, or GitHub PR creation fails;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
 
@@ -186,6 +193,23 @@ non-destructive fetch attempt made before base branch resolution.
 - Git commit failure: `ready_to_commit` -> `blocked` with git exit code and
   stderr summary.
 
+## `/flow-pr` transition details
+
+- Successful PR creation or update: `committed` -> `pr_opened` with bounded PR
+  metadata stored in session state.
+- Dry-run: remains `committed`; rendered title/body preview is returned but no
+  push or GitHub PR call is performed.
+- Invalid payload: `committed` -> `blocked` or remains unchanged when the caller
+  keeps state external.
+- Reserved head branch: `committed` -> `blocked` unless explicit emergency
+  override policy allows it.
+- Missing remote base branch or base=head: `committed` -> `blocked`.
+- Failed latest check state: `committed` -> `blocked` unless unverified PR policy
+  or `--allow-unverified` allows a warned PR.
+- Missing or `no_checks` state: warns by default and blocks only when config
+  requires passed checks before PR.
+- GitHub CLI/auth failure: `committed` -> `blocked` with a clear error.
+
 ## Retry transitions
 
 - Failed local checks: `local_checks` -> `fixing_local_findings` ->
@@ -194,7 +218,7 @@ non-destructive fetch attempt made before base branch resolution.
   `self_review`.
 - Failed CI: `ci_waiting` -> `fixing_local_findings` -> `local_checks` ->
   `ci_waiting`.
-- Invalid payload: `ready_to_commit` or `pr_opened` -> `blocked` -> prior safe
+- Invalid payload: `ready_to_commit` or `committed` -> `blocked` -> prior safe
   phase after correction.
 
 ## Emergency transitions

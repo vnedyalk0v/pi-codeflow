@@ -166,6 +166,7 @@ describe('/flow-check command registration', () => {
               lifecycle: { phase: 'local_checks', workBranch: null },
               checks: { lastRun: null },
               commits: { lastCommit: null },
+              pullRequests: { lastPullRequest: null },
               updatedAt: '2026-01-01T00:00:01.000Z',
             },
           }) satisfies FlowCheckResult,

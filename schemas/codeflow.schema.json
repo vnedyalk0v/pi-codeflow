@@ -282,16 +282,28 @@
       "type": "object",
       "required": [
         "template",
+        "titleTemplate",
         "baseBranch",
         "draftByDefault",
+        "requireVerification",
         "requireSelfReview",
         "openWhenChecksFail",
-        "updateExisting"
+        "updateExisting",
+        "maxTitleLength",
+        "titleLengthPolicy",
+        "requirePassedChecksBeforePr",
+        "pushBeforeCreate",
+        "linkKeyword"
       ],
       "properties": {
         "template": {
           "type": "string",
           "minLength": 1
+        },
+        "titleTemplate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Template for deterministic PR titles. Supported placeholders include type, scope, scopeSuffix, summary, ticket, and ticketPrefix."
         },
         "baseBranch": {
           "type": "string",
@@ -299,6 +311,10 @@
         },
         "draftByDefault": {
           "type": "boolean"
+        },
+        "requireVerification": {
+          "type": "boolean",
+          "description": "Whether PR payloads must include at least one verification item."
         },
         "requireSelfReview": {
           "type": "boolean"
@@ -308,6 +324,34 @@
         },
         "updateExisting": {
           "type": "boolean"
+        },
+        "maxTitleLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Maximum rendered PR title length."
+        },
+        "titleLengthPolicy": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning"
+          ]
+        },
+        "requirePassedChecksBeforePr": {
+          "type": "boolean",
+          "description": "Whether /flow-pr requires latest /flow-check state to be passed."
+        },
+        "pushBeforeCreate": {
+          "type": "boolean",
+          "description": "Whether /flow-pr safely pushes the current feature branch before creating a PR."
+        },
+        "linkKeyword": {
+          "type": "string",
+          "enum": [
+            "Refs"
+          ],
+          "description": "Issue link keyword used by the default PR body renderer."
         }
       },
       "additionalProperties": false

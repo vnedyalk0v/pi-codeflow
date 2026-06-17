@@ -60,7 +60,7 @@ export function getNextExpectedActions(
     case 'committed':
       return [
         'Prepare a structured pull request payload and preserve the existing commit history.',
-        `Target pull requests at configured base branch ${config.pullRequest.baseBranch}.`,
+        `Use /flow-pr to render and open a PR against configured base branch ${config.pullRequest.baseBranch}.`,
       ];
     case 'pr_opened':
       return [

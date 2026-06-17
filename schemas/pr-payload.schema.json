@@ -6,79 +6,114 @@
   "type": "object",
   "required": [
     "title",
-    "summary",
-    "context",
-    "changes",
-    "verification",
-    "selfReview",
-    "risk",
-    "rollback",
-    "reviewerNotes",
-    "linkedIssues"
+    "body"
   ],
   "properties": {
     "title": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 120
-    },
-    "summary": {
-      "type": "string",
-      "minLength": 1
-    },
-    "context": {
-      "type": "string",
-      "minLength": 1
-    },
-    "changes": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
+      "type": "object",
+      "required": [
+        "type",
+        "summary"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "feat",
+            "fix",
+            "hotfix",
+            "refactor",
+            "perf",
+            "docs",
+            "test",
+            "chore",
+            "ci",
+            "build",
+            "revert"
+          ],
+          "description": "Conventional PR title type."
+        },
+        "scope": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9.-]*$",
+          "description": "Optional component scope."
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Short deterministic title summary."
+        },
+        "ticket": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional ticket ID rendered by configured title templates."
+        }
       },
-      "minItems": 1
+      "additionalProperties": false
     },
-    "verification": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
+    "body": {
+      "type": "object",
+      "required": [
+        "summary",
+        "context",
+        "changes",
+        "risk",
+        "rollback"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "verification": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Commands run or explicit skipped-check reasons. Required by default Codeflow policy."
+        },
+        "selfReview": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Agent self-review evidence. Required by default Codeflow policy."
+        },
+        "risk": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rollback": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewerNotes": {
+          "type": "string"
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Optional issue or ticket references rendered with Refs by default."
+        }
       },
-      "minItems": 1
-    },
-    "selfReview": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "minItems": 1
-    },
-    "risk": {
-      "type": "string",
-      "minLength": 1
-    },
-    "riskLevel": {
-      "type": "string",
-      "enum": [
-        "low",
-        "medium",
-        "high"
-      ]
-    },
-    "rollback": {
-      "type": "string",
-      "minLength": 1
-    },
-    "reviewerNotes": {
-      "type": "string"
-    },
-    "linkedIssues": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "additionalProperties": false
     },
     "draft": {
       "type": "boolean"
@@ -87,19 +122,9 @@
       "type": "string",
       "minLength": 1
     },
-    "labels": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    },
-    "assignees": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+    "headBranch": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "additionalProperties": false

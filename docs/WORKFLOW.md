@@ -9,7 +9,8 @@ valid next steps before unsafe actions become possible.
 The v0.6 foundation exposes lifecycle phase types, initial in-memory lifecycle
 state creation, next expected action guidance, before-agent guidance injection,
 `/flow-start` semantic branch preparation, `/flow-check` local check running,
-and `/flow-commit` template-rendered commit creation.
+`/flow-commit` template-rendered commit creation, and `/flow-pr` generated PR
+title/body creation.
 
 `/flow-start` moves a clean repository from `initialized` to `branch_prepared`
 by validating or inferring the branch type, rendering the branch name, selecting
@@ -18,8 +19,11 @@ the configured base branch, and creating or switching to the work branch.
 stores the latest bounded check state in the command result, and summarizes
 failures. `/flow-commit` validates structured commit payloads, renders the final
 commit message from the configured template, commits staged changes with a
-message file, and stores bounded commit metadata. PR rendering, self-review
-automation, persistent external state storage, and GitHub automation are later
+message file, and stores bounded commit metadata. `/flow-pr` validates a
+structured PR payload, renders the title/body from templates, safely pushes the
+feature branch when configured, opens or updates the GitHub PR, and stores
+bounded PR metadata. Self-review automation, persistent external state storage,
+GitHub checks watching, review comment automation, and merge automation are later
 work.
 
 ## Phase reference
@@ -91,6 +95,32 @@ Failure behavior:
 - git commit failure blocks with exit code and stderr summary;
 - dry-run renders the message and reports warnings without moving to
   `committed`.
+
+## After `/flow-pr`
+
+After a local commit exists, `/flow-pr` reads a structured PR payload, validates
+it, renders the final PR title/body from templates, resolves base/head branches,
+checks local safety policy, pushes the current feature branch when configured,
+and opens or updates the GitHub PR with explicit `gh` arguments. It never watches
+GitHub Actions, requests reviews, resolves comments, approves, merges, or deletes
+branches.
+
+Failure behavior:
+
+- invalid payload blocks with validation errors;
+- missing remote base branch blocks normal creation;
+- reserved head branch blocks unless an explicit emergency override is allowed;
+- base=head blocks because a PR cannot target itself;
+- failed latest check state blocks unless `--allow-unverified` or config allows
+  opening with failed checks;
+- missing or `no_checks` state warns by default and blocks only when config
+  requires passed checks before PR;
+- missing commit state warns that commits may not have been created through
+  `/flow-commit`;
+- missing GitHub CLI or authentication blocks with clear next steps;
+- existing PRs are updated when `pullRequest.updateExisting` is true, otherwise
+  Codeflow reports the existing PR URL when discoverable;
+- dry-run renders the title/body preview and does not move to `pr_opened`.
 
 ## Phase details
 
@@ -211,13 +241,15 @@ Failure behavior:
 - **Purpose:** local commit exists.
 - **Entry conditions:** Codeflow rendered and performed the commit from staged
   changes.
-- **Expected agent behavior:** prepare PR payload; do not rewrite history by
-  default.
-- **Expected command/tool:** future `/flow-pr`.
+- **Expected agent behavior:** prepare a structured PR payload; do not rewrite
+  history by default.
+- **Expected command/tool:** `/flow-pr`.
 - **Allowed transitions:** `pr_opened`, `local_checks`, `blocked`.
-- **Failure transitions:** `blocked` if no remote or invalid base when PR support
-  is implemented.
-- **Output artifacts:** commit SHA and bounded commit metadata.
+- **Failure transitions:** `blocked` on invalid PR payload, reserved head branch,
+  missing base branch, base=head, failed required check state, missing GitHub
+  CLI/authentication, or PR creation failure.
+- **Output artifacts:** commit SHA, bounded commit metadata, rendered PR title
+  and body preview, and bounded PR metadata on success.
 
 ### `pr_opened`
 
@@ -229,7 +261,8 @@ Failure behavior:
 - **Allowed transitions:** `ci_waiting`, `review_triage`, `verified`,
   `blocked`.
 - **Failure transitions:** `blocked` if PR creation fails.
-- **Output artifacts:** PR URL and rendered body.
+- **Output artifacts:** PR URL, PR number, base/head branches, rendered title,
+  rendered body, and bounded PR metadata.
 
 ### `ci_waiting`
 

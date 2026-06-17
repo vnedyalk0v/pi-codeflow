@@ -47,6 +47,7 @@ export interface CodeflowBranchingConfig {
 }
 
 export type CodeflowCommitTitleLengthPolicy = 'error' | 'warning';
+export type CodeflowPrTitleLengthPolicy = 'error' | 'warning';
 
 export interface CodeflowCommitsConfig {
   template: string;
@@ -66,11 +67,18 @@ export interface CodeflowCommitsConfig {
 
 export interface CodeflowPullRequestConfig {
   template: string;
+  titleTemplate: string;
   baseBranch: string;
   draftByDefault: boolean;
+  requireVerification: boolean;
   requireSelfReview: boolean;
   openWhenChecksFail: boolean;
   updateExisting: boolean;
+  maxTitleLength: number;
+  titleLengthPolicy: CodeflowPrTitleLengthPolicy;
+  requirePassedChecksBeforePr: boolean;
+  pushBeforeCreate: boolean;
+  linkKeyword: 'Refs';
 }
 
 export interface CodeflowCheckConfig {

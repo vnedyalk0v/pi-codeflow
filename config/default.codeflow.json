@@ -34,8 +34,9 @@
       "build",
       "revert"
     ],
-    "defaultType": "chore",
+    "defaultType": "feat",
     "template": "templates/branch-name.md",
+    "ticketPattern": "\\b[A-Z][A-Z0-9]+-\\d+\\b",
     "slug": {
       "case": "kebab",
       "maxLength": 60,

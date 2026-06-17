@@ -6,7 +6,9 @@ trail.
 
 ## Default emergency path
 
-The default emergency path is a hotfix branch, not direct work on `main`:
+The default emergency path is a hotfix branch, not direct work on `main`.
+`/flow-start --emergency "reason"` prepares this branch path when emergency
+configuration supports `hotfix_branch`:
 
 ```text
 hotfix/<ticket-or-slug>
@@ -27,6 +29,7 @@ Emergency flow requires:
 ## Required emergency behavior
 
 - Prefer a `hotfix/` branch over direct reserved-branch work.
+- Use `/flow-start --emergency` to prepare the hotfix branch when available.
 - Keep commits structured.
 - Keep PRs structured.
 - Run configured checks unless the user explicitly accepts skipped checks.

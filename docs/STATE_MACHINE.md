@@ -5,14 +5,17 @@ This document is the compact state-machine reference for Codeflow. See
 
 ## Implementation status
 
-The v0.3 implementation provides a small in-memory lifecycle foundation:
+The v0.4 implementation provides a small lifecycle foundation and the first
+command-driven transition:
 
 - `createInitialLifecycleState()` creates an initial state and defaults to
   `idle`.
 - `getNextExpectedActions()` returns model-neutral guidance for the active
   phase and resolved config.
-- Persistent state storage and command-driven transitions are not implemented
-  yet.
+- `/flow-start` prepares a semantic branch and returns phase
+  `branch_prepared`.
+- Persistent state storage and later command-driven transitions are not
+  implemented yet.
 
 ## Lifecycle phases
 
@@ -37,8 +40,9 @@ The v0.3 implementation provides a small in-memory lifecycle foundation:
 
 ## Next expected action summary
 
-The v0.3 guidance layer maps phases to next expected actions. The action text is
-proactive guidance, not a mutation engine.
+The guidance layer maps phases to next expected actions. `/flow-start` now
+performs the `initialized` -> `branch_prepared` branch preparation mutation; the
+rest of the action text is proactive guidance, not a mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -69,7 +73,7 @@ proactive guidance, not a mutation engine.
 | `idle` | `emergency` | User provides emergency reason. |
 | `initialized` | `branch_prepared` | Config valid and branch prepared. |
 | `initialized` | `planning` | Docs-only or branch already prepared. |
-| `initialized` | `blocked` | Invalid config, dirty tree, or missing required context. |
+| `initialized` | `blocked` | Invalid config, invalid branch type, dirty tree, missing base branch, unsupported emergency behavior, or missing required context. |
 | `branch_prepared` | `planning` | Semantic branch is active. |
 | `planning` | `implementing` | Plan accepted or task is straightforward. |
 | `planning` | `blocked` | Requirements unclear. |
@@ -122,12 +126,20 @@ human decision.
 A workflow should enter `blocked` when:
 
 - config is invalid;
+- an explicit branch type is not allowed by config;
 - a required base branch is missing;
+- fallback base branch selection is configured but unavailable;
 - the working tree is dirty before task start;
+- rendered work branch would be reserved;
+- emergency mode is requested but config does not support the hotfix branch
+  path;
 - branch policy would be violated;
 - a payload fails validation;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
+
+For `/flow-start`, these failures leave the repository unchanged except for any
+non-destructive fetch attempt made before base branch resolution.
 
 ## Retry transitions
 

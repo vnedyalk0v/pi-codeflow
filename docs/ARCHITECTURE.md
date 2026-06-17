@@ -1,10 +1,10 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. The v0.3 foundation
+prompts, templates, config, schemas, and documentation. The v0.4 foundation
 includes config loading, conservative merging, schema validation, proactive
-guidance generation, before-agent guidance injection, and a small in-memory
-lifecycle state model.
+guidance generation, before-agent guidance injection, a small in-memory
+lifecycle state model, and `/flow-start` semantic branch preparation.
 
 ## Components
 
@@ -30,9 +30,10 @@ lifecycle state model.
 
 ### Tooling Layer
 
-- **Responsibility:** expose future commands such as `/flow-start`,
-  `/flow-check`, `/flow-commit`, `/flow-pr`, `/flow-comments`, and
-  `/flow-report`.
+- **Status:** `/flow-start` implemented foundation in v0.4; later commands are
+  future work.
+- **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
+  `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`.
 - **Inputs:** user commands, agent payloads, and state.
 - **Outputs:** tool results and state transitions.
 - **Must not:** perform unsafe operations without policy approval.
@@ -47,6 +48,7 @@ lifecycle state model.
 
 ### Git Integration
 
+- **Status:** safe branch-preparation subset implemented in v0.4.
 - **Responsibility:** inspect status, create branches, stage/commit changes,
   and read diffs.
 - **Inputs:** repository path, branch policy, and commit payloads.
@@ -131,8 +133,9 @@ lifecycle state model.
 v0.1 defined the contracts that future implementation PRs should follow. v0.2
 implemented the config loader and config schema validator foundation. v0.3
 implements the guidance generation and before-agent injection foundation plus a
-minimal lifecycle state helper.
+minimal lifecycle state helper. v0.4 implements the first command layer and safe
+semantic branch creation foundation through `/flow-start`.
 
-Flow commands, semantic branch creation, check running, commit automation, PR
-automation, persistent lifecycle storage, and GitHub automation remain future
-implementation work.
+Check running, self-review automation, commit automation, PR automation,
+persistent lifecycle storage, and GitHub automation remain future implementation
+work.

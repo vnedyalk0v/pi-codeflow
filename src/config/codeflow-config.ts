@@ -37,6 +37,7 @@ export interface CodeflowBranchingConfig {
   allowedTypes: CodeflowBranchType[];
   defaultType: CodeflowBranchType;
   template: string;
+  ticketPattern?: string;
   slug: {
     case: 'kebab';
     maxLength: number;

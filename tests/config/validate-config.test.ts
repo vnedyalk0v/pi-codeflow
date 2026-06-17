@@ -129,6 +129,26 @@ describe('validateCodeflowConfig', () => {
     }
   });
 
+  it('rejects a default branch type outside allowed branch types', () => {
+    const config = cloneDefault();
+    config.branching.allowedTypes = ['docs'];
+    config.branching.defaultType = 'feat';
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/branching/defaultType',
+            keyword: 'allowedBranchType',
+            allowedValues: ['docs'],
+          }),
+        ]),
+      );
+    }
+  });
+
   it('rejects null used to remove a required object', () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       baseBranches: null,

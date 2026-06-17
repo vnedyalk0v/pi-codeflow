@@ -1,6 +1,13 @@
-{{classification}}: {{summary}}
+Classification: {{classification}}
 
+Rationale:
+{{rationale}}
+
+Response:
 {{response}}
 
 Verification:
-{{verification}}
+{{verificationList}}
+
+Resolution:
+{{resolution}}

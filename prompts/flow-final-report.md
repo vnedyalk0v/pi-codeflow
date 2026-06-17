@@ -2,9 +2,11 @@
 description: Produce a Codeflow final delivery report
 argument-hint: "[context]"
 ---
-Produce a final delivery report.
+Return a structured final report payload.
 
-Include:
+The package renders the final report from a template. Include:
+
+- summary
 - changed files
 - checks run and results
 - issues or PRs
@@ -12,3 +14,4 @@ Include:
 - decisions made
 - residual risks
 - follow-up work
+- emergency override reason, if applicable

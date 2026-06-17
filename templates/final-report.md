@@ -1,22 +1,33 @@
 # Final Report
 
 ## Summary
+
 {{summary}}
 
 ## Changed files
-{{changedFiles}}
+
+{{changedFilesList}}
 
 ## Checks
-{{checks}}
+
+{{checksList}}
 
 ## Issues and PRs
-{{issues}}
+
+{{issuesList}}
 
 ## Review comments
-{{reviewComments}}
+
+{{reviewCommentsList}}
+
+## Decisions
+
+{{decisionsList}}
 
 ## Risks
-{{risk}}
+
+{{risksList}}
 
 ## Follow-up
-{{followUp}}
+
+{{followUpList}}

@@ -2,18 +2,105 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/pr-payload.schema.json",
   "title": "Codeflow PR payload",
+  "description": "Structured payload supplied by the agent before Codeflow renders and opens or updates a PR.",
   "type": "object",
-  "required": ["title", "summary", "changes", "verification", "risk", "rollback"],
+  "required": [
+    "title",
+    "summary",
+    "context",
+    "changes",
+    "verification",
+    "selfReview",
+    "risk",
+    "rollback",
+    "reviewerNotes",
+    "linkedIssues"
+  ],
   "properties": {
-    "title": { "type": "string" },
-    "summary": { "type": "string" },
-    "context": { "type": "string" },
-    "changes": { "type": "array", "items": { "type": "string" } },
-    "verification": { "type": "array", "items": { "type": "string" } },
-    "selfReview": { "type": "array", "items": { "type": "string" } },
-    "risk": { "type": "string" },
-    "rollback": { "type": "string" },
-    "linkedIssues": { "type": "array", "items": { "type": "string" } }
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context": {
+      "type": "string",
+      "minLength": 1
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "selfReview": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "risk": {
+      "type": "string",
+      "minLength": 1
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "rollback": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewerNotes": {
+      "type": "string"
+    },
+    "linkedIssues": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "draft": {
+      "type": "boolean"
+    },
+    "baseBranch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "assignees": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   },
   "additionalProperties": false
 }

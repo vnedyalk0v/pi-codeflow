@@ -79,4 +79,37 @@ describe('mergeCodeflowConfig', () => {
       );
     }
   });
+
+  it('defines __proto__ as an own property so validation can reject it', () => {
+    const defaults = getDefaultCodeflowConfig();
+    const projectConfig = JSON.parse(
+      '{"__proto__":{"polluted":true},"branching":{"slug":{"__proto__":{"nestedPolluted":true}}}}',
+    ) as Record<string, unknown>;
+    const merged = mergeCodeflowConfig(defaults, projectConfig);
+
+    expect(Object.hasOwn(merged, '__proto__')).toBe(true);
+    expect(Object.hasOwn(merged.branching.slug, '__proto__')).toBe(true);
+    expect((merged as unknown as Record<string, unknown>).polluted).toBeUndefined();
+    expect(
+      (merged.branching.slug as unknown as Record<string, unknown>).nestedPolluted,
+    ).toBeUndefined();
+
+    const validation = validateCodeflowConfig(merged);
+
+    expect(validation.valid).toBe(false);
+    if (!validation.valid) {
+      expect(validation.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/__proto__',
+            keyword: 'additionalProperties',
+          }),
+          expect.objectContaining({
+            path: '/branching/slug/__proto__',
+            keyword: 'additionalProperties',
+          }),
+        ]),
+      );
+    }
+  });
 });

@@ -25,7 +25,14 @@ function mergeValues(defaultValue: unknown, projectValue: unknown): unknown {
     const merged: Record<string, unknown> = cloneJson(defaultValue);
 
     for (const [key, value] of Object.entries(projectValue)) {
-      merged[key] = mergeValues(merged[key], value);
+      const currentValue = Object.hasOwn(merged, key) ? merged[key] : undefined;
+
+      Object.defineProperty(merged, key, {
+        value: mergeValues(currentValue, value),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
     }
 
     return merged;

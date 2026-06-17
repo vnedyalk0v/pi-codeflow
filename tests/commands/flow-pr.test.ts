@@ -11,13 +11,29 @@ import {
   parseFlowPrArguments,
   readFlowPrPayloadFile,
   runFlowPr,
+  type CodeflowCommitPayload,
   type CodeflowPrPayload,
+  type FlowCheckResult,
+  type FlowCommitResult,
   type FlowPrResult,
 } from '../../src/index';
 import { registerCodeflowExtension } from '../../src/extension';
 import type { GitClient } from '../../src/git/git-client';
 import type { GhClientLike } from '../../src/github/gh-client';
 import { createCodeflowSessionState } from '../../src/state/session-state';
+
+function commitPayload(): CodeflowCommitPayload {
+  return {
+    type: 'feat',
+    scope: 'pull-requests',
+    summary: 'implement generated pull requests',
+    context: 'Codeflow needs deterministic PRs.',
+    changes: ['Added command behavior.'],
+    verification: ['npm test'],
+    risk: 'Medium.',
+    refs: ['#12'],
+  };
+}
 
 function payload(overrides: Partial<CodeflowPrPayload> = {}): CodeflowPrPayload {
   return {
@@ -322,6 +338,125 @@ describe('/flow-pr command registration', () => {
     expect(notifications[0]?.level).toBe('info');
     expect(notifications[0]?.message).toContain('Codeflow PR dry-run.');
     expect(notifications[0]?.message).toContain('Rendered PR body:');
+  });
+
+  it('passes stored command session state from check to commit to PR', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'codeflow-flow-pr-state-'));
+    await writeFile(path.join(dir, 'commit-payload.json'), JSON.stringify(commitPayload()), 'utf8');
+    await writeFile(path.join(dir, 'pr-payload.json'), JSON.stringify(payload()), 'utf8');
+    const checkSession = createCodeflowSessionState({ phase: 'local_checks' });
+    checkSession.checks.lastRun = {
+      status: 'passed',
+      startedAt: '2026-01-01T00:00:00.000Z',
+      finishedAt: '2026-01-01T00:00:01.000Z',
+      durationMs: 1000,
+      results: [],
+    };
+    const commitSession = createCodeflowSessionState({ phase: 'committed' });
+    commitSession.checks = checkSession.checks;
+    commitSession.commits.lastCommit = {
+      sha: 'a'.repeat(40),
+      branch: 'feat/flow-pr-generated-title-body',
+      title: 'feat(pull-requests): implement generated pull requests',
+      type: 'feat',
+      scope: 'pull-requests',
+      summary: 'implement generated pull requests',
+      refs: ['#12'],
+      committedAt: '2026-01-01T00:00:02.000Z',
+    };
+    const prSession = createCodeflowSessionState({ phase: 'pr_opened' });
+    prSession.checks = checkSession.checks;
+    prSession.commits = commitSession.commits;
+    prSession.pullRequests.lastPullRequest = {
+      number: 12,
+      url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/12',
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr-generated-title-body',
+      title: 'feat(pull-requests): implement generated pull requests',
+      draft: true,
+      createdAt: '2026-01-01T00:00:03.000Z',
+    };
+    let commitReceivedSession: unknown;
+    let prReceivedSession: unknown;
+    const handlers = new Map<string, (args: string, context: { cwd: string; ui: { notify: (message: string, level: 'info' | 'warning' | 'error') => void } }) => Promise<unknown>>();
+    const context = {
+      cwd: dir,
+      ui: {
+        notify() {},
+      },
+    };
+
+    registerCodeflowExtension(
+      {
+        on() {},
+        registerCommand(name, options) {
+          handlers.set(name, options.handler);
+        },
+      },
+      {
+        runFlowCheck: async () =>
+          ({
+            checkRun: {
+              status: 'passed',
+              startedAt: '2026-01-01T00:00:00.000Z',
+              finishedAt: '2026-01-01T00:00:01.000Z',
+              durationMs: 1000,
+              results: [],
+              summary: 'Codeflow checks passed.',
+              failedCheckNames: [],
+              passedCheckNames: ['test'],
+              skippedCheckNames: [],
+            },
+            lifecyclePhase: 'local_checks',
+            nextExpectedActions: ['Proceed to self-review when available.'],
+            warnings: [],
+            sessionState: checkSession,
+          }) satisfies FlowCheckResult,
+        runFlowCommit: async (options) => {
+          commitReceivedSession = options.sessionState;
+          return {
+            status: 'dry_run',
+            commitSha: null,
+            branch: 'feat/flow-pr-generated-title-body',
+            title: 'feat(pull-requests): implement generated pull requests',
+            message: 'feat(pull-requests): implement generated pull requests',
+            payload: options.payload,
+            warnings: [],
+            validationWarnings: [],
+            lifecyclePhase: 'ready_to_commit',
+            nextExpectedActions: ['Review the rendered commit preview.'],
+            sessionState: commitSession,
+          } satisfies FlowCommitResult;
+        },
+        runFlowPr: async (options) => {
+          prReceivedSession = options.sessionState;
+          return {
+            status: 'dry_run',
+            prUrl: null,
+            prNumber: null,
+            baseBranch: 'dev',
+            headBranch: 'feat/flow-pr-generated-title-body',
+            title: 'feat(pull-requests): implement generated pull requests',
+            body: '## Summary\n\nImplemented /flow-pr.',
+            payload: options.payload,
+            warnings: [],
+            validationWarnings: [],
+            lifecyclePhase: 'committed',
+            draft: true,
+            updatedExisting: false,
+            nextExpectedActions: ['Review the rendered PR title and body preview.'],
+            sessionState: prSession,
+          } satisfies FlowPrResult;
+        },
+      },
+    );
+
+    await handlers.get('flow-check')?.('--dry-run', context);
+    await handlers.get('flow-commit')?.('--dry-run --payload commit-payload.json', context);
+    await handlers.get('flow-pr')?.('--dry-run --payload pr-payload.json', context);
+
+    expect(commitReceivedSession).toBe(checkSession);
+    expect(prReceivedSession).toBe(commitSession);
   });
 
   it('surfaces invalid payload errors', async () => {

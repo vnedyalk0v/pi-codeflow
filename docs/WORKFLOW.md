@@ -4,28 +4,238 @@ Codeflow defines a named lifecycle for AI-assisted coding work. The lifecycle is
 a guidance path first and a safety boundary second: agents should be steered into
 valid next steps before unsafe actions become possible.
 
-## Lifecycle phases
+## Phase reference
 
-| Phase | Purpose | Entry conditions | Expected agent behavior | Expected command/tool | Allowed transitions | Failure transitions | Output artifacts |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `idle` | No active Codeflow task. | Repository is available and no task is active. | Wait for a task or issue; do not mutate files. | `/flow-status` | `initialized`, `emergency` | `blocked` | None. |
-| `initialized` | Task is accepted and classified. | User request or issue is provided. | Identify task type, refs, constraints, and base branch. | `/flow-start` | `branch_prepared`, `planning`, `blocked`, `emergency` | `blocked` on invalid config or dirty tree. | Task metadata and branch payload. |
-| `branch_prepared` | Semantic branch is ready. | Config is valid and base branch exists. | Work only on the semantic branch. | `/flow-start` | `planning`, `blocked`, `emergency` | `blocked` on branch collision or missing base. | Branch name and base branch. |
-| `planning` | Implementation plan is produced. | Task and branch metadata exist. | Create a concise plan with files, checks, risks, and rollback notes. | `/flow-plan` | `implementing`, `blocked`, `emergency` | `blocked` if requirements are unclear. | Implementation plan. |
-| `implementing` | Changes are made. | Plan is accepted or the task is docs-only. | Make focused changes that match the plan and issue. | Agent editing tools. | `local_checks`, `self_review`, `blocked`, `emergency` | `blocked` on missing information or unsafe request. | Working tree diff. |
-| `local_checks` | Configured checks run. | There is a diff or committed change to verify. | Run checks in configured order and capture results. | `/flow-check` | `self_review`, `fixing_local_findings`, `verified`, `blocked` | `fixing_local_findings` on failures; `blocked` on invalid config. | Check results. |
-| `self_review` | Agent reviews its own diff. | Diff exists and checks have run or are intentionally skipped. | Review for task fit, safety, docs, tests, and regressions. | `/flow-review` | `ready_to_commit`, `fixing_local_findings`, `blocked` | `fixing_local_findings` on findings. | Self-review report. |
-| `fixing_local_findings` | Local check or self-review issues are fixed. | Failed checks or self-review findings exist. | Fix only identified local findings; keep scope focused. | Agent editing tools, `/flow-check` | `local_checks`, `self_review`, `blocked` | `blocked` when fix requires human decision. | Updated diff and check results. |
-| `ready_to_commit` | Diff is ready for commit payload generation. | Checks and self-review are acceptable. | Stage intended changes and provide structured commit payload only. | `/flow-commit` | `committed`, `blocked` | `blocked` on dirty unstaged required changes or invalid payload. | Commit payload and rendered message. |
-| `committed` | Local commit exists. | Codeflow rendered and performed the commit. | Prepare PR payload; do not rewrite history by default. | `/flow-pr` | `pr_opened`, `local_checks`, `blocked` | `blocked` if no remote or invalid base. | Commit SHA. |
-| `pr_opened` | Pull request exists. | PR payload is valid and branch is pushed. | Track PR, summarize context, and wait for CI/review. | `/flow-pr` | `ci_waiting`, `review_triage`, `verified`, `blocked` | `blocked` if PR creation fails. | PR URL and rendered body. |
-| `ci_waiting` | Remote checks are running. | PR exists and GitHub checks are available. | Watch checks and summarize status. | `/flow-watch` | `verified`, `fixing_local_findings`, `review_triage`, `blocked` | `fixing_local_findings` on CI failure; `blocked` on unavailable status. | CI summary. |
-| `review_triage` | Reviewer comments are classified. | PR has unresolved comments. | Classify each comment before acting. | `/flow-comments` | `fixing_review_findings`, `verified`, `blocked` | `blocked` when comment needs human decision. | Review triage payload. |
-| `fixing_review_findings` | Valid reviewer comments are addressed. | At least one valid review finding exists. | Fix valid comments, re-run checks, reply with evidence. | `/flow-fix-comments`, `/flow-check` | `local_checks`, `ci_waiting`, `review_triage`, `verified`, `blocked` | `blocked` if requested change is unsafe or ambiguous. | Fix commits, replies, check results. |
-| `verified` | Local and relevant remote verification passed or was intentionally skipped. | Checks, self-review, CI, and review triage are acceptable. | Prepare final delivery report. | `/flow-report` | `final_reported`, `review_triage`, `blocked` | `blocked` if required evidence is missing. | Verification summary. |
-| `final_reported` | Work is summarized for the user. | Verification evidence exists. | Report changed files, checks, issues, decisions, and risks. | `/flow-report` | `idle` | None. | Final report. |
-| `blocked` | Agent cannot safely continue. | Missing information, invalid config, unsafe state, or human decision needed. | Stop, explain blocker, and ask for guidance. | `/flow-status` | Prior safe phase, `emergency`, `idle` | None. | Blocker report. |
-| `emergency` | Explicit emergency path is active. | User requests urgent handling and provides reason. | Prefer `hotfix/` branch; still use structured payloads and final report. | `/flow-start`, `/flow-commit`, `/flow-pr`, `/flow-report` | `branch_prepared`, `planning`, `verified`, `final_reported`, `blocked` | `blocked` if reason or authority is missing. | Emergency reason, hotfix branch, report. |
+| Phase | Purpose | Command or tool |
+| --- | --- | --- |
+| `idle` | No active Codeflow task. | `/flow-status` |
+| `initialized` | Task is accepted and classified. | `/flow-start` |
+| `branch_prepared` | Semantic branch is ready. | `/flow-start` |
+| `planning` | Implementation plan is produced. | `/flow-plan` |
+| `implementing` | Changes are made. | Agent editing tools |
+| `local_checks` | Configured checks run. | `/flow-check` |
+| `self_review` | Agent reviews its own diff. | `/flow-review` |
+| `fixing_local_findings` | Local check or self-review issues are fixed. | Agent editing tools, `/flow-check` |
+| `ready_to_commit` | Diff is ready for commit payload generation. | `/flow-commit` |
+| `committed` | Local commit exists. | `/flow-pr` |
+| `pr_opened` | Pull request exists. | `/flow-pr` |
+| `ci_waiting` | Remote checks are running. | `/flow-watch` |
+| `review_triage` | Reviewer comments are classified. | `/flow-comments` |
+| `fixing_review_findings` | Valid reviewer comments are addressed. | `/flow-fix-comments`, `/flow-check` |
+| `verified` | Local and relevant remote verification passed or was intentionally skipped. | `/flow-report` |
+| `final_reported` | Work is summarized for the user. | `/flow-report` |
+| `blocked` | Agent cannot safely continue. | `/flow-status` |
+| `emergency` | Explicit emergency path is active. | `/flow-start`, `/flow-commit`, `/flow-pr`, `/flow-report` |
+
+## Phase details
+
+### `idle`
+
+- **Purpose:** no active Codeflow task.
+- **Entry conditions:** repository is available and no task is active.
+- **Expected agent behavior:** wait for a task or issue; do not mutate files.
+- **Expected command/tool:** `/flow-status`.
+- **Allowed transitions:** `initialized`, `emergency`.
+- **Failure transitions:** `blocked`.
+- **Output artifacts:** none.
+
+### `initialized`
+
+- **Purpose:** task is accepted and classified.
+- **Entry conditions:** user request or issue is provided.
+- **Expected agent behavior:** identify task type, refs, constraints, and base
+  branch.
+- **Expected command/tool:** `/flow-start`.
+- **Allowed transitions:** `branch_prepared`, `planning`, `blocked`,
+  `emergency`.
+- **Failure transitions:** `blocked` on invalid config or dirty tree.
+- **Output artifacts:** task metadata and branch payload.
+
+### `branch_prepared`
+
+- **Purpose:** semantic branch is ready.
+- **Entry conditions:** config is valid and base branch exists.
+- **Expected agent behavior:** work only on the semantic branch.
+- **Expected command/tool:** `/flow-start`.
+- **Allowed transitions:** `planning`, `blocked`, `emergency`.
+- **Failure transitions:** `blocked` on branch collision or missing base.
+- **Output artifacts:** branch name and base branch.
+
+### `planning`
+
+- **Purpose:** implementation plan is produced.
+- **Entry conditions:** task and branch metadata exist.
+- **Expected agent behavior:** create a concise plan with files, checks, risks,
+  and rollback notes.
+- **Expected command/tool:** `/flow-plan`.
+- **Allowed transitions:** `implementing`, `blocked`, `emergency`.
+- **Failure transitions:** `blocked` if requirements are unclear.
+- **Output artifacts:** implementation plan.
+
+### `implementing`
+
+- **Purpose:** changes are made.
+- **Entry conditions:** plan is accepted or the task is docs-only.
+- **Expected agent behavior:** make focused changes that match the plan and
+  issue.
+- **Expected command/tool:** agent editing tools.
+- **Allowed transitions:** `local_checks`, `self_review`, `blocked`,
+  `emergency`.
+- **Failure transitions:** `blocked` on missing information or unsafe request.
+- **Output artifacts:** working tree diff.
+
+### `local_checks`
+
+- **Purpose:** configured checks run.
+- **Entry conditions:** there is a diff or committed change to verify.
+- **Expected agent behavior:** run checks in configured order and capture
+  results.
+- **Expected command/tool:** `/flow-check`.
+- **Allowed transitions:** `self_review`, `fixing_local_findings`, `verified`,
+  `blocked`.
+- **Failure transitions:** `fixing_local_findings` on failures; `blocked` on
+  invalid config.
+- **Output artifacts:** check results.
+
+### `self_review`
+
+- **Purpose:** agent reviews its own diff.
+- **Entry conditions:** diff exists and checks have run or are intentionally
+  skipped.
+- **Expected agent behavior:** review for task fit, safety, docs, tests, and
+  regressions.
+- **Expected command/tool:** `/flow-review`.
+- **Allowed transitions:** `ready_to_commit`, `fixing_local_findings`,
+  `blocked`.
+- **Failure transitions:** `fixing_local_findings` on findings.
+- **Output artifacts:** self-review report.
+
+### `fixing_local_findings`
+
+- **Purpose:** local check or self-review issues are fixed.
+- **Entry conditions:** failed checks or self-review findings exist.
+- **Expected agent behavior:** fix only identified local findings; keep scope
+  focused.
+- **Expected command/tool:** agent editing tools, `/flow-check`.
+- **Allowed transitions:** `local_checks`, `self_review`, `blocked`.
+- **Failure transitions:** `blocked` when the fix requires human decision.
+- **Output artifacts:** updated diff and check results.
+
+### `ready_to_commit`
+
+- **Purpose:** diff is ready for commit payload generation.
+- **Entry conditions:** checks and self-review are acceptable.
+- **Expected agent behavior:** stage intended changes and provide structured
+  commit payload only.
+- **Expected command/tool:** `/flow-commit`.
+- **Allowed transitions:** `committed`, `blocked`.
+- **Failure transitions:** `blocked` on dirty unstaged required changes or
+  invalid payload.
+- **Output artifacts:** commit payload and rendered message.
+
+### `committed`
+
+- **Purpose:** local commit exists.
+- **Entry conditions:** Codeflow rendered and performed the commit.
+- **Expected agent behavior:** prepare PR payload; do not rewrite history by
+  default.
+- **Expected command/tool:** `/flow-pr`.
+- **Allowed transitions:** `pr_opened`, `local_checks`, `blocked`.
+- **Failure transitions:** `blocked` if no remote or invalid base.
+- **Output artifacts:** commit SHA.
+
+### `pr_opened`
+
+- **Purpose:** pull request exists.
+- **Entry conditions:** PR payload is valid and branch is pushed.
+- **Expected agent behavior:** track PR, summarize context, and wait for CI or
+  review.
+- **Expected command/tool:** `/flow-pr`.
+- **Allowed transitions:** `ci_waiting`, `review_triage`, `verified`,
+  `blocked`.
+- **Failure transitions:** `blocked` if PR creation fails.
+- **Output artifacts:** PR URL and rendered body.
+
+### `ci_waiting`
+
+- **Purpose:** remote checks are running.
+- **Entry conditions:** PR exists and GitHub checks are available.
+- **Expected agent behavior:** watch checks and summarize status.
+- **Expected command/tool:** `/flow-watch`.
+- **Allowed transitions:** `verified`, `fixing_local_findings`,
+  `review_triage`, `blocked`.
+- **Failure transitions:** `fixing_local_findings` on CI failure; `blocked` on
+  unavailable status.
+- **Output artifacts:** CI summary.
+
+### `review_triage`
+
+- **Purpose:** reviewer comments are classified.
+- **Entry conditions:** PR has unresolved comments.
+- **Expected agent behavior:** classify each comment before acting.
+- **Expected command/tool:** `/flow-comments`.
+- **Allowed transitions:** `fixing_review_findings`, `verified`, `blocked`.
+- **Failure transitions:** `blocked` when a comment needs human decision.
+- **Output artifacts:** review triage payload.
+
+### `fixing_review_findings`
+
+- **Purpose:** valid reviewer comments are addressed.
+- **Entry conditions:** at least one valid review finding exists.
+- **Expected agent behavior:** fix valid comments, re-run checks, and reply with
+  evidence.
+- **Expected command/tool:** `/flow-fix-comments`, `/flow-check`.
+- **Allowed transitions:** `local_checks`, `ci_waiting`, `review_triage`,
+  `verified`, `blocked`.
+- **Failure transitions:** `blocked` if requested change is unsafe or ambiguous.
+- **Output artifacts:** fix commits, replies, and check results.
+
+### `verified`
+
+- **Purpose:** local and relevant remote verification passed or was intentionally
+  skipped.
+- **Entry conditions:** checks, self-review, CI, and review triage are
+  acceptable.
+- **Expected agent behavior:** prepare final delivery report.
+- **Expected command/tool:** `/flow-report`.
+- **Allowed transitions:** `final_reported`, `review_triage`, `blocked`.
+- **Failure transitions:** `blocked` if required evidence is missing.
+- **Output artifacts:** verification summary.
+
+### `final_reported`
+
+- **Purpose:** work is summarized for the user.
+- **Entry conditions:** verification evidence exists.
+- **Expected agent behavior:** report changed files, checks, issues, decisions,
+  and risks.
+- **Expected command/tool:** `/flow-report`.
+- **Allowed transitions:** `idle`.
+- **Failure transitions:** none.
+- **Output artifacts:** final report.
+
+### `blocked`
+
+- **Purpose:** agent cannot safely continue.
+- **Entry conditions:** missing information, invalid config, unsafe state, or
+  human decision needed.
+- **Expected agent behavior:** stop, explain blocker, and ask for guidance.
+- **Expected command/tool:** `/flow-status`.
+- **Allowed transitions:** prior safe phase, `emergency`, `idle`.
+- **Failure transitions:** none.
+- **Output artifacts:** blocker report.
+
+### `emergency`
+
+- **Purpose:** explicit emergency path is active.
+- **Entry conditions:** user requests urgent handling and provides reason.
+- **Expected agent behavior:** prefer a `hotfix/` branch; still use structured
+  payloads and final report.
+- **Expected command/tool:** `/flow-start`, `/flow-commit`, `/flow-pr`,
+  `/flow-report`.
+- **Allowed transitions:** `branch_prepared`, `planning`, `verified`,
+  `final_reported`, `blocked`.
+- **Failure transitions:** `blocked` if reason or authority is missing.
+- **Output artifacts:** emergency reason, hotfix branch, and report.
 
 ## State transition table
 
@@ -96,3 +306,17 @@ valid next steps before unsafe actions become possible.
 - Move to `emergency` only when an explicit reason is provided.
 - Prefer `hotfix/<ticket-or-slug>` over direct reserved-branch work.
 - Require structured commits, structured PRs, checks, and a final report.
+
+## Blocked behavior
+
+When the workflow enters `blocked`, Codeflow should report:
+
+- the phase where the blocker occurred;
+- why the agent cannot safely continue;
+- what user or maintainer decision is needed;
+- whether any working tree changes exist;
+- the safest next options.
+
+Blocked state is not a failure of the package. It is the correct outcome when
+continuing would require guessing, discarding user work, bypassing policy, or
+making a human decision automatically.

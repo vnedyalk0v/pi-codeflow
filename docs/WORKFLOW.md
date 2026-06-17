@@ -6,15 +6,18 @@ valid next steps before unsafe actions become possible.
 
 ## Implementation status
 
-The v0.4 foundation exposes lifecycle phase types, initial in-memory lifecycle
+The v0.5 foundation exposes lifecycle phase types, initial in-memory lifecycle
 state creation, next expected action guidance, before-agent guidance injection,
-and `/flow-start` semantic branch preparation.
+`/flow-start` semantic branch preparation, and `/flow-check` local check
+running.
 
-`/flow-start` is the first command-driven transition. It moves a clean repository
-from `initialized` to `branch_prepared` by validating or inferring the branch
-type, rendering the branch name, selecting the configured base branch, and
-creating or switching to the work branch. Persistent lifecycle storage, check
-running, commit rendering, PR rendering, and GitHub automation are later work.
+`/flow-start` moves a clean repository from `initialized` to `branch_prepared`
+by validating or inferring the branch type, rendering the branch name, selecting
+the configured base branch, and creating or switching to the work branch.
+`/flow-check` then runs configured checks in order, captures result metadata,
+stores the latest bounded check state in the command result, and summarizes
+failures. Commit rendering, PR rendering, self-review automation, persistent
+external state storage, and GitHub automation are later work.
 
 ## Phase reference
 
@@ -46,6 +49,25 @@ expected actions are to continue only on the prepared work branch and move to
 planning with `/flow-plan` when that command exists, or provide a structured plan
 if the user asks. `/flow-start` does not run checks, commit, push, open a PR, or
 perform implementation.
+
+## After `/flow-check`
+
+After implementation changes, `/flow-check` loads the resolved Codeflow config
+and runs only the checks from `config.checks`. It never accepts a freeform
+command argument, commits, pushes, opens a PR, watches GitHub checks, or resolves
+review comments.
+
+Pass and failure behavior:
+
+- passing required checks record `local_checks` with next action toward
+  self-review;
+- failed required checks, including timeouts, record `fixing_local_findings` and
+  instruct the agent to fix the local output before re-running `/flow-check`;
+- optional check failures are reported but do not fail the overall run;
+- no configured checks record `local_checks` with a warning and must not be
+  presented as verified local evidence;
+- dry-runs show the planned checks as skipped and must not be presented as
+  executed verification.
 
 ## Phase details
 
@@ -111,15 +133,17 @@ perform implementation.
 ### `local_checks`
 
 - **Purpose:** configured checks run.
-- **Entry conditions:** there is a diff or committed change to verify.
+- **Entry conditions:** there is a diff or committed change to verify, or the
+  agent needs to record that no checks are configured.
 - **Expected agent behavior:** run checks in configured order and capture
   results.
 - **Expected command/tool:** `/flow-check`.
 - **Allowed transitions:** `self_review`, `fixing_local_findings`, `verified`,
   `blocked`.
-- **Failure transitions:** `fixing_local_findings` on failures; `blocked` on
-  invalid config.
-- **Output artifacts:** check results.
+- **Failure transitions:** `fixing_local_findings` on required failures or
+  timeouts; `blocked` on invalid config.
+- **Output artifacts:** check results, failure summaries, and bounded latest
+  check state.
 
 ### `self_review`
 

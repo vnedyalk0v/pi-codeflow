@@ -73,15 +73,18 @@
   "checks": [
     {
       "name": "ruff",
-      "command": "ruff check ."
+      "command": "ruff check .",
+      "timeoutMs": 120000
     },
     {
       "name": "mypy",
-      "command": "mypy ."
+      "command": "mypy .",
+      "timeoutMs": 120000
     },
     {
       "name": "pytest",
-      "command": "pytest"
+      "command": "pytest",
+      "timeoutMs": 300000
     }
   ],
   "reviewComments": {

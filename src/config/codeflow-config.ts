@@ -67,7 +67,9 @@ export interface CodeflowCheckConfig {
   name: string;
   command: string;
   cwd?: string;
+  timeoutMs?: number;
   timeoutSeconds?: number;
+  required?: boolean;
 }
 
 export interface CodeflowReviewCommentsConfig {

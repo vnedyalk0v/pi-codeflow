@@ -116,9 +116,9 @@
 
 **Deliverables**
 
-- `/flow-check` implementation.
-- `/flow-review` prompt integration.
-- Check result state.
+- `/flow-check` implementation. Implemented foundation in #10.
+- `/flow-review` prompt integration. Future work; no dedicated issue yet.
+- Check result state. Latest bounded check state is returned by `/flow-check`.
 
 **Non-goals**
 

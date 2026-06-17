@@ -72,15 +72,18 @@
   "checks": [
     {
       "name": "workspace lint",
-      "command": "<workspace-tool> run lint --changed"
+      "command": "<workspace-tool> run lint --changed",
+      "timeoutMs": 120000
     },
     {
       "name": "workspace tests",
-      "command": "<workspace-tool> run test --changed"
+      "command": "<workspace-tool> run test --changed",
+      "timeoutMs": 300000
     },
     {
       "name": "workspace build",
-      "command": "<workspace-tool> run build --changed"
+      "command": "<workspace-tool> run build --changed",
+      "required": false
     }
   ],
   "reviewComments": {

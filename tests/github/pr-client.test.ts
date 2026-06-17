@@ -110,23 +110,25 @@ describe('createGitHubPullRequest', () => {
         if (args[0] === 'pr' && args[1] === 'create') {
           throw new GithubCliError({
             code: 'gh_command_failed',
-            message: 'a pull request already exists: https://github.com/vnedyalk0v/pi-codeflow/pull/33',
+            message: 'a pull request already exists for this branch',
             args,
-            stderr: 'a pull request already exists: https://github.com/vnedyalk0v/pi-codeflow/pull/33',
+            stderr: 'a pull request already exists for this branch',
           });
         }
 
-        if (args[0] === 'pr' && args[1] === 'view') {
+        if (args[0] === 'pr' && args[1] === 'list') {
           return {
             args,
-            stdout: JSON.stringify({
-              url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/33',
-              number: 33,
-              baseRefName: 'dev',
-              headRefName: 'feat/flow-pr',
-              title: 'old title',
-              isDraft: false,
-            }),
+            stdout: JSON.stringify([
+              {
+                url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/33',
+                number: 33,
+                baseRefName: 'dev',
+                headRefName: 'feat/flow-pr',
+                title: 'old title',
+                isDraft: false,
+              },
+            ]),
             stderr: '',
           };
         }
@@ -138,6 +140,12 @@ describe('createGitHubPullRequest', () => {
     expect(result.created).toBe(false);
     expect(result.updatedExisting).toBe(true);
     expect(result.url).toBe('https://github.com/vnedyalk0v/pi-codeflow/pull/33');
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.arrayContaining(['pr', 'list', '--head', 'feat/flow-pr', '--limit', '1']),
+      ]),
+    );
+    expect(calls.some((args) => args[0] === 'pr' && args[1] === 'view')).toBe(false);
     expect(calls.some((args) => args[0] === 'pr' && args[1] === 'edit')).toBe(true);
   });
 

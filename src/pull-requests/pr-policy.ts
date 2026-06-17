@@ -373,7 +373,6 @@ function handleMissingChecks(
     message,
     allow:
       options.allowUnverified ||
-      options.config.pullRequest.openWhenChecksFail ||
       !options.config.pullRequest.requirePassedChecksBeforePr,
     dryRun: options.dryRun,
     warnings: options.warnings,

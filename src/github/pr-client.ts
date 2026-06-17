@@ -178,16 +178,19 @@ async function viewExistingPullRequest(
   try {
     const result = await ghClient.run([
       'pr',
-      'view',
+      'list',
       '--head',
       headBranch,
       '--json',
       'url,number,baseRefName,headRefName,title,isDraft',
+      '--limit',
+      '1',
     ]);
-    const parsed = parseJson(result.stdout) as ExistingPrView;
+    const parsed = parseJson(result.stdout) as ExistingPrView[];
+    const existingPr = Array.isArray(parsed) ? parsed[0] : undefined;
 
-    if (typeof parsed.url === 'string' && parsed.url.length > 0) {
-      return parsed as Required<Pick<ExistingPrView, 'url'>> & ExistingPrView;
+    if (typeof existingPr?.url === 'string' && existingPr.url.length > 0) {
+      return existingPr as Required<Pick<ExistingPrView, 'url'>> & ExistingPrView;
     }
   } catch (error) {
     if (error instanceof GithubCliError && fallbackUrl) {

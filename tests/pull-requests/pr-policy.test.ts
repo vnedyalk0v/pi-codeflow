@@ -133,6 +133,56 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
     expect(allowed.warnings.join('\n')).toContain('Latest /flow-check state failed');
   });
 
+  it('does not let openWhenChecksFail bypass missing checks when passed checks are required', async () => {
+    const missingState = passedState();
+    missingState.checks.lastRun = null;
+    const noChecksState = passedState();
+    noChecksState.checks.lastRun = {
+      status: 'no_checks',
+      startedAt: '2026-01-01T00:00:00.000Z',
+      finishedAt: '2026-01-01T00:00:01.000Z',
+      durationMs: 1000,
+      results: [],
+    };
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      pullRequest: {
+        openWhenChecksFail: true,
+        requirePassedChecksBeforePr: true,
+      },
+    } as Record<string, unknown>);
+
+    await expect(
+      createCodeflowPullRequestFromPayload({
+        payload: payload(),
+        config,
+        gitClient: gitClient(),
+        ghClient: ghClient(),
+        sessionState: missingState,
+      }),
+    ).rejects.toMatchObject({ code: 'checks_required' });
+
+    await expect(
+      createCodeflowPullRequestFromPayload({
+        payload: payload(),
+        config,
+        gitClient: gitClient(),
+        ghClient: ghClient(),
+        sessionState: noChecksState,
+      }),
+    ).rejects.toMatchObject({ code: 'checks_required' });
+
+    await expect(
+      createCodeflowPullRequestFromPayload({
+        payload: payload(),
+        config,
+        allowUnverified: true,
+        gitClient: gitClient(),
+        ghClient: ghClient(),
+        sessionState: missingState,
+      }),
+    ).resolves.toMatchObject({ status: 'created' });
+  });
+
   it('warns when commit state is missing but does not block by default', async () => {
     const state = passedState();
     state.commits.lastCommit = null;

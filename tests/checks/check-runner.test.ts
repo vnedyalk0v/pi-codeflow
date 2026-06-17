@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -19,6 +19,12 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function delay(ms: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 describe('runCodeflowChecks', () => {
@@ -118,18 +124,35 @@ describe('runCodeflowChecks', () => {
     expect(result.summary).toContain('Codeflow required checks passed');
   });
 
-  it('handles command timeouts', async () => {
+  it('handles command timeouts and kills child process trees', async () => {
     const cwd = await makeTempDir();
+    const childScript = path.join(cwd, 'child.js');
+    const parentScript = path.join(cwd, 'parent.js');
+    const lateFile = path.join(cwd, 'late.txt');
+
+    await writeFile(
+      childScript,
+      `setTimeout(() => require('fs').writeFileSync(${JSON.stringify(lateFile)}, 'late'), 250);\nsetTimeout(() => {}, 1000);\n`,
+      'utf8',
+    );
+    await writeFile(
+      parentScript,
+      `require('child_process').spawn(process.execPath, [${JSON.stringify(childScript)}], { stdio: 'ignore' });\nsetTimeout(() => {}, 1000);\n`,
+      'utf8',
+    );
+
     const result = await runCodeflowChecks({
       cwd,
       checks: [
         {
           name: 'slow',
-          command: `${node} -e "setTimeout(() => {}, 1000)"`,
+          command: `${node} ${JSON.stringify(parentScript)}`,
           timeoutMs: 50,
         },
       ],
     });
+
+    await delay(400);
 
     expect(result.status).toBe('failed');
     expect(result.results[0]).toMatchObject({
@@ -137,6 +160,7 @@ describe('runCodeflowChecks', () => {
       status: 'timed_out',
       exitCode: null,
     });
+    await expect(fileExists(lateFile)).resolves.toBe(false);
   });
 
   it('handles an empty check list', async () => {

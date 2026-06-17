@@ -3,6 +3,19 @@ import type { CodeflowCheckResult, CodeflowCheckRunResult } from './check-result
 import { isFailedCheckStatus } from './check-policy';
 
 const ANSI_PATTERN = /\u001B\[[0-?]*[ -/]*[@-~]/g;
+const SECRET_PATTERNS: Array<[RegExp, string]> = [
+  [/(authorization\s*[:=]\s*bearer\s+)[^\s'\"]+/gi, '$1[REDACTED]'],
+  [/(authorization\s*[:=]\s*basic\s+)[^\s'\"]+/gi, '$1[REDACTED]'],
+  [
+    /((?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|password|passwd|secret|token)\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|[^\s,;]+)/gi,
+    '$1[REDACTED]',
+  ],
+  [/(\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b)/g, '[REDACTED]'],
+  [/(\bgithub_pat_[A-Za-z0-9_]{20,}\b)/g, '[REDACTED]'],
+  [/(\bAKIA[0-9A-Z]{16}\b)/g, '[REDACTED]'],
+  [/(\bsk-[A-Za-z0-9_-]{20,}\b)/g, '[REDACTED]'],
+  [/(\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b)/g, '[REDACTED]'],
+];
 const MAX_OUTPUT_LINES = 8;
 const MAX_OUTPUT_CHARS = 2000;
 const MAX_RESULT_SUMMARY_CHARS = 500;
@@ -109,8 +122,17 @@ export function stripAnsi(value: string): string {
   return value.replace(ANSI_PATTERN, '');
 }
 
+export function redactSecrets(value: string): string {
+  return SECRET_PATTERNS.reduce(
+    (current, [pattern, replacement]) => current.replace(pattern, replacement),
+    value,
+  );
+}
+
 export function truncateForSummary(value: string, maxChars = MAX_RESULT_SUMMARY_CHARS): string {
-  const normalized = stripAnsi(value).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const normalized = redactSecrets(stripAnsi(value))
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
 
   if (normalized.length <= maxChars) {
     return normalized;
@@ -121,7 +143,7 @@ export function truncateForSummary(value: string, maxChars = MAX_RESULT_SUMMARY_
 }
 
 function formatCompactResultLine(result: CodeflowCheckResult): string {
-  const command = result.command;
+  const command = truncateForSummary(result.command);
   const required = result.required ? '' : ' (optional)';
 
   if (result.status === 'passed') {
@@ -141,10 +163,10 @@ function formatCompactResultLine(result: CodeflowCheckResult): string {
 
 function formatFailureLine(result: CodeflowCheckResult): string {
   if (result.status === 'timed_out') {
-    return `- ${result.name}: \`${result.command}\` timed out after ${formatDurationMs(result.durationMs)}`;
+    return `- ${result.name}: \`${truncateForSummary(result.command)}\` timed out after ${formatDurationMs(result.durationMs)}`;
   }
 
-  return `- ${result.name}: \`${result.command}\` exited with code ${result.exitCode ?? 'unknown'} after ${formatDurationMs(result.durationMs)}`;
+  return `- ${result.name}: \`${truncateForSummary(result.command)}\` exited with code ${result.exitCode ?? 'unknown'} after ${formatDurationMs(result.durationMs)}`;
 }
 
 function getRelevantOutput(result: CodeflowCheckResult): string {

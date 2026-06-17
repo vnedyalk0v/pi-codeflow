@@ -80,6 +80,37 @@ describe('summarizeCheckResults', () => {
     expect(summary).toContain('Fix the failing check output');
   });
 
+  it('redacts likely secrets before adding output to summaries', () => {
+    const summary = summarizeCheckResults(
+      makeRun({
+        status: 'failed',
+        failedCheckNames: ['test'],
+        results: [
+          {
+            name: 'test',
+            command: 'npm test --token=ghp_abcdefghijklmnopqrstuvwxyz123456',
+            status: 'failed',
+            exitCode: 1,
+            signal: null,
+            startedAt: '2026-01-01T00:00:00.000Z',
+            finishedAt: '2026-01-01T00:00:01.000Z',
+            durationMs: 1000,
+            stdout: '',
+            stderr: 'Authorization: Bearer sk-abcdefghijklmnopqrstuvwxyz123456\npassword=super-secret\n',
+            summary: 'test failed.',
+            required: true,
+          },
+        ],
+      }),
+    );
+
+    expect(summary).toContain('Authorization: Bearer [REDACTED]');
+    expect(summary).toContain('password=[REDACTED]');
+    expect(summary).not.toContain('super-secret');
+    expect(summary).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
+    expect(summary).not.toContain('sk-abcdefghijklmnopqrstuvwxyz123456');
+  });
+
   it('strips ANSI escape sequences and truncates large output in summaries', () => {
     const largeOutput = Array.from({ length: 40 }, (_, index) => `\u001B[31mline ${index}\u001B[0m`).join('\n');
     const summary = summarizeCheckResults(

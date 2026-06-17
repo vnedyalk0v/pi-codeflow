@@ -46,12 +46,22 @@ export interface CodeflowBranchingConfig {
   };
 }
 
+export type CodeflowCommitTitleLengthPolicy = 'error' | 'warning';
+
 export interface CodeflowCommitsConfig {
   template: string;
   conventional: boolean;
   allowedTypes: CodeflowBranchType[];
   requireStructuredPayload: boolean;
   performCommit: boolean;
+  requireBody: boolean;
+  requireVerification: boolean;
+  requireRisk: boolean;
+  maxTitleLength: number;
+  titleLengthPolicy: CodeflowCommitTitleLengthPolicy;
+  useBreakingChangeMarker: boolean;
+  allowUnverifiedCommits: boolean;
+  requirePassedChecksBeforeCommit: boolean;
 }
 
 export interface CodeflowPullRequestConfig {

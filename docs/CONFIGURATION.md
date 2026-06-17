@@ -1,10 +1,11 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.5
+The project-level configuration file is `.pi/codeflow.json`. The v0.6
 foundation loads package defaults, optionally loads project config, merges the
 two layers, validates the resolved config, uses the resolved config to build
-before-agent Codeflow guidance, applies branch policy in `/flow-start`, and
-runs configured local checks in `/flow-check`.
+before-agent Codeflow guidance, applies branch policy in `/flow-start`, runs
+configured local checks in `/flow-check`, and renders staged commits through
+`/flow-commit`.
 
 ## Config resolution order
 
@@ -23,8 +24,10 @@ and `configPath: null`. When a project config is found, it returns
 Command-specific overrides are reserved for a future milestone. `/flow-start`
 reads the resolved config and may create or switch to a semantic work branch.
 `/flow-check` reads the resolved config and runs only configured local checks.
-Neither command commits, pushes, opens pull requests, or mutates GitHub
-resources.
+`/flow-commit` reads the resolved config, validates structured commit payloads,
+renders the commit template, and commits staged changes only. These commands do
+not push, open pull requests, watch GitHub checks, resolve review comments, or
+merge.
 
 ## Default config
 
@@ -178,6 +181,37 @@ Pull request base outside allowed base branches:
 | `templates` | Named template paths. |
 | `guidance` | Proactive guidance and structured-output behavior. |
 | `safety` | Fallback safety boundaries. |
+
+## Commit policy
+
+The `commits` object controls structured commit payload validation, template
+rendering, and local commit safety.
+
+| Field | Purpose |
+| --- | --- |
+| `template` | Commit template path used when it differs from the package default. |
+| `conventional` | Declares Conventional Commit-compatible title rendering. |
+| `allowedTypes` | Commit types accepted in structured payloads. |
+| `requireStructuredPayload` | Requires model output to be a structured payload. |
+| `performCommit` | Allows `/flow-commit` to run `git commit` in normal mode. |
+| `requireBody` | Requires rendered messages to include a body. |
+| `requireVerification` | Requires payload `verification` to contain at least one item. |
+| `requireRisk` | Requires payload `risk` to be non-empty. |
+| `maxTitleLength` | Maximum rendered title length; default is 72. |
+| `titleLengthPolicy` | `error` blocks overlong titles; `warning` reports but allows them. |
+| `useBreakingChangeMarker` | Adds `!` to Conventional Commit titles when `breakingChange` exists. |
+| `allowUnverifiedCommits` | Lets failed or missing check-state proceed with warnings; it does not waive payload verification. |
+| `requirePassedChecksBeforeCommit` | Requires latest `/flow-check` state to be `passed`. |
+
+Default behavior is conservative: structured payloads, body, verification, risk,
+and safe staged-change commits are required. Failed latest check state blocks by
+default. Missing or `no_checks` state warns by default unless
+`requirePassedChecksBeforeCommit` is enabled.
+
+`/flow-commit` resolves template paths from the repository root and then the
+package root. If a configured template is missing, the bundled default commit
+template is used with a warning. If a configured template exists but cannot be
+read as a file, rendering fails.
 
 ## Guidance policy
 
@@ -348,7 +382,15 @@ a fix and verification. Invalid comments normally require human review.
       "revert"
     ],
     "requireStructuredPayload": true,
-    "performCommit": true
+    "performCommit": true,
+    "requireBody": true,
+    "requireVerification": true,
+    "requireRisk": true,
+    "maxTitleLength": 72,
+    "titleLengthPolicy": "error",
+    "useBreakingChangeMarker": true,
+    "allowUnverifiedCommits": false,
+    "requirePassedChecksBeforeCommit": false
   },
   "pullRequest": {
     "template": "templates/pull-request.md",

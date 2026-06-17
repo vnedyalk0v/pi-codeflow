@@ -35,6 +35,25 @@ export {
   type FlowCheckResult,
 } from './commands/flow-check';
 export {
+  runFlowCommit,
+  parseFlowCommitArguments,
+  formatFlowCommitResult,
+  readFlowCommitPayloadFile,
+  type FlowCommitOptions,
+  type FlowCommitResult,
+} from './commands/flow-commit';
+export { validateCommitPayload } from './commits/commit-payload-validation';
+export { renderCommitMessage } from './commits/commit-message-renderer';
+export { createGitCommitFromPayload } from './commits/commit-policy';
+export { buildCommitTitle, summarizeCommitBody } from './commits/commit-summary';
+export type {
+  CodeflowCommitPayload,
+  CodeflowCommitValidationResult,
+  CodeflowCommitMessage,
+  CodeflowCommitResult,
+} from './commits/commit-payload';
+export { CodeflowCommitError, type CodeflowCommitErrorCode } from './commits/commit-errors';
+export {
   runCodeflowChecks,
   type RunCodeflowChecksOptions,
 } from './checks/check-runner';

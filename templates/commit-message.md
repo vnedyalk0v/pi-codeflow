@@ -1,4 +1,4 @@
-{{type}}{{scopeSuffix}}: {{summary}}
+{{type}}{{scopeSuffix}}{{breakingMarker}}: {{summary}}
 
 Context:
 {{context}}
@@ -12,4 +12,6 @@ Verification:
 Risk:
 {{risk}}
 
+{{breakingChangeLine}}
 Refs: {{refsList}}
+{{footersList}}

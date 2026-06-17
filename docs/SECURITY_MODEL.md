@@ -103,6 +103,30 @@ The extension should not automatically:
 - rewrite public history;
 - make product or security decisions on behalf of maintainers.
 
+## Local commit execution
+
+`/flow-commit` creates local commits from structured payloads and staged changes
+only. It renders the final message from the configured template and passes that
+message through a temporary file to `git commit --file`.
+
+Safety expectations for commits:
+
+- never run `git add .` by default;
+- refuse commits when no staged changes exist;
+- warn but do not include unstaged or untracked files;
+- refuse normal commits on reserved branches;
+- allow reserved-branch commits only when explicit emergency override policy
+  permits them;
+- use latest `/flow-check` state when available;
+- block failed check state by default unless unverified commits are explicitly
+  allowed;
+- remove temporary message files after commit attempts;
+- never push, open PRs, watch GitHub checks, resolve review comments, or merge.
+
+Reviewers should focus on staged-change safety, reserved-branch handling,
+check-state policy, template rendering, and temporary-file cleanup whenever this
+layer changes.
+
 ## Local check execution
 
 `/flow-check` executes shell-like command strings from validated project-owned

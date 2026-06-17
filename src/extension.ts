@@ -14,7 +14,15 @@ import {
   runFlowCheck,
   type FlowCheckResult,
 } from './commands/flow-check';
+import {
+  formatFlowCommitResult,
+  parseFlowCommitArguments,
+  readFlowCommitPayloadFile,
+  runFlowCommit,
+  type FlowCommitResult,
+} from './commands/flow-commit';
 import { CodeflowCheckError } from './checks/check-errors';
+import { CodeflowCommitError } from './commits/commit-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -48,6 +56,7 @@ export interface RegisterCodeflowExtensionOptions {
   loadConfig?: typeof loadCodeflowConfig;
   runFlowStart?: typeof runFlowStart;
   runFlowCheck?: typeof runFlowCheck;
+  runFlowCommit?: typeof runFlowCommit;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -67,13 +76,13 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start' | 'flow-check',
+    name: 'flow-start' | 'flow-check' | 'flow-commit',
     options: {
       description: string;
       handler: (
         args: string,
         context: CodeflowExtensionCommandContext,
-      ) => Promise<FlowStartResult | FlowCheckResult>;
+      ) => Promise<FlowStartResult | FlowCheckResult | FlowCommitResult>;
     },
   ): void;
 }
@@ -119,6 +128,12 @@ export function registerCodeflowExtension(
     description: 'Run configured Codeflow local checks and record results',
     handler: async (args, context) =>
       handleFlowCheckCommand(args, context, options.runFlowCheck ?? runFlowCheck),
+  });
+
+  pi.registerCommand?.('flow-commit', {
+    description: 'Render and create a Codeflow commit from a structured payload',
+    handler: async (args, context) =>
+      handleFlowCommitCommand(args, context, options.runFlowCommit ?? runFlowCommit),
   });
 }
 
@@ -171,6 +186,40 @@ async function handleFlowCheckCommand(
   }
 }
 
+async function handleFlowCommitCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  commitFlow: typeof runFlowCommit,
+): Promise<FlowCommitResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowCommitArguments(args ?? '');
+
+    if (!parsed.payloadPath) {
+      throw new CodeflowCommitError({
+        code: 'invalid_arguments',
+        message: '/flow-commit requires --payload <path>.',
+      });
+    }
+
+    const payload = await readFlowCommitPayloadFile(parsed.payloadPath, context.cwd);
+    const result = await commitFlow({
+      cwd: context.cwd,
+      payload,
+      dryRun: parsed.dryRun,
+      allowUnverified: parsed.allowUnverified,
+      allowReservedBranch: parsed.allowReservedBranch,
+    });
+
+    context.ui.notify(formatFlowCommitResult(result), 'info');
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowCommitErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
 function getFlowStartErrorMessage(error: unknown): string {
   if (error instanceof FlowStartError) {
     return `/flow-start failed: ${error.message}`;
@@ -193,6 +242,18 @@ function getFlowCheckErrorMessage(error: unknown): string {
   }
 
   return '/flow-check failed.';
+}
+
+function getFlowCommitErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowCommitError) {
+    return `/flow-commit failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-commit failed: ${error.message}`;
+  }
+
+  return '/flow-commit failed.';
 }
 
 async function loadGuidance(

@@ -227,7 +227,7 @@ rendering, branch safety, GitHub CLI behavior, and bounded PR state.
 | `draftByDefault` | Opens draft PRs unless payload or command flags override it. |
 | `requireVerification` | Requires payload `body.verification` to contain at least one item. |
 | `requireSelfReview` | Requires payload `body.selfReview` to contain at least one item. |
-| `openWhenChecksFail` | Allows failed latest `/flow-check` state with a warning. |
+| `openWhenChecksFail` | Allows failed latest `/flow-check` state with a warning when `requirePassedChecksBeforePr` is false. |
 | `updateExisting` | Updates title/body on an existing branch PR when discoverable. |
 | `maxTitleLength` | Maximum rendered PR title length; default is 120. |
 | `titleLengthPolicy` | `error` blocks overlong titles; `warning` reports but allows them. |
@@ -237,9 +237,11 @@ rendering, branch safety, GitHub CLI behavior, and bounded PR state.
 
 Default behavior is conservative: structured payloads, verification,
 self-review, draft PRs, explicit base/head, safe feature-branch push, and `Refs`
-linked issues. Failed latest check state blocks by default. Missing or
-`no_checks` state warns by default unless `requirePassedChecksBeforePr` is
-enabled.
+linked issues. Failed latest check state blocks by default. `openWhenChecksFail` can downgrade
+failed checks to warnings only when `requirePassedChecksBeforePr` is false.
+Missing or `no_checks` state warns by default unless
+`requirePassedChecksBeforePr` is enabled. Explicit `/flow-pr --allow-unverified`
+can override these local check-state gates.
 
 `/flow-pr` resolves template paths from the repository root and then the package
 root. If a configured PR template is missing, the bundled default PR template is

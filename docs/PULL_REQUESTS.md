@@ -174,10 +174,10 @@ when available.
 - Passed latest checks allow PR creation.
 - Failed latest checks block by default.
 - `--allow-unverified` or `pullRequest.openWhenChecksFail` allows failed checks
-  with a warning.
+  with a warning when passed checks are not required.
 - Missing or `no_checks` state warns by default.
 - `pullRequest.requirePassedChecksBeforePr` makes missing or non-passed checks
-  block.
+  block unless `/flow-pr --allow-unverified` is explicit.
 - Missing `/flow-commit` metadata warns that the PR may include commits not
   created through `/flow-commit`.
 - `/flow-commit` metadata from a different branch than the resolved PR head

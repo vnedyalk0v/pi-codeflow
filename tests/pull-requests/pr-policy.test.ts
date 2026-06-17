@@ -133,9 +133,17 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
     expect(allowed.warnings.join('\n')).toContain('Latest /flow-check state failed');
   });
 
-  it('does not let openWhenChecksFail bypass missing checks when passed checks are required', async () => {
+  it('does not let openWhenChecksFail bypass required passed checks', async () => {
     const missingState = passedState();
     missingState.checks.lastRun = null;
+    const failedState = passedState();
+    failedState.checks.lastRun = {
+      status: 'failed',
+      startedAt: '2026-01-01T00:00:00.000Z',
+      finishedAt: '2026-01-01T00:00:01.000Z',
+      durationMs: 1000,
+      results: [],
+    };
     const noChecksState = passedState();
     noChecksState.checks.lastRun = {
       status: 'no_checks',
@@ -160,6 +168,16 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
         sessionState: missingState,
       }),
     ).rejects.toMatchObject({ code: 'checks_required' });
+
+    await expect(
+      createCodeflowPullRequestFromPayload({
+        payload: payload(),
+        config,
+        gitClient: gitClient(),
+        ghClient: ghClient(),
+        sessionState: failedState,
+      }),
+    ).rejects.toMatchObject({ code: 'checks_failed' });
 
     await expect(
       createCodeflowPullRequestFromPayload({

@@ -320,7 +320,8 @@
           "type": "boolean"
         },
         "openWhenChecksFail": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether /flow-pr allows failed latest /flow-check state with a warning when requirePassedChecksBeforePr is false."
         },
         "updateExisting": {
           "type": "boolean"
@@ -340,7 +341,7 @@
         },
         "requirePassedChecksBeforePr": {
           "type": "boolean",
-          "description": "Whether /flow-pr requires latest /flow-check state to be passed."
+          "description": "Whether /flow-pr requires latest /flow-check state to be passed unless --allow-unverified is explicit."
         },
         "pushBeforeCreate": {
           "type": "boolean",

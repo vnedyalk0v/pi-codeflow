@@ -343,7 +343,10 @@ function validateCheckState(options: {
     handleCheckBlocker({
       code: 'checks_failed',
       message: 'Latest /flow-check state failed; rerun checks or use --allow-unverified.',
-      allow: options.allowUnverified || options.config.pullRequest.openWhenChecksFail,
+      allow:
+        options.allowUnverified ||
+        (!options.config.pullRequest.requirePassedChecksBeforePr &&
+          options.config.pullRequest.openWhenChecksFail),
       dryRun: options.dryRun,
       warnings: options.warnings,
     });

@@ -5,8 +5,9 @@ Pi package for consistent AI coding workflows.
 **Project status:** early implementation / pre-MVP.
 
 > Warning: this repository is not ready for production use yet. It now contains
-> the first config loading and validation foundation, but it does not enforce
-> workflow safety in real projects.
+> config loading, validation, guidance injection, lifecycle state helpers, and
+> the first `/flow-start` semantic branch preparation foundation, but it does
+> not enforce the full workflow in real projects.
 
 pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
 lifecycle:
@@ -25,6 +26,8 @@ lifecycle:
 ## What this package will do
 
 - Provide model-neutral workflow guidance for AI coding agents.
+- Inject proactive Codeflow guidance from validated configuration before agent
+  runs.
 - Standardize branch names, commit payloads, PR payloads, review replies, and
   final reports.
 - Load project-specific workflow configuration from `.pi/codeflow.json`.
@@ -46,7 +49,7 @@ lifecycle:
 
 | Command | Purpose |
 | --- | --- |
-| `/flow-start` | Classify a task and prepare branch metadata. |
+| `/flow-start` | Classify a task and prepare a semantic work branch. |
 | `/flow-plan` | Produce an implementation plan. |
 | `/flow-status` | Show current lifecycle state. |
 | `/flow-check` | Run configured checks. |
@@ -93,7 +96,11 @@ pi-codeflow/
 
 ## Development note
 
-This repository intentionally does not include production extension logic,
-guidance injection, flow commands, or workflow automation yet. The first
-implementation layer is limited to configuration loading, merging, validation,
-and tests.
+This repository now includes the first production foundations for configuration
+loading, validation, guidance generation, before-agent guidance injection,
+in-memory lifecycle state helpers, and `/flow-start` semantic branch
+preparation.
+
+It still does not implement check running, self-review automation, commit
+generation, PR generation, GitHub automation, review comment automation, or
+persistent lifecycle storage.

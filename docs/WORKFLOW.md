@@ -4,6 +4,18 @@ Codeflow defines a named lifecycle for AI-assisted coding work. The lifecycle is
 a guidance path first and a safety boundary second: agents should be steered into
 valid next steps before unsafe actions become possible.
 
+## Implementation status
+
+The v0.4 foundation exposes lifecycle phase types, initial in-memory lifecycle
+state creation, next expected action guidance, before-agent guidance injection,
+and `/flow-start` semantic branch preparation.
+
+`/flow-start` is the first command-driven transition. It moves a clean repository
+from `initialized` to `branch_prepared` by validating or inferring the branch
+type, rendering the branch name, selecting the configured base branch, and
+creating or switching to the work branch. Persistent lifecycle storage, check
+running, commit rendering, PR rendering, and GitHub automation are later work.
+
 ## Phase reference
 
 | Phase | Purpose | Command or tool |
@@ -27,6 +39,14 @@ valid next steps before unsafe actions become possible.
 | `blocked` | Agent cannot safely continue. | `/flow-status` |
 | `emergency` | Explicit emergency path is active. | `/flow-start`, `/flow-commit`, `/flow-pr`, `/flow-report` |
 
+## After `/flow-start`
+
+After a successful `/flow-start`, Codeflow reports `branch_prepared`. The next
+expected actions are to continue only on the prepared work branch and move to
+planning with `/flow-plan` when that command exists, or provide a structured plan
+if the user asks. `/flow-start` does not run checks, commit, push, open a PR, or
+perform implementation.
+
 ## Phase details
 
 ### `idle`
@@ -46,20 +66,24 @@ valid next steps before unsafe actions become possible.
 - **Expected agent behavior:** identify task type, refs, constraints, and base
   branch.
 - **Expected command/tool:** `/flow-start`.
-- **Allowed transitions:** `branch_prepared`, `planning`, `blocked`,
-  `emergency`.
-- **Failure transitions:** `blocked` on invalid config or dirty tree.
-- **Output artifacts:** task metadata and branch payload.
+- **Allowed transitions:** `branch_prepared`, `blocked`, `emergency`.
+- **Failure transitions:** `blocked` on invalid config, invalid branch type,
+  dirty tree, missing base branch, or unsupported emergency behavior.
+- **Output artifacts:** task metadata, branch payload, and lifecycle state result.
 
 ### `branch_prepared`
 
 - **Purpose:** semantic branch is ready.
-- **Entry conditions:** config is valid and base branch exists.
+- **Entry conditions:** config is valid, the working tree was clean, the base
+  branch exists or configured fallback was available, and `/flow-start` prepared
+  the work branch.
 - **Expected agent behavior:** work only on the semantic branch.
 - **Expected command/tool:** `/flow-start`.
 - **Allowed transitions:** `planning`, `blocked`, `emergency`.
-- **Failure transitions:** `blocked` on branch collision or missing base.
-- **Output artifacts:** branch name and base branch.
+- **Failure transitions:** `blocked` on branch collision, missing base, dirty
+  tree, or reserved work branch.
+- **Output artifacts:** branch name, base branch, task, phase, and next expected
+  actions.
 
 ### `planning`
 

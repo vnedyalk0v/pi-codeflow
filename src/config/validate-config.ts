@@ -157,6 +157,18 @@ function validateSemanticConfigRules(
     });
   }
 
+  if (!config.branching.allowedTypes.includes(config.branching.defaultType)) {
+    errors.push({
+      path: '/branching/defaultType',
+      keyword: 'allowedBranchType',
+      message: '/branching/defaultType must be listed in /branching/allowedTypes',
+      allowedValues: config.branching.allowedTypes,
+      details: {
+        defaultType: config.branching.defaultType,
+      },
+    });
+  }
+
   return errors;
 }
 

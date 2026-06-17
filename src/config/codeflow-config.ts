@@ -1,3 +1,7 @@
+import type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
+
+export type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
+
 export type CodeflowBranchType =
   | 'feat'
   | 'fix'
@@ -22,26 +26,6 @@ export type CodeflowReviewAutoResolveReason = 'fixed' | 'stale' | 'already_fixed
 
 export type CodeflowEmergencyPath = 'hotfix_branch' | 'human_only';
 
-export type CodeflowLifecyclePhase =
-  | 'idle'
-  | 'initialized'
-  | 'branch_prepared'
-  | 'planning'
-  | 'implementing'
-  | 'local_checks'
-  | 'self_review'
-  | 'fixing_local_findings'
-  | 'ready_to_commit'
-  | 'committed'
-  | 'pr_opened'
-  | 'ci_waiting'
-  | 'review_triage'
-  | 'fixing_review_findings'
-  | 'verified'
-  | 'final_reported'
-  | 'blocked'
-  | 'emergency';
-
 export interface CodeflowBaseBranchesConfig {
   default: string;
   allowed: string[];
@@ -53,6 +37,7 @@ export interface CodeflowBranchingConfig {
   allowedTypes: CodeflowBranchType[];
   defaultType: CodeflowBranchType;
   template: string;
+  ticketPattern?: string;
   slug: {
     case: 'kebab';
     maxLength: number;

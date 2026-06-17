@@ -1,9 +1,9 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.2
+The project-level configuration file is `.pi/codeflow.json`. The v0.4
 foundation loads package defaults, optionally loads project config, merges the
-two layers, and validates the resolved config before future workflow commands
-mutate repository state.
+two layers, validates the resolved config, uses the resolved config to build
+before-agent Codeflow guidance, and applies branch policy in `/flow-start`.
 
 ## Config resolution order
 
@@ -19,7 +19,10 @@ When no project config is found, the loader returns `usedDefaultConfig: true`
 and `configPath: null`. When a project config is found, it returns
 `usedDefaultConfig: false` and the absolute path to that config file.
 
-Command-specific overrides are reserved for a future milestone.
+Command-specific overrides are reserved for a future milestone. `/flow-start`
+reads the resolved config and may create or switch to a semantic work branch.
+It does not persist lifecycle state, commit, push, open pull requests, or mutate
+GitHub resources.
 
 ## Default config
 
@@ -174,6 +177,20 @@ Pull request base outside allowed base branches:
 | `guidance` | Proactive guidance and structured-output behavior. |
 | `safety` | Fallback safety boundaries. |
 
+## Guidance policy
+
+The guidance generator honors the resolved `guidance` flags:
+
+- `proactive` controls whether the injected guidance tells agents to proactively
+  steer toward the next lifecycle step.
+- `requireStructuredPayloads` controls whether structured payload instructions
+  are injected as mandatory guidance.
+- `renderOutputsFromTemplates` controls whether template-rendered output
+  instructions are injected as mandatory guidance.
+- `stopForHumanDecisions` controls whether guidance tells agents to stop when
+  product, security, legal, credential, merge, release, or ambiguous review
+  decisions are required.
+
 ## Checks
 
 `checks` is an ordered array. Codeflow must run checks in order and stop or
@@ -187,18 +204,21 @@ continue according to future policy. Each check includes:
 ## Template resolution
 
 Template paths are resolved from the repository root unless a future config key
-explicitly changes the base directory. Missing templates should block rendering.
+explicitly changes the base directory. For branch names, a non-default
+`branching.template` takes precedence over `templates.branchName`; otherwise the
+named branch template is used. Missing templates block rendering.
 
 ## Branch policy configuration
 
 Branching config controls:
 
 - allowed branch types;
-- default branch type;
+- default branch type, which must also be listed in `allowedTypes`;
 - branch name template;
 - slug case;
 - slug length;
-- branch collision handling.
+- branch collision handling;
+- ticket detection through `branching.ticketPattern`.
 
 ## Emergency behavior configuration
 
@@ -258,8 +278,9 @@ a fix and verification. Invalid comments normally require human review.
       "build",
       "revert"
     ],
-    "defaultType": "chore",
+    "defaultType": "feat",
     "template": "templates/branch-name.md",
+    "ticketPattern": "\\b[A-Z][A-Z0-9]+-\\d+\\b",
     "slug": {
       "case": "kebab",
       "maxLength": 60,

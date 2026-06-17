@@ -3,6 +3,20 @@
 This document is the compact state-machine reference for Codeflow. See
 [WORKFLOW.md](WORKFLOW.md) for detailed phase behavior.
 
+## Implementation status
+
+The v0.4 implementation provides a small lifecycle foundation and the first
+command-driven transition:
+
+- `createInitialLifecycleState()` creates an initial state and defaults to
+  `idle`.
+- `getNextExpectedActions()` returns model-neutral guidance for the active
+  phase and resolved config.
+- `/flow-start` prepares a semantic branch and returns phase
+  `branch_prepared`.
+- Persistent state storage and later command-driven transitions are not
+  implemented yet.
+
 ## Lifecycle phases
 
 - `idle`
@@ -24,6 +38,33 @@ This document is the compact state-machine reference for Codeflow. See
 - `blocked`
 - `emergency`
 
+## Next expected action summary
+
+The guidance layer maps phases to next expected actions. `/flow-start` now
+performs the `initialized` -> `branch_prepared` branch preparation mutation; the
+rest of the action text is proactive guidance, not a mutation engine.
+
+| Phase | Next expected action focus |
+| --- | --- |
+| `idle` | Wait for a task, then use `/flow-start` when available. |
+| `initialized` | Confirm scope and prepare semantic branch metadata. |
+| `branch_prepared` | Continue only on the prepared work branch and move to planning. |
+| `planning` | Produce an implementation plan before editing. |
+| `implementing` | Make focused changes and move toward checks or self-review. |
+| `local_checks` | Run configured checks when tooling is available, or record none configured. |
+| `self_review` | Review the diff and fix local findings before commit readiness. |
+| `fixing_local_findings` | Fix only local check or self-review findings, then re-check. |
+| `ready_to_commit` | Provide a structured commit payload for template rendering. |
+| `committed` | Prepare a structured PR payload for the configured base branch. |
+| `pr_opened` | Track CI and review state before final reporting. |
+| `ci_waiting` | Summarize remote check status and react to failures. |
+| `review_triage` | Classify comments before acting and stop for human decisions. |
+| `fixing_review_findings` | Fix valid review findings and re-run verification. |
+| `verified` | Prepare a structured final report payload. |
+| `final_reported` | Return to idle unless a new task starts. |
+| `blocked` | Stop workflow-changing operations and ask for the needed decision. |
+| `emergency` | Confirm emergency reason and still require structured artifacts. |
+
 ## Transition table
 
 | From | To | Trigger |
@@ -32,7 +73,7 @@ This document is the compact state-machine reference for Codeflow. See
 | `idle` | `emergency` | User provides emergency reason. |
 | `initialized` | `branch_prepared` | Config valid and branch prepared. |
 | `initialized` | `planning` | Docs-only or branch already prepared. |
-| `initialized` | `blocked` | Invalid config, dirty tree, or missing required context. |
+| `initialized` | `blocked` | Invalid config, invalid branch type, dirty tree, missing base branch, unsupported emergency behavior, or missing required context. |
 | `branch_prepared` | `planning` | Semantic branch is active. |
 | `planning` | `implementing` | Plan accepted or task is straightforward. |
 | `planning` | `blocked` | Requirements unclear. |
@@ -85,12 +126,20 @@ human decision.
 A workflow should enter `blocked` when:
 
 - config is invalid;
+- an explicit branch type is not allowed by config;
 - a required base branch is missing;
+- fallback base branch selection is configured but unavailable;
 - the working tree is dirty before task start;
+- rendered work branch would be reserved;
+- emergency mode is requested but config does not support the hotfix branch
+  path;
 - branch policy would be violated;
 - a payload fails validation;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
+
+For `/flow-start`, these failures leave the repository unchanged except for any
+non-destructive fetch attempt made before base branch resolution.
 
 ## Retry transitions
 

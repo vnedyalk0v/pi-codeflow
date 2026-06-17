@@ -1,16 +1,19 @@
 # Implementation Plan After v0.1
 
-The next implementation PR should stay small and target the first executable
-foundation pieces.
+Implementation PRs should stay small and target one executable foundation layer
+at a time.
 
 ## Current implementation PR
 
 Target issue:
 
-- #7 Implement config loader and validation.
+- #9 Implement `/flow-start` and semantic branch creation.
 
-This PR implements the v0.2 config foundation and keeps guidance injection out
-of scope.
+This PR implements the v0.4 semantic branch creation foundation. It consumes the
+validated config layer from #7 and guidance/lifecycle foundation from #8, then
+adds the first safe workflow-mutating command. Check running, self-review,
+commit generation, PR generation, GitHub checks watching, and review comment
+automation remain out of scope.
 
 ## Implemented #7 scope
 
@@ -23,27 +26,51 @@ of scope.
 - Add unit tests for default loading, project loading, merge behavior, schema
   validation, and conditional fallback requirements.
 
-## Non-goals for #7
+## Implemented #8 scope
 
-- Guidance injection.
-- Pi extension lifecycle hooks.
-- Flow commands.
-- Branch creation.
-- Running checks.
-- Creating commits.
-- Opening PRs.
-- GitHub review comment automation.
+- Build Codeflow guidance from loaded config.
+- Inject guidance with Pi `before_agent_start`.
+- Provide a safe warning path when config loading fails.
+- Add a minimal lifecycle phase and state helper foundation.
+- Return next expected actions for lifecycle phases.
+- Add unit tests for guidance, lifecycle behavior, and extension injection.
+- Update docs for the implemented v0.3 scope.
+
+## Implemented #9 scope
+
+- Add `/flow-start` command registration.
+- Add deterministic branch type inference and explicit type validation.
+- Render semantic branch names from config/template rules.
+- Detect tickets from `branching.ticketPattern` or explicit `--ticket`.
+- Select base branches from configured policy, preferring `origin/<base>`.
+- Prevent dirty working tree branch preparation.
+- Keep reserved branches out of normal Codeflow work branches.
+- Return lifecycle phase `branch_prepared` with next expected actions.
+- Add tests for branching, command behavior, git integration, and safety cases.
+
+## Non-goals for #9
+
+- `/flow-check` implementation.
+- Self-review automation.
+- Commit generation or commit execution.
+- PR generation or PR opening.
+- GitHub checks watcher.
+- Review comment automation.
+- Persistent lifecycle storage.
 
 ## Next intended implementation issue
 
-#8 Implement guidance injection is the next intended implementation issue after
-#7. It should consume the validated config layer rather than reimplementing
-config resolution or schema validation.
+#10 Implement `/flow-check` is the next intended implementation issue after #9.
+It should build on the prepared branch and lifecycle state result from
+`/flow-start` rather than reimplementing config resolution or branch policy.
 
 ## Verification expectations
 
 - Unit tests for config loading and validation.
-- Fixture configs for valid project config, invalid project config, and missing
-  project config.
-- Manual check that no guidance injection, Pi lifecycle hooks, flow commands, or
-  workflow automation are introduced in #7.
+- Unit tests for generated guidance and safe config-load failure behavior.
+- Unit tests for lifecycle state creation and next expected actions.
+- Unit tests for branch type inference, branch name rendering, branch policy,
+  reserved branch behavior, base branch behavior, dirty tree protection, and the
+  `/flow-start` command registration.
+- Manual check that `/flow-check`, self-review, commit generation, PR generation,
+  GitHub automation, and review comment automation remain out of scope.

@@ -10,16 +10,17 @@ user's local permissions. pi-codeflow must therefore be conservative by default.
 
 The normal user experience should guide agents into safe behavior:
 
-- create semantic branches;
+- create semantic branches with `/flow-start`;
 - plan before editing;
-- run configured checks;
+- run configured checks when that tooling is implemented;
 - provide structured payloads;
-- render outputs from templates;
+- render outputs from templates when renderers are implemented;
 - ask humans for decisions when needed.
 
-Safety boundaries are fallback protection. They should block or warn when an
-agent tries to bypass the expected workflow, but they should not be the primary
-way users experience Codeflow.
+The v0.3 guidance injection foundation implements this as proactive before-agent
+guidance. Safety boundaries are fallback protection. They should block or warn
+when an agent tries to bypass the expected workflow, but they should not be the
+primary way users experience Codeflow.
 
 ## Reserved branch safety
 

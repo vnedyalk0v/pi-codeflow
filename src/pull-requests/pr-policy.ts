@@ -184,6 +184,7 @@ async function evaluatePrSafety(options: {
     baseBranch,
     headBranch,
     currentBranch,
+    dryRun: options.dryRun,
     push: options.push,
     warnings,
   });
@@ -432,6 +433,7 @@ async function collectAheadWarnings(options: {
   baseBranch: string;
   headBranch: string;
   currentBranch: string | null;
+  dryRun: boolean;
   push: boolean;
   warnings: string[];
 }): Promise<void> {
@@ -440,6 +442,7 @@ async function collectAheadWarnings(options: {
     gitClient: options.gitClient,
     headBranch: options.headBranch,
     currentBranch: options.currentBranch,
+    dryRun: options.dryRun,
     push: options.push,
   });
 
@@ -497,6 +500,7 @@ async function resolveHeadRefForAheadCount(options: {
   gitClient: GitClient;
   headBranch: string;
   currentBranch: string | null;
+  dryRun: boolean;
   push: boolean;
 }): Promise<string | null> {
   try {
@@ -508,20 +512,21 @@ async function resolveHeadRefForAheadCount(options: {
       return `origin/${options.headBranch}`;
     }
 
-    if (
-      !options.push &&
-      (await options.gitClient.remoteHeadExists(options.headBranch)) &&
-      (await options.gitClient.fetchBranch(options.headBranch))
-    ) {
-      return `origin/${options.headBranch}`;
-    }
-
     if (options.currentBranch === options.headBranch) {
       return 'HEAD';
     }
 
     if (await options.gitClient.branchExists(options.headBranch)) {
       return options.headBranch;
+    }
+
+    if (
+      !options.push &&
+      !options.dryRun &&
+      (await options.gitClient.remoteHeadExists(options.headBranch)) &&
+      (await options.gitClient.fetchBranch(options.headBranch))
+    ) {
+      return `origin/${options.headBranch}`;
     }
   } catch (error) {
     if (error instanceof GitError) {

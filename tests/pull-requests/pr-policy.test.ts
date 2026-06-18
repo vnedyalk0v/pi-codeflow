@@ -240,6 +240,34 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
     );
   });
 
+  it('does not fetch missing remote-tracking refs during dry-run previews', async () => {
+    const state = passedState();
+    state.commits.lastCommit!.branch = 'feat/remote-only-head';
+    let fetched = false;
+    const result = await createCodeflowPullRequestFromPayload({
+      payload: payload({ headBranch: 'feat/remote-only-head' }),
+      dryRun: true,
+      push: false,
+      gitClient: gitClient({
+        getCurrentBranch: async () => 'feat/current-checkout',
+        remoteBranchExists: async (branchName: string) => branchName === 'dev',
+        remoteHeadExists: async (branchName: string) => branchName === 'feat/remote-only-head',
+        branchExists: async (branchName: string) => branchName === 'dev',
+        fetchBranch: async () => {
+          fetched = true;
+          return true;
+        },
+      }),
+      sessionState: state,
+    });
+
+    expect(result.status).toBe('dry_run');
+    expect(fetched).toBe(false);
+    expect(result.warnings.join('\n')).toContain(
+      'Could not compare PR head feat/remote-only-head against base branch dev',
+    );
+  });
+
   it('uses configured base branch and explicit base override', async () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       pullRequest: { baseBranch: 'develop' },

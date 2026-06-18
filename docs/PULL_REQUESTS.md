@@ -24,7 +24,8 @@ Instead:
 ```
 
 Dry-run mode renders the title and body preview, validates policy, and does not
-push or call GitHub.
+push, call GitHub, or fetch missing remote-tracking refs for head-branch
+comparison.
 
 ## Structured payload
 

@@ -7,14 +7,16 @@ at a time.
 
 Target issue:
 
-- #11 Implement `/flow-commit` with generated commit messages.
+- #12 Implement `/flow-pr` with generated PR title/body.
 
-This PR implements the v0.6 commit foundation. It consumes the validated config
-layer from #7, guidance/lifecycle foundation from #8, semantic branch command
-foundation from #9, and local check runner foundation from #10. It adds
-structured commit payload validation, deterministic commit message rendering,
-Conventional Commit-compatible titles, safe staged-change commit execution,
-check-state policy, dry-run previews, and bounded latest commit metadata.
+This PR implements the v0.6 pull request foundation. It consumes the validated
+config layer from #7, guidance/lifecycle foundation from #8, semantic branch
+command foundation from #9, local check runner foundation from #10, and commit
+renderer foundation from #11. It adds structured PR payload validation,
+deterministic PR title rendering, PR body rendering from templates, GitHub CLI
+PR creation/update behavior, base/head branch safety, check-state and
+commit-state policy, dry-run previews, draft behavior, and bounded latest PR
+metadata.
 
 ## Implemented #7 scope
 
@@ -77,20 +79,37 @@ check-state policy, dry-run previews, and bounded latest commit metadata.
 - Add tests for validation, rendering, git behavior, command behavior, and state
   updates.
 
-## Non-goals for #11
+## Implemented #12 scope
 
-- `/flow-pr` implementation.
-- PR title/body generation.
+- Add `/flow-pr` command registration.
+- Validate structured nested PR payloads against schema and semantic rules.
+- Render deterministic PR titles from structured title fields.
+- Render deterministic PR bodies from the configured PR template.
+- Open or update GitHub PRs through `gh pr create` and `gh pr edit`.
+- Use explicit `--base`, `--head`, `--title`, and `--body-file` arguments.
+- Support dry-run previews without pushing or calling GitHub.
+- Support draft and ready PR behavior.
+- Refuse reserved head branches and base=head PRs.
+- Warn or block based on latest `/flow-check` state policy.
+- Warn when latest `/flow-commit` state is missing.
+- Store bounded latest PR metadata in session state.
+- Add tests for validation, rendering, command behavior, GitHub CLI behavior,
+  and state updates.
+
+## Non-goals for #12
+
 - GitHub checks watcher.
 - Review comment automation.
 - Merge automation.
-- Broad branch protection or tool-call blocking beyond `/flow-commit` safety.
+- Auto-approval.
+- Auto-resolving reviewer comments.
+- Post-PR CI waiting beyond lightweight next-action guidance.
 
 ## Next intended implementation issue
 
-#12 Implement `/flow-pr` with generated PR title/body is next after #11. It
-should build on the structured payload and template-rendering pattern introduced
-by `/flow-commit` without changing `/flow-commit` scope.
+#13 GitHub checks watcher is next after #12. It should build on the bounded PR
+metadata produced by `/flow-pr` without adding review comment or merge
+automation.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.
@@ -109,5 +128,8 @@ work before Codeflow should claim full pre-commit verification automation.
 - Unit tests for commit payload validation, template rendering, Conventional
   Commit title generation, staged-change safety, check-state policy, command
   registration, git commit execution, and bounded commit state.
-- Manual check that PR generation, GitHub automation, review comment automation,
-  and merge automation remain out of scope.
+- Unit tests for PR payload validation, PR title/body rendering, branch and
+  check-state policy, command registration, GitHub CLI integration, dry-run and
+  draft behavior, and bounded PR state.
+- Manual check that GitHub checks watching, review comment automation,
+  auto-approval, merge automation, and branch deletion remain out of scope.

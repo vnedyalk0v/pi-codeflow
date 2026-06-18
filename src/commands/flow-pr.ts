@@ -3,48 +3,53 @@ import path from 'node:path';
 
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { loadCodeflowConfig } from '../config/load-config';
-import { createGitCommitFromPayload } from '../commits/commit-policy';
-import { CodeflowCommitError } from '../commits/commit-errors';
-import type {
-  CodeflowCommitPayload,
-  CodeflowCommitResult,
-} from '../commits/commit-payload';
+import type { GhClientLike } from '../github/gh-client';
 import type { GitClient } from '../git/git-client';
 import type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
 import {
   createCodeflowSessionState,
-  updateSessionStateWithCommit,
+  updateSessionStateWithPullRequest,
   type CodeflowSessionState,
 } from '../state/session-state';
 import { parseJson } from '../utils/json';
+import { createCodeflowPullRequestFromPayload } from '../pull-requests/pr-policy';
+import { CodeflowPrError } from '../pull-requests/pr-errors';
+import type { CodeflowPrPayload, CodeflowPrResult } from '../pull-requests/pr-payload';
 
-export interface FlowCommitOptions {
+export interface FlowPrOptions {
   cwd?: string;
-  payload: CodeflowCommitPayload;
+  payload: CodeflowPrPayload;
   dryRun?: boolean;
+  draft?: boolean;
+  baseBranch?: string;
+  headBranch?: string;
   allowUnverified?: boolean;
-  allowReservedBranch?: boolean;
+  allowReservedHead?: boolean;
+  push?: boolean;
   config?: CodeflowConfig;
   loadConfig?: typeof loadCodeflowConfig;
   gitClient?: GitClient;
+  ghClient?: GhClientLike;
   sessionState?: CodeflowSessionState;
 }
 
-export interface FlowCommitResult extends CodeflowCommitResult {
+export interface FlowPrResult extends CodeflowPrResult {
   nextExpectedActions: string[];
   sessionState: CodeflowSessionState;
 }
 
-export interface ParsedFlowCommitArguments {
+export interface ParsedFlowPrArguments {
   dryRun: boolean;
+  draft?: boolean;
   allowUnverified: boolean;
-  allowReservedBranch: boolean;
+  allowReservedHead: boolean;
+  push?: boolean;
   payloadPath?: string;
+  baseBranch?: string;
+  headBranch?: string;
 }
 
-export async function runFlowCommit(
-  options: FlowCommitOptions,
-): Promise<FlowCommitResult> {
+export async function runFlowPr(options: FlowPrOptions): Promise<FlowPrResult> {
   const cwd = options.cwd ?? process.cwd();
   const loadConfig = options.loadConfig ?? loadCodeflowConfig;
   const loadedConfig = options.config
@@ -56,48 +61,59 @@ export async function runFlowCommit(
       }
     : await loadConfig({ cwd });
   const config = loadedConfig.config;
-  const sessionState = options.sessionState ?? createCodeflowSessionState({ phase: 'ready_to_commit' });
+  const sessionState = options.sessionState ?? createCodeflowSessionState({ phase: 'committed' });
   const templateCwd = resolveCommandBaseCwd(cwd, loadedConfig.configPath);
-  const commit = await createGitCommitFromPayload({
+  const pr = await createCodeflowPullRequestFromPayload({
     cwd,
     payload: options.payload,
     dryRun: options.dryRun,
+    draft: options.draft,
+    baseBranch: options.baseBranch,
+    headBranch: options.headBranch,
     allowUnverified: options.allowUnverified,
-    allowReservedBranch: options.allowReservedBranch,
+    allowReservedHead: options.allowReservedHead,
+    push: options.push,
     config,
     gitClient: options.gitClient,
+    ghClient: options.ghClient,
     sessionState,
     templateCwd,
   });
-  const warnings = [...commit.warnings];
+  const warnings = [...pr.warnings];
 
   if (loadedConfig.usedDefaultConfig) {
     warnings.push('No project Codeflow config was found; package defaults are in use.');
   }
 
-  const nextSessionState = commit.status === 'committed' && commit.commitSha
-    ? updateSessionStateWithCommit(sessionState, {
-        sha: commit.commitSha,
-        branch: commit.branch,
-        title: commit.title,
-        payload: commit.payload,
+  const nextSessionState = pr.status === 'created' && pr.prUrl && pr.prNumber !== null
+    ? updateSessionStateWithPullRequest(sessionState, {
+        number: pr.prNumber,
+        url: pr.prUrl,
+        baseBranch: pr.baseBranch,
+        headBranch: pr.headBranch,
+        title: pr.title,
+        draft: pr.draft,
       })
     : sessionState;
 
   return {
-    ...commit,
+    ...pr,
     warnings,
-    nextExpectedActions: getFlowCommitNextExpectedActions(commit.lifecyclePhase, commit.status),
+    nextExpectedActions: getFlowPrNextExpectedActions(pr.lifecyclePhase, pr.status),
     sessionState: nextSessionState,
   };
 }
 
-export function parseFlowCommitArguments(args: string): ParsedFlowCommitArguments {
+export function parseFlowPrArguments(args: string): ParsedFlowPrArguments {
   const tokens = splitCommandArguments(args);
   let dryRun = false;
+  let draft: boolean | undefined;
   let allowUnverified = false;
-  let allowReservedBranch = false;
+  let allowReservedHead = false;
+  let push: boolean | undefined;
   let payloadPath: string | undefined;
+  let baseBranch: string | undefined;
+  let headBranch: string | undefined;
 
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
@@ -107,13 +123,33 @@ export function parseFlowCommitArguments(args: string): ParsedFlowCommitArgument
       continue;
     }
 
+    if (token === '--draft') {
+      draft = true;
+      continue;
+    }
+
+    if (token === '--ready') {
+      draft = false;
+      continue;
+    }
+
     if (token === '--allow-unverified') {
       allowUnverified = true;
       continue;
     }
 
-    if (token === '--allow-reserved-branch') {
-      allowReservedBranch = true;
+    if (token === '--allow-reserved-head') {
+      allowReservedHead = true;
+      continue;
+    }
+
+    if (token === '--push') {
+      push = true;
+      continue;
+    }
+
+    if (token === '--no-push') {
+      push = false;
       continue;
     }
 
@@ -128,17 +164,39 @@ export function parseFlowCommitArguments(args: string): ParsedFlowCommitArgument
       continue;
     }
 
+    if (token === '--base') {
+      baseBranch = readFlagValue(tokens, index, '--base');
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--base=')) {
+      baseBranch = token.slice('--base='.length);
+      continue;
+    }
+
+    if (token === '--head') {
+      headBranch = readFlagValue(tokens, index, '--head');
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--head=')) {
+      headBranch = token.slice('--head='.length);
+      continue;
+    }
+
     if (token.startsWith('--')) {
-      throw new CodeflowCommitError({
+      throw new CodeflowPrError({
         code: 'invalid_arguments',
-        message: `Unknown /flow-commit option: ${token}`,
+        message: `Unknown /flow-pr option: ${token}`,
         details: { option: token },
       });
     }
 
-    throw new CodeflowCommitError({
+    throw new CodeflowPrError({
       code: 'invalid_arguments',
-      message: `/flow-commit only accepts flags; unexpected argument: ${token}`,
+      message: `/flow-pr only accepts flags; unexpected argument: ${token}`,
       details: { argument: token },
     });
   }
@@ -146,15 +204,19 @@ export function parseFlowCommitArguments(args: string): ParsedFlowCommitArgument
   return {
     dryRun,
     allowUnverified,
-    allowReservedBranch,
+    allowReservedHead,
+    ...(draft === undefined ? {} : { draft }),
+    ...(push === undefined ? {} : { push }),
     ...(payloadPath === undefined ? {} : { payloadPath }),
+    ...(baseBranch === undefined ? {} : { baseBranch }),
+    ...(headBranch === undefined ? {} : { headBranch }),
   };
 }
 
-export async function readFlowCommitPayloadFile(
+export async function readFlowPrPayloadFile(
   payloadPath: string,
   cwd = process.cwd(),
-): Promise<CodeflowCommitPayload> {
+): Promise<CodeflowPrPayload> {
   const resolvedPath = path.isAbsolute(payloadPath)
     ? payloadPath
     : path.resolve(cwd, payloadPath);
@@ -167,39 +229,41 @@ export async function readFlowCommitPayloadFile(
       ? 'payload_file_not_found'
       : 'payload_file_unreadable';
 
-    throw new CodeflowCommitError({
+    throw new CodeflowPrError({
       code,
-      message: `Commit payload file could not be read: ${resolvedPath}`,
+      message: `PR payload file could not be read: ${resolvedPath}`,
       details: { payloadPath: resolvedPath },
       cause: error,
     });
   }
 
   try {
-    return parseJson(text) as CodeflowCommitPayload;
+    return parseJson(text) as CodeflowPrPayload;
   } catch (error) {
-    throw new CodeflowCommitError({
+    throw new CodeflowPrError({
       code: 'invalid_payload_json',
-      message: `Commit payload file contains invalid JSON: ${resolvedPath}`,
+      message: `PR payload file contains invalid JSON: ${resolvedPath}`,
       details: { payloadPath: resolvedPath },
       cause: error,
     });
   }
 }
 
-export function formatFlowCommitResult(result: FlowCommitResult): string {
+export function formatFlowPrResult(result: FlowPrResult): string {
   const lines = [
-    result.status === 'dry_run' ? 'Codeflow commit dry-run.' : 'Codeflow commit created.',
+    result.status === 'dry_run' ? 'Codeflow PR dry-run.' : 'Codeflow PR ready.',
     '',
     `Status: ${result.status}`,
-    `Branch: ${result.branch ?? 'detached HEAD'}`,
-    `Commit: ${result.commitSha ?? 'not created'}`,
+    `PR: ${result.prUrl ?? 'not created'}`,
+    `Base branch: ${result.baseBranch}`,
+    `Head branch: ${result.headBranch}`,
+    `Draft: ${result.draft ? 'yes' : 'no'}`,
     `Title: ${result.title}`,
     `Lifecycle phase: ${result.lifecyclePhase}`,
     '',
-    'Rendered commit message:',
+    'Rendered PR body:',
     '```',
-    result.message,
+    result.body,
     '```',
     '',
     'Next expected actions:',
@@ -221,32 +285,32 @@ function resolveCommandBaseCwd(cwd: string, configPath: string | null): string {
   return path.dirname(path.dirname(configPath));
 }
 
-function getFlowCommitNextExpectedActions(
+function getFlowPrNextExpectedActions(
   phase: CodeflowLifecyclePhase,
-  status: CodeflowCommitResult['status'],
+  status: CodeflowPrResult['status'],
 ): string[] {
   if (status === 'dry_run') {
     return [
-      'Review the rendered commit preview.',
-      'Run /flow-commit without --dry-run when the staged diff and payload are ready.',
+      'Review the rendered PR title and body preview.',
+      'Run /flow-pr without --dry-run when the branch and payload are ready.',
     ];
   }
 
-  if (phase === 'committed') {
+  if (phase === 'pr_opened') {
     return [
-      'Prepare a structured PR payload and use /flow-pr for PR creation.',
-      'Do not push, open a PR, watch GitHub checks, or merge from /flow-commit.',
+      'Watch CI and reviewer activity with a future /flow-watch or manual GitHub review.',
+      'Do not merge, approve, resolve comments, or delete branches from /flow-pr.',
     ];
   }
 
-  return ['Resolve the commit blocker, then rerun /flow-commit.'];
+  return ['Resolve the PR blocker, then rerun /flow-pr.'];
 }
 
 function readFlagValue(tokens: string[], index: number, flagName: string): string {
   const value = tokens[index + 1];
 
   if (!value || value.startsWith('--')) {
-    throw new CodeflowCommitError({
+    throw new CodeflowPrError({
       code: 'invalid_arguments',
       message: `${flagName} requires a value.`,
       details: { flagName },
@@ -304,9 +368,9 @@ function splitCommandArguments(args: string): string[] {
   }
 
   if (quote) {
-    throw new CodeflowCommitError({
+    throw new CodeflowPrError({
       code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-commit arguments.',
+      message: 'Unterminated quote in /flow-pr arguments.',
     });
   }
 

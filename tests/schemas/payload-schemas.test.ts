@@ -22,6 +22,60 @@ function validateSchema(relativePath: string, input: unknown) {
 }
 
 describe('payload schemas', () => {
+  it('accepts the structured nested PR payload shape', () => {
+    const result = validateSchema('schemas/pr-payload.schema.json', {
+      title: {
+        type: 'feat',
+        scope: 'pull-requests',
+        summary: 'implement generated pull requests',
+        ticket: 'FLOW-12',
+      },
+      body: {
+        summary: 'Implemented /flow-pr.',
+        context: 'Codeflow needs deterministic PR formatting.',
+        changes: ['Added PR payload validation.'],
+        verification: ['npm test'],
+        selfReview: ['Confirmed no merge automation was added.'],
+        risk: 'Medium.',
+        rollback: 'Revert the PR.',
+        reviewerNotes: 'Focus on PR safety.',
+        refs: ['#12'],
+      },
+      draft: true,
+      baseBranch: 'dev',
+      headBranch: 'feat/flow-pr-generated-title-body',
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects unknown PR payload fields', () => {
+    const result = validateSchema('schemas/pr-payload.schema.json', {
+      title: {
+        type: 'feat',
+        summary: 'implement generated pull requests',
+      },
+      body: {
+        summary: 'Implemented /flow-pr.',
+        context: 'Codeflow needs deterministic PR formatting.',
+        changes: ['Added PR payload validation.'],
+        risk: 'Medium.',
+        rollback: 'Revert the PR.',
+      },
+      labels: ['feature'],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          instancePath: '',
+          keyword: 'additionalProperties',
+        }),
+      ]),
+    );
+  });
+
   it('rejects empty emergency audit fields when emergency override is used', () => {
     const result = validateSchema('schemas/final-report.schema.json', {
       summary: 'Emergency fix shipped.',

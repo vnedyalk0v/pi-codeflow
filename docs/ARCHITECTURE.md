@@ -5,7 +5,8 @@ prompts, templates, config, schemas, and documentation. The v0.6 foundation
 includes config loading, conservative merging, schema validation, proactive
 guidance generation, before-agent guidance injection, a small lifecycle state
 model, `/flow-start` semantic branch preparation, `/flow-check` local check
-running, and `/flow-commit` generated commit messages.
+running, `/flow-commit` generated commit messages, and `/flow-pr` generated PR
+title/body creation.
 
 ## Components
 
@@ -33,7 +34,8 @@ running, and `/flow-commit` generated commit messages.
 
 - **Status:** `/flow-start` implemented foundation in v0.4; `/flow-check`
   implemented foundation in v0.5; `/flow-commit` implemented foundation in
-  v0.6; later commands are future work.
+  v0.6; `/flow-pr` implemented foundation in v0.6; later commands are future
+  work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
   `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`.
 - **Inputs:** user commands, agent payloads, and state.
@@ -43,7 +45,8 @@ running, and `/flow-commit` generated commit messages.
 ### Template Renderer
 
 - **Status:** branch template foundation exists in v0.4; commit message renderer
-  foundation is implemented in v0.6. PR rendering remains future work in #12.
+  foundation is implemented in v0.6. PR title/body rendering foundation is
+  implemented in v0.6 for #12.
 - **Responsibility:** render branch names, commit messages, PR bodies, review
   replies, and final reports.
 - **Inputs:** structured payloads and template files.
@@ -53,21 +56,28 @@ running, and `/flow-commit` generated commit messages.
 ### Git Integration
 
 - **Status:** safe branch-preparation subset implemented in v0.4; staged-change
-  commit subset implemented in v0.6.
-- **Responsibility:** inspect status, create branches, stage/commit changes,
-  and read diffs.
-- **Inputs:** repository path, branch policy, and commit payloads.
-- **Outputs:** branches, commits, and git status summaries.
-- **Must not:** force-push, discard changes, or work on reserved branches by
-  default.
+  commit subset implemented in v0.6; safe feature-branch push support added for
+  `/flow-pr` in v0.6.
+- **Responsibility:** inspect status, create branches, commit staged changes,
+  compare refs, push the current feature branch when policy allows, and read
+  diffs.
+- **Inputs:** repository path, branch policy, commit payloads, and PR base/head
+  policy.
+- **Outputs:** branches, commits, pushed feature refs, and git status summaries.
+- **Must not:** force-push, discard changes, delete branches, or work on
+  reserved branches by default.
 
 ### GitHub Integration
 
-- **Responsibility:** open/update PRs, watch checks, list review comments, and
-  apply allowed replies/resolutions.
+- **Status:** PR creation/update foundation is implemented in v0.6 for #12;
+  GitHub checks watching remains future work in #13.
+- **Responsibility:** open/update PRs now, and later watch checks, list review
+  comments, and apply allowed replies/resolutions.
 - **Inputs:** PR payloads, GitHub CLI/API output, and review policy.
-- **Outputs:** PR URLs, CI summaries, and comment triage.
-- **Must not:** merge PRs or bypass human review.
+- **Outputs:** PR URLs and bounded PR metadata now; CI summaries and comment
+  triage later.
+- **Must not:** merge PRs, approve PRs, resolve reviewer comments without
+  policy, or bypass human review.
 
 ### Check Runner
 
@@ -85,8 +95,9 @@ running, and `/flow-commit` generated commit messages.
 
 - **Status:** lifecycle state helper foundation exists in v0.3; bounded latest
   check state is returned by `/flow-check` in v0.5; bounded latest commit
-  metadata is returned by `/flow-commit` in v0.6; persistent external storage is
-  not implemented yet.
+  metadata is returned by `/flow-commit` in v0.6; bounded latest PR metadata is
+  returned by `/flow-pr` in v0.6; persistent external storage is not implemented
+  yet.
 - **Responsibility:** track lifecycle phase, task metadata, check results,
   payloads, and reports in future milestones.
 - **Inputs:** tool results and guidance decisions.
@@ -147,10 +158,14 @@ running, and `/flow-commit` generated commit messages.
 8. The Commit Renderer creates the final commit message from the configured
    template.
 9. Git integration commits staged changes through a message file.
-10. State Store records phase, evidence, bounded check summaries, and bounded
-    commit metadata.
-11. Future PR and GitHub integrations perform approved remote operations.
-12. Safety Boundary blocks off-path behavior when needed.
+10. `/flow-pr` validates a structured PR payload, renders the PR title/body,
+    applies branch and check-state policy, pushes the feature branch when
+    configured, and calls GitHub CLI with explicit PR arguments.
+11. State Store records phase, evidence, bounded check summaries, bounded commit
+    metadata, and bounded PR metadata.
+12. Future GitHub checks and review integrations perform later remote
+    operations.
+13. Safety Boundary blocks off-path behavior when needed.
 
 ## Implementation boundary
 
@@ -160,9 +175,9 @@ implements the guidance generation and before-agent injection foundation plus a
 minimal lifecycle state helper. v0.4 implements the first command layer and safe
 semantic branch creation foundation through `/flow-start`. v0.5 implements the
 configured local check runner foundation through `/flow-check`. v0.6 implements
-the commit renderer and commit command foundation through `/flow-commit`.
+the commit renderer and commit command foundation through `/flow-commit`, plus
+the PR renderer and PR command foundation through `/flow-pr`.
 
-Self-review automation, PR automation, persistent external lifecycle storage,
-GitHub checks watching, review comment automation, and merge automation remain
-future implementation work. `/flow-pr` and generated PR title/body rendering are
-next in #12.
+Self-review automation, persistent external lifecycle storage, GitHub checks
+watching, review comment automation, and merge automation remain future
+implementation work. GitHub checks watcher work is next in #13.

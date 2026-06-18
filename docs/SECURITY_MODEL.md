@@ -49,6 +49,10 @@ explicit user request, a documented reason, and a final report.
 Normal flow should push feature branches only when opening or updating PRs.
 Direct pushes to reserved branches are outside normal scope.
 
+`/flow-pr` only pushes the current branch to the matching remote branch when
+`pullRequest.pushBeforeCreate` or `--push` is active. It refuses to push reserved
+branches and never force-pushes.
+
 ## Force push behavior
 
 Force push is disabled by default. If a user explicitly asks for a force push,
@@ -102,6 +106,29 @@ The extension should not automatically:
 - rotate or inspect secrets;
 - rewrite public history;
 - make product or security decisions on behalf of maintainers.
+
+## Pull request execution
+
+`/flow-pr` opens or updates pull requests from structured payloads only. It
+renders the final title/body from Codeflow templates and calls GitHub CLI with
+explicit `--base`, `--head`, `--title`, and `--body-file` arguments.
+
+Safety expectations for PRs:
+
+- never use `gh pr create --fill`;
+- refuse normal PRs from reserved head branches;
+- refuse base=head PRs;
+- use `Refs` linked issues by default, not automatic closing keywords;
+- warn about uncommitted changes because they are not in the PR until committed;
+- block failed latest check state by default;
+- warn when latest commit state is missing;
+- push only the current feature branch to its matching remote branch;
+- never force-push, merge, approve, request reviews, resolve comments, watch CI,
+  or delete branches.
+
+Reviewers should focus on deterministic rendering, branch/base safety, GitHub
+CLI error handling, temporary body-file cleanup, and bounded PR state whenever
+this layer changes.
 
 ## Local commit execution
 

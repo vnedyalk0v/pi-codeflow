@@ -33,6 +33,10 @@ Rules:
   a structured payload and let Codeflow render the final message.
 - Do not run raw `git commit` for Codeflow workflow commits when `/flow-commit`
   is available.
+- Use `/flow-pr` for Codeflow workflow pull requests when it is available;
+  provide a structured PR payload and let Codeflow render the final title/body.
+- Do not run raw `gh pr create` for Codeflow workflow PRs when `/flow-pr` is
+  available.
 - Use other Codeflow tools when available.
 - If a Codeflow tool is not implemented yet, explain the limitation instead of
   pretending it exists.
@@ -43,8 +47,8 @@ Rules:
   final reports.
 - Let templates render final outputs.
 - Follow configured checks through `/flow-check` and report failures clearly.
-- Do not claim `/flow-pr` or PR rendering is implemented until that command
-  exists.
+- Do not claim `/flow-watch`, review comment automation, merge automation, or
+  auto-approval exists until those commands are implemented.
 - Treat safety boundaries as fallback protection, not the normal workflow.
 - Do not work directly on reserved branches unless an explicit emergency
   override exists; `/flow-start` may be invoked from a reserved branch only to

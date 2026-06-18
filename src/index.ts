@@ -42,6 +42,14 @@ export {
   type FlowCommitOptions,
   type FlowCommitResult,
 } from './commands/flow-commit';
+export {
+  runFlowPr,
+  parseFlowPrArguments,
+  formatFlowPrResult,
+  readFlowPrPayloadFile,
+  type FlowPrOptions,
+  type FlowPrResult,
+} from './commands/flow-pr';
 export { validateCommitPayload } from './commits/commit-payload-validation';
 export { renderCommitMessage } from './commits/commit-message-renderer';
 export { createGitCommitFromPayload } from './commits/commit-policy';
@@ -53,6 +61,18 @@ export type {
   CodeflowCommitResult,
 } from './commits/commit-payload';
 export { CodeflowCommitError, type CodeflowCommitErrorCode } from './commits/commit-errors';
+export { validatePrPayload } from './pull-requests/pr-payload-validation';
+export { renderPrTitle } from './pull-requests/pr-title-renderer';
+export { renderPrBody } from './pull-requests/pr-body-renderer';
+export { createCodeflowPullRequestFromPayload } from './pull-requests/pr-policy';
+export { createGitHubPullRequest } from './github/pr-client';
+export type {
+  CodeflowPrPayload,
+  CodeflowPrValidationResult,
+  CodeflowPrRenderResult,
+  CodeflowPrResult,
+} from './pull-requests/pr-payload';
+export { CodeflowPrError, type CodeflowPrErrorCode } from './pull-requests/pr-errors';
 export {
   runCodeflowChecks,
   type RunCodeflowChecksOptions,

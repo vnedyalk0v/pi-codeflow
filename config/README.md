@@ -19,3 +19,9 @@ compatibility.
 template rendering, staged-change commit execution, and latest-check policy. The
 defaults require structured payloads, a body, verification, risk, and staged
 changes while refusing reserved branches and failed checks by default.
+
+`pullRequest` controls `/flow-pr` payload validation, title/body templates, draft
+behavior, base/head safety, feature-branch push behavior, existing PR updates,
+and latest-check policy. The defaults require structured payloads,
+verification, self-review, and draft PRs while refusing reserved head branches,
+base=head PRs, and failed checks by default.

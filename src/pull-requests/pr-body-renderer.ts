@@ -1,5 +1,6 @@
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
+import { redactSecrets } from '../utils/redaction';
 import {
   compactBlankLines,
   formatMarkdownBulletList,
@@ -34,8 +35,8 @@ export async function renderPrBody(
         usedDefaultTemplate: options.usedDefaultTemplate ?? false,
         warnings: [],
       };
-  const title = renderPrTitle(payload.title, config);
-  const body = compactBlankLines(renderSimpleTemplate(loadedTemplate.text, {
+  const title = redactSecrets(renderPrTitle(payload.title, config));
+  const rawBody = compactBlankLines(renderSimpleTemplate(loadedTemplate.text, {
     title,
     type: payload.title.type,
     scope: payload.title.scope ?? '',
@@ -59,6 +60,7 @@ export async function renderPrBody(
     linkedIssuesList: formatLinkedIssues(payload.body.refs ?? [], config.pullRequest.linkKeyword),
     refsList: formatLinkedIssues(payload.body.refs ?? [], config.pullRequest.linkKeyword),
   }));
+  const body = redactSecrets(rawBody);
 
   assertNoUnresolvedPlaceholders(body);
   assertPrBody(body);

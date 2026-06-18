@@ -50,6 +50,45 @@ describe('renderPrBody', () => {
     expect(result.body).not.toMatch(/{{.*}}/);
   });
 
+  it('redacts likely secrets from rendered titles and bodies', async () => {
+    const githubToken = 'ghp_1234567890abcdef1234567890abcdef1234';
+    const githubPat = 'github_pat_1234567890abcdef1234567890abcdef1234';
+    const openAiKey = 'sk-1234567890abcdef1234567890abcdef';
+    const awsKey = 'AKIA1234567890ABCDEF';
+    const bearerToken = 'sample-bearer-token';
+    const result = await renderPrBody(payload({
+      title: {
+        type: 'feat',
+        scope: 'pull-requests',
+        summary: `avoid leaking ${githubToken}`,
+      },
+      body: {
+        ...payload().body,
+        summary: `Authorization: Bearer ${bearerToken}`,
+        context: 'api_key="super-secret-value"',
+        changes: ['Removed password=hunter2 from copied output.'],
+        verification: [`curl -H "Authorization: Bearer ${bearerToken}"`],
+        selfReview: [`Confirmed ${githubPat} is hidden.`],
+        risk: `token=${openAiKey}`,
+        rollback: `Unset ${awsKey}.`,
+        reviewerNotes: 'secret=plain-text-secret',
+      },
+    }));
+
+    expect(result.title).toContain('[REDACTED]');
+    expect(result.title).not.toContain(githubToken);
+    expect(result.body).toContain('Authorization: Bearer [REDACTED]');
+    expect(result.body).toContain('api_key=[REDACTED]');
+    expect(result.body).not.toContain(githubToken);
+    expect(result.body).not.toContain(githubPat);
+    expect(result.body).not.toContain(openAiKey);
+    expect(result.body).not.toContain(awsKey);
+    expect(result.body).not.toContain(bearerToken);
+    expect(result.body).not.toContain('hunter2');
+    expect(result.body).not.toContain('super-secret-value');
+    expect(result.body).not.toContain('plain-text-secret');
+  });
+
   it('normalizes closing keywords to Refs by default', async () => {
     const result = await renderPrBody(
       payload({ body: { ...payload().body, refs: ['Closes #12', 'Fixes #13'] } }),

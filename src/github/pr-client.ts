@@ -156,7 +156,7 @@ async function handleGithubCreateError(
   }
 
   const existing = await viewExistingPullRequest(ghClient, options.headBranch, existingUrl);
-  await editExistingPullRequest(ghClient, existing.url, options.title, bodyFilePath);
+  await editExistingPullRequest(ghClient, existing.url, options.title, bodyFilePath, options.baseBranch);
   const draftUpdate = await updateExistingPullRequestDraftState(
     ghClient,
     existing.url,
@@ -164,14 +164,14 @@ async function handleGithubCreateError(
     options.draftOverride,
   );
   const warnings = [
-    `Pull request already exists for ${options.headBranch}; updated title/body on ${existing.url}.`,
+    `Pull request already exists for ${options.headBranch}; updated title/body/base on ${existing.url}.`,
     ...draftUpdate.warnings,
   ];
 
   return {
     url: existing.url,
     number: existing.number ?? parsePullRequestNumber(existing.url),
-    baseBranch: existing.baseRefName ?? options.baseBranch,
+    baseBranch: options.baseBranch,
     headBranch: existing.headRefName ?? options.headBranch,
     title: options.title,
     draft: draftUpdate.draft ?? existing.isDraft ?? options.draft === true,
@@ -235,9 +235,10 @@ async function editExistingPullRequest(
   url: string,
   title: string,
   bodyFilePath: string,
+  baseBranch: string,
 ): Promise<void> {
   try {
-    await ghClient.run(['pr', 'edit', url, '--title', title, '--body-file', bodyFilePath]);
+    await ghClient.run(['pr', 'edit', url, '--title', title, '--body-file', bodyFilePath, '--base', baseBranch]);
   } catch (error) {
     if (error instanceof GithubCliError) {
       throw new CodeflowPrError({

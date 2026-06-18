@@ -52,16 +52,21 @@ export class GitClient {
   }
 
   async remoteHeadExists(branchName: string, remote = 'origin'): Promise<boolean> {
+    return (await this.getRemoteHeadSha(branchName, remote)) !== null;
+  }
+
+  async getRemoteHeadSha(branchName: string, remote = 'origin'): Promise<string | null> {
     if (!(await this.remoteExists(remote))) {
-      return false;
+      return null;
     }
 
     try {
-      await this.run(['ls-remote', '--exit-code', '--heads', remote, branchName]);
-      return true;
+      const result = await this.run(['ls-remote', '--exit-code', '--heads', remote, branchName]);
+      const [sha] = result.stdout.trim().split(/\s+/, 1);
+      return sha && sha.length > 0 ? sha : null;
     } catch (error) {
       if (error instanceof GitError && isExitCode(error.exitCode, 2)) {
-        return false;
+        return null;
       }
 
       throw error;
@@ -95,7 +100,11 @@ export class GitClient {
   }
 
   async getLatestCommitSha(): Promise<string> {
-    const result = await this.run(['rev-parse', 'HEAD']);
+    return this.getRefSha('HEAD');
+  }
+
+  async getRefSha(ref: string): Promise<string> {
+    const result = await this.run(['rev-parse', ref]);
     return result.stdout.trim();
   }
 

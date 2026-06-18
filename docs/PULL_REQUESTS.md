@@ -151,7 +151,9 @@ Codeflow refuses normal PR creation when:
 - base and head are the same;
 - the head branch is reserved;
 - the base branch is outside `baseBranches.allowed`;
-- the branch cannot be pushed or found remotely.
+- the branch cannot be pushed or found remotely;
+- pushing is disabled and the actual remote head does not match the local head
+  branch that would otherwise be omitted from the PR.
 
 Uncommitted changes do not block by default, but Codeflow warns that they are
 not included in the PR until committed and pushed.
@@ -203,10 +205,10 @@ gh pr create --base <base> --head <head> --title <title> --body-file <file>
 `--fill`, because the extension owns final title/body formatting.
 
 If a PR already exists for the branch and `pullRequest.updateExisting` is true,
-Codeflow discovers the existing PR and updates title/body with `gh pr edit`. If
-updates are disabled, it returns a clear error and includes the existing PR URL
-when discoverable. PR URLs returned by `gh` may use `github.com` or a GitHub
-Enterprise hostname and may include a trailing slash.
+Codeflow discovers the existing PR and updates title, body, and requested base
+branch with `gh pr edit`. If updates are disabled, it returns a clear error and
+includes the existing PR URL when discoverable. PR URLs returned by `gh` may use
+`github.com` or a GitHub Enterprise hostname and may include a trailing slash.
 
 ## Out of scope
 

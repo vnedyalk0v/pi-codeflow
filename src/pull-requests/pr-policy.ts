@@ -584,17 +584,78 @@ async function ensureHeadBranchPushed(options: {
     }
   }
 
-  const remoteExists =
-    (await options.gitClient.remoteBranchExists(options.headBranch)) ||
-    (await options.gitClient.remoteHeadExists(options.headBranch));
+  try {
+    const remoteHeadSha = await options.gitClient.getRemoteHeadSha(options.headBranch);
 
-  if (!remoteExists) {
-    throw new CodeflowPrError({
-      code: 'branch_not_pushed',
-      message: `Remote branch origin/${options.headBranch} was not found. Push the branch or enable pullRequest.pushBeforeCreate.`,
-      details: { headBranch: options.headBranch },
+    if (!remoteHeadSha) {
+      throw new CodeflowPrError({
+        code: 'branch_not_pushed',
+        message: `Remote branch origin/${options.headBranch} was not found. Push the branch or enable pullRequest.pushBeforeCreate.`,
+        details: { headBranch: options.headBranch },
+      });
+    }
+
+    const localHeadRef = await resolveLocalHeadRefForRemoteVerification({
+      gitClient: options.gitClient,
+      headBranch: options.headBranch,
+      currentBranch: options.currentBranch,
     });
+
+    if (!localHeadRef) {
+      return;
+    }
+
+    const localHeadSha = await options.gitClient.getRefSha(localHeadRef);
+
+    if (localHeadSha !== remoteHeadSha) {
+      throw new CodeflowPrError({
+        code: 'branch_not_pushed',
+        message: `Remote branch origin/${options.headBranch} does not match ${localHeadRef}; push the branch or enable pullRequest.pushBeforeCreate.`,
+        details: {
+          headBranch: options.headBranch,
+          localRef: localHeadRef,
+          localHeadSha,
+          remoteHeadSha,
+        },
+      });
+    }
+  } catch (error) {
+    if (error instanceof CodeflowPrError) {
+      throw error;
+    }
+
+    if (error instanceof GitError) {
+      throw new CodeflowPrError({
+        code: 'branch_not_pushed',
+        message: `Could not verify remote branch origin/${options.headBranch} before PR creation: ${error.message}`,
+        details: {
+          headBranch: options.headBranch,
+          exitCode: error.exitCode ?? null,
+          stderr: error.stderr ?? '',
+          stdout: error.stdout ?? '',
+        },
+        cause: error,
+      });
+    }
+
+    throw error;
   }
+}
+
+async function resolveLocalHeadRefForRemoteVerification(options: {
+  gitClient: GitClient;
+  headBranch: string;
+  currentBranch: string | null;
+}): Promise<string | null> {
+  if (options.currentBranch === options.headBranch) {
+    return 'HEAD';
+  }
+
+  if (await options.gitClient.branchExists(options.headBranch)) {
+    return `refs/heads/${options.headBranch}`;
+  }
+
+  return null;
 }
 
 function resolveDraftFlag(

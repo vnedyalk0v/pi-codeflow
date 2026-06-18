@@ -60,6 +60,8 @@ function gitClient(overrides: Partial<GitClient> = {}): GitClient {
     remoteBranchExists: async () => true,
     remoteHeadExists: async () => true,
     branchExists: async (branchName: string) => branchName === 'dev',
+    getRemoteHeadSha: async () => 'a'.repeat(40),
+    getRefSha: async () => 'a'.repeat(40),
     getAheadCount: async () => 1,
     pushBranch: async () => undefined,
     ...overrides,
@@ -307,6 +309,42 @@ describe('createCodeflowPullRequestFromPayload policy', () => {
     expect(result.title).toBe('feat(pull-requests): implement generated pull requests');
     expect(result.body).toContain('## Summary');
     expect(called).toBe(false);
+  });
+
+  it('blocks --no-push PR creation when local head differs from the remote head', async () => {
+    await expect(
+      createCodeflowPullRequestFromPayload({
+        payload: payload(),
+        push: false,
+        gitClient: gitClient({
+          getRemoteHeadSha: async () => 'b'.repeat(40),
+          getRefSha: async (ref: string) => ref === 'HEAD' ? 'a'.repeat(40) : 'b'.repeat(40),
+        }),
+        ghClient: ghClient(),
+        sessionState: passedState(),
+      }),
+    ).rejects.toMatchObject({
+      code: 'branch_not_pushed',
+      message: expect.stringContaining('does not match HEAD'),
+    });
+  });
+
+  it('allows --no-push PR creation when the remote head matches the local head', async () => {
+    const pushed: string[] = [];
+    const result = await createCodeflowPullRequestFromPayload({
+      payload: payload(),
+      push: false,
+      gitClient: gitClient({
+        getRemoteHeadSha: async () => 'a'.repeat(40),
+        getRefSha: async () => 'a'.repeat(40),
+        pushBranch: async (branchName: string) => { pushed.push(branchName); },
+      }),
+      ghClient: ghClient(),
+      sessionState: passedState(),
+    });
+
+    expect(result.status).toBe('created');
+    expect(pushed).toEqual([]);
   });
 
   it('pushes the current feature branch and creates a PR in normal mode', async () => {

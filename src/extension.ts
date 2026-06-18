@@ -21,12 +21,24 @@ import {
   runFlowCommit,
   type FlowCommitResult,
 } from './commands/flow-commit';
+import {
+  formatFlowPrResult,
+  parseFlowPrArguments,
+  readFlowPrPayloadFile,
+  runFlowPr,
+  type FlowPrResult,
+} from './commands/flow-pr';
 import { CodeflowCheckError } from './checks/check-errors';
 import { CodeflowCommitError } from './commits/commit-errors';
+import { CodeflowPrError } from './pull-requests/pr-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
 import { appendCodeflowGuidanceToSystemPrompt } from './guidance/guidance-format';
+import {
+  createCodeflowSessionState,
+  type CodeflowSessionState,
+} from './state/session-state';
 
 export interface CodeflowBeforeAgentStartEvent {
   systemPrompt: string;
@@ -57,6 +69,7 @@ export interface RegisterCodeflowExtensionOptions {
   runFlowStart?: typeof runFlowStart;
   runFlowCheck?: typeof runFlowCheck;
   runFlowCommit?: typeof runFlowCommit;
+  runFlowPr?: typeof runFlowPr;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -65,6 +78,11 @@ export interface CodeflowExtensionCommandContext extends CodeflowExtensionContex
   ui: {
     notify(message: string, level: 'info' | 'warning' | 'error'): void;
   };
+}
+
+interface CodeflowExtensionSessionStore {
+  get(cwd: string): CodeflowSessionState | undefined;
+  set(cwd: string, state: CodeflowSessionState): void;
 }
 
 interface CodeflowExtensionApi {
@@ -76,13 +94,13 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start' | 'flow-check' | 'flow-commit',
+    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr',
     options: {
       description: string;
       handler: (
         args: string,
         context: CodeflowExtensionCommandContext,
-      ) => Promise<FlowStartResult | FlowCheckResult | FlowCommitResult>;
+      ) => Promise<FlowStartResult | FlowCheckResult | FlowCommitResult | FlowPrResult>;
     },
   ): void;
 }
@@ -114,6 +132,8 @@ export function registerCodeflowExtension(
   pi: CodeflowExtensionApi,
   options: RegisterCodeflowExtensionOptions = {},
 ): void {
+  const sessionStore = createInMemorySessionStore();
+
   pi.on('before_agent_start', async (event, context) =>
     buildCodeflowBeforeAgentStartResult(event, context, options),
   );
@@ -121,19 +141,25 @@ export function registerCodeflowExtension(
   pi.registerCommand?.('flow-start', {
     description: 'Start a Codeflow task and prepare a semantic work branch',
     handler: async (args, context) =>
-      handleFlowStartCommand(args, context, options.runFlowStart ?? runFlowStart),
+      handleFlowStartCommand(args, context, options.runFlowStart ?? runFlowStart, sessionStore),
   });
 
   pi.registerCommand?.('flow-check', {
     description: 'Run configured Codeflow local checks and record results',
     handler: async (args, context) =>
-      handleFlowCheckCommand(args, context, options.runFlowCheck ?? runFlowCheck),
+      handleFlowCheckCommand(args, context, options.runFlowCheck ?? runFlowCheck, sessionStore),
   });
 
   pi.registerCommand?.('flow-commit', {
     description: 'Render and create a Codeflow commit from a structured payload',
     handler: async (args, context) =>
-      handleFlowCommitCommand(args, context, options.runFlowCommit ?? runFlowCommit),
+      handleFlowCommitCommand(args, context, options.runFlowCommit ?? runFlowCommit, sessionStore),
+  });
+
+  pi.registerCommand?.('flow-pr', {
+    description: 'Render and open a Codeflow pull request from a structured payload',
+    handler: async (args, context) =>
+      handleFlowPrCommand(args, context, options.runFlowPr ?? runFlowPr, sessionStore),
   });
 }
 
@@ -143,6 +169,7 @@ async function handleFlowStartCommand(
   args: string,
   context: CodeflowExtensionCommandContext,
   startFlow: typeof runFlowStart,
+  sessionStore: CodeflowExtensionSessionStore,
 ): Promise<FlowStartResult> {
   await context.waitForIdle?.();
 
@@ -153,6 +180,15 @@ async function handleFlowStartCommand(
       ...parsed,
     } satisfies FlowStartOptions);
 
+    sessionStore.set(
+      context.cwd,
+      createCodeflowSessionState({
+        phase: result.currentPhase,
+        task: result.task,
+        baseBranch: result.baseBranch,
+        workBranch: result.workBranch,
+      }),
+    );
     context.ui.notify(formatFlowStartResult(result), 'info');
     return result;
   } catch (error) {
@@ -165,6 +201,7 @@ async function handleFlowCheckCommand(
   args: string,
   context: CodeflowExtensionCommandContext,
   checkFlow: typeof runFlowCheck,
+  sessionStore: CodeflowExtensionSessionStore,
 ): Promise<FlowCheckResult> {
   await context.waitForIdle?.();
 
@@ -173,8 +210,10 @@ async function handleFlowCheckCommand(
     const result = await checkFlow({
       cwd: context.cwd,
       ...parsed,
+      sessionState: sessionStore.get(context.cwd),
     });
 
+    sessionStore.set(context.cwd, result.sessionState);
     context.ui.notify(
       formatFlowCheckResult(result),
       result.checkRun.status === 'failed' ? 'warning' : 'info',
@@ -190,6 +229,7 @@ async function handleFlowCommitCommand(
   args: string,
   context: CodeflowExtensionCommandContext,
   commitFlow: typeof runFlowCommit,
+  sessionStore: CodeflowExtensionSessionStore,
 ): Promise<FlowCommitResult> {
   await context.waitForIdle?.();
 
@@ -210,14 +250,70 @@ async function handleFlowCommitCommand(
       dryRun: parsed.dryRun,
       allowUnverified: parsed.allowUnverified,
       allowReservedBranch: parsed.allowReservedBranch,
+      sessionState: sessionStore.get(context.cwd),
     });
 
+    sessionStore.set(context.cwd, result.sessionState);
     context.ui.notify(formatFlowCommitResult(result), 'info');
     return result;
   } catch (error) {
     context.ui.notify(getFlowCommitErrorMessage(error), 'error');
     throw error;
   }
+}
+
+async function handleFlowPrCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  prFlow: typeof runFlowPr,
+  sessionStore: CodeflowExtensionSessionStore,
+): Promise<FlowPrResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowPrArguments(args ?? '');
+
+    if (!parsed.payloadPath) {
+      throw new CodeflowPrError({
+        code: 'invalid_arguments',
+        message: '/flow-pr requires --payload <path>.',
+      });
+    }
+
+    const payload = await readFlowPrPayloadFile(parsed.payloadPath, context.cwd);
+    const result = await prFlow({
+      cwd: context.cwd,
+      payload,
+      dryRun: parsed.dryRun,
+      draft: parsed.draft,
+      baseBranch: parsed.baseBranch,
+      headBranch: parsed.headBranch,
+      allowUnverified: parsed.allowUnverified,
+      allowReservedHead: parsed.allowReservedHead,
+      push: parsed.push,
+      sessionState: sessionStore.get(context.cwd),
+    });
+
+    sessionStore.set(context.cwd, result.sessionState);
+    context.ui.notify(formatFlowPrResult(result), 'info');
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowPrErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
+function createInMemorySessionStore(): CodeflowExtensionSessionStore {
+  const sessions = new Map<string, CodeflowSessionState>();
+
+  return {
+    get(cwd) {
+      return sessions.get(cwd);
+    },
+    set(cwd, state) {
+      sessions.set(cwd, state);
+    },
+  };
 }
 
 function getFlowStartErrorMessage(error: unknown): string {
@@ -254,6 +350,18 @@ function getFlowCommitErrorMessage(error: unknown): string {
   }
 
   return '/flow-commit failed.';
+}
+
+function getFlowPrErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowPrError) {
+    return `/flow-pr failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-pr failed: ${error.message}`;
+  }
+
+  return '/flow-pr failed.';
 }
 
 async function loadGuidance(

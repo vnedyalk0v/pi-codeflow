@@ -71,11 +71,18 @@
   },
   "pullRequest": {
     "template": "templates/pull-request.md",
+    "titleTemplate": "{{ticketPrefix}}{{type}}{{scopeSuffix}}: {{summary}}",
     "baseBranch": "dev",
     "draftByDefault": true,
+    "requireVerification": true,
     "requireSelfReview": true,
     "openWhenChecksFail": false,
-    "updateExisting": true
+    "updateExisting": true,
+    "maxTitleLength": 120,
+    "titleLengthPolicy": "warning",
+    "requirePassedChecksBeforePr": false,
+    "pushBeforeCreate": true,
+    "linkKeyword": "Refs"
   },
   "checks": [
     {

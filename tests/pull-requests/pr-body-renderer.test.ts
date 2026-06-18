@@ -1,0 +1,175 @@
+import { mkdir, mkdtemp } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  getDefaultCodeflowConfig,
+  mergeCodeflowConfig,
+  renderPrBody,
+  type CodeflowPrPayload,
+} from '../../src/index';
+
+function payload(overrides: Partial<CodeflowPrPayload> = {}): CodeflowPrPayload {
+  return {
+    title: {
+      type: 'feat',
+      scope: 'pull-requests',
+      summary: 'implement generated pull requests',
+    },
+    body: {
+      summary: 'Implemented the /flow-pr foundation.',
+      context: 'Codeflow needs deterministic PR title/body rendering.',
+      changes: ['Added payload validation.', 'Added PR body renderer.'],
+      verification: ['npm run typecheck', 'npm test'],
+      selfReview: ['Confirmed no merge automation was added.'],
+      risk: 'Medium. This opens GitHub PRs.',
+      rollback: 'Revert this PR.',
+      reviewerNotes: 'Focus on GitHub CLI error handling.',
+      refs: ['#12'],
+    },
+    ...overrides,
+  };
+}
+
+describe('renderPrBody', () => {
+  it('renders the standard PR sections deterministically', async () => {
+    const result = await renderPrBody(payload());
+
+    expect(result.body).toContain('## Summary\n\nImplemented the /flow-pr foundation.');
+    expect(result.body).toContain('## Context\n\nCodeflow needs deterministic PR title/body rendering.');
+    expect(result.body).toContain('## Changes\n\n- Added payload validation.\n- Added PR body renderer.');
+    expect(result.body).toContain('## Verification\n\n- [x] npm run typecheck\n- [x] npm test');
+    expect(result.body).toContain('## Self-review\n\n- [x] Confirmed no merge automation was added.');
+    expect(result.body).toContain('## Risk\n\nMedium. This opens GitHub PRs.');
+    expect(result.body).toContain('## Rollback\n\nRevert this PR.');
+    expect(result.body).toContain('## Reviewer notes\n\nFocus on GitHub CLI error handling.');
+    expect(result.body).toContain('## Linked issues\n\nRefs #12');
+    expect(result.body).not.toContain('Closes #12');
+    expect(result.body).not.toMatch(/{{.*}}/);
+  });
+
+  it('preserves literal placeholder syntax from payload fields', async () => {
+    const result = await renderPrBody(payload({
+      title: {
+        type: 'feat',
+        scope: 'pull-requests',
+        summary: 'document {{summary}} placeholder',
+      },
+      body: {
+        ...payload().body,
+        summary: 'Document the {{context}} placeholder.',
+        context: 'Keep unknown {{customPlaceholder}} text literal.',
+        changes: ['Explain {{changesList}} without expanding it.'],
+        verification: ['Confirmed {{verificationList}} remains literal.'],
+        selfReview: ['Checked {{selfReviewList}} remains literal.'],
+        risk: 'Low; {{risk}} is documentation text.',
+        rollback: 'Revert docs mentioning {{rollback}}.',
+        reviewerNotes: 'Review literal {{reviewerNotes}} examples.',
+      },
+    }));
+
+    expect(result.title).toContain('&#123;&#123;summary&#125;&#125;');
+    expect(result.body).toContain('Document the &#123;&#123;context&#125;&#125; placeholder.');
+    expect(result.body).toContain('Keep unknown &#123;&#123;customPlaceholder&#125;&#125; text literal.');
+    expect(result.body).toContain('- Explain &#123;&#123;changesList&#125;&#125; without expanding it.');
+    expect(result.body).not.toContain('Codeflow needs deterministic PR title/body rendering.');
+    expect(result.body).not.toMatch(/{{.*}}/);
+  });
+
+  it('redacts likely secrets from rendered titles and bodies', async () => {
+    const githubToken = 'ghp_1234567890abcdef1234567890abcdef1234';
+    const githubPat = 'github_pat_1234567890abcdef1234567890abcdef1234';
+    const openAiKey = 'sk-1234567890abcdef1234567890abcdef';
+    const awsKey = 'AKIA1234567890ABCDEF';
+    const bearerToken = 'sample-bearer-token';
+    const result = await renderPrBody(payload({
+      title: {
+        type: 'feat',
+        scope: 'pull-requests',
+        summary: `avoid leaking ${githubToken}`,
+      },
+      body: {
+        ...payload().body,
+        summary: `Authorization: Bearer ${bearerToken}`,
+        context: 'api_key="super-secret-value"',
+        changes: ['Removed password=hunter2 from copied output.'],
+        verification: [`curl -H "Authorization: Bearer ${bearerToken}"`],
+        selfReview: [`Confirmed ${githubPat} is hidden.`],
+        risk: `token=${openAiKey}`,
+        rollback: `Unset ${awsKey}.`,
+        reviewerNotes: 'secret=plain-text-secret',
+      },
+    }));
+
+    expect(result.title).toContain('[REDACTED]');
+    expect(result.title).not.toContain(githubToken);
+    expect(result.body).toContain('Authorization: Bearer [REDACTED]');
+    expect(result.body).toContain('api_key=[REDACTED]');
+    expect(result.body).not.toContain(githubToken);
+    expect(result.body).not.toContain(githubPat);
+    expect(result.body).not.toContain(openAiKey);
+    expect(result.body).not.toContain(awsKey);
+    expect(result.body).not.toContain(bearerToken);
+    expect(result.body).not.toContain('hunter2');
+    expect(result.body).not.toContain('super-secret-value');
+    expect(result.body).not.toContain('plain-text-secret');
+  });
+
+  it('normalizes closing keywords to Refs by default', async () => {
+    const result = await renderPrBody(
+      payload({ body: { ...payload().body, refs: ['Closes #12', 'Fixes #13'] } }),
+    );
+
+    expect(result.body).toContain('Refs #12\nRefs #13');
+    expect(result.body).not.toContain('Closes #12');
+    expect(result.body).not.toContain('Fixes #13');
+  });
+
+  it('uses fallback text for missing reviewer notes and refs', async () => {
+    const result = await renderPrBody(
+      payload({ body: { ...payload().body, reviewerNotes: undefined, refs: [] } }),
+    );
+
+    expect(result.body).toContain('## Reviewer notes\n\nNone.');
+    expect(result.body).toContain('## Linked issues\n\nNone.');
+  });
+
+  it('uses the bundled default template when the configured template is missing', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'codeflow-missing-pr-template-'));
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      pullRequest: {
+        template: 'missing/pull-request.md',
+      },
+    } as Record<string, unknown>);
+    const result = await renderPrBody(payload(), { cwd, config });
+
+    expect(result.usedDefaultTemplate).toBe(true);
+    expect(result.warnings.join('\n')).toContain('using bundled default pull request template');
+    expect(result.body).toContain('## Summary');
+  });
+
+  it('errors clearly when the configured template path is not readable as a file', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'codeflow-bad-pr-template-'));
+    await mkdir(path.join(cwd, 'template-dir'));
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      pullRequest: {
+        template: 'template-dir',
+      },
+    } as Record<string, unknown>);
+
+    await expect(renderPrBody(payload(), { cwd, config })).rejects.toMatchObject({
+      name: 'CodeflowPrError',
+      code: 'template_unreadable',
+    });
+  });
+
+  it('errors when a custom template leaves unresolved placeholders', async () => {
+    await expect(
+      renderPrBody(payload(), {
+        templateText: '## Summary\n\n{{summary}}\n\n## Context\n\n{{context}}\n\n## Changes\n\n{{changesList}}\n\n## Verification\n\n{{verificationList}}\n\n## Self-review\n\n{{selfReviewList}}\n\n## Risk\n\n{{risk}}\n\n## Rollback\n\n{{rollback}}\n\n## Reviewer notes\n\n{{reviewerNotes}}\n\n## Linked issues\n\n{{linkedIssuesList}}\n\n{{unknown}}',
+      }),
+    ).rejects.toMatchObject({ code: 'unresolved_template_placeholder' });
+  });
+});

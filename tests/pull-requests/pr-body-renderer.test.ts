@@ -50,6 +50,34 @@ describe('renderPrBody', () => {
     expect(result.body).not.toMatch(/{{.*}}/);
   });
 
+  it('preserves literal placeholder syntax from payload fields', async () => {
+    const result = await renderPrBody(payload({
+      title: {
+        type: 'feat',
+        scope: 'pull-requests',
+        summary: 'document {{summary}} placeholder',
+      },
+      body: {
+        ...payload().body,
+        summary: 'Document the {{context}} placeholder.',
+        context: 'Keep unknown {{customPlaceholder}} text literal.',
+        changes: ['Explain {{changesList}} without expanding it.'],
+        verification: ['Confirmed {{verificationList}} remains literal.'],
+        selfReview: ['Checked {{selfReviewList}} remains literal.'],
+        risk: 'Low; {{risk}} is documentation text.',
+        rollback: 'Revert docs mentioning {{rollback}}.',
+        reviewerNotes: 'Review literal {{reviewerNotes}} examples.',
+      },
+    }));
+
+    expect(result.title).toContain('&#123;&#123;summary&#125;&#125;');
+    expect(result.body).toContain('Document the &#123;&#123;context&#125;&#125; placeholder.');
+    expect(result.body).toContain('Keep unknown &#123;&#123;customPlaceholder&#125;&#125; text literal.');
+    expect(result.body).toContain('- Explain &#123;&#123;changesList&#125;&#125; without expanding it.');
+    expect(result.body).not.toContain('Codeflow needs deterministic PR title/body rendering.');
+    expect(result.body).not.toMatch(/{{.*}}/);
+  });
+
   it('redacts likely secrets from rendered titles and bodies', async () => {
     const githubToken = 'ghp_1234567890abcdef1234567890abcdef1234';
     const githubPat = 'github_pat_1234567890abcdef1234567890abcdef1234';

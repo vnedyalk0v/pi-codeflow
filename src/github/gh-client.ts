@@ -4,6 +4,16 @@ import { promisify } from 'node:util';
 import { GithubCliError } from './github-errors';
 
 const execFileAsync = promisify(execFile);
+const AUTH_REQUIRED_PATTERNS = [
+  /\bnot logged (?:in|into)\b/i,
+  /\bgh auth (?:login|refresh)\b/i,
+  /\b(?:authentication|authorization)\s+(?:required|failed|needed|error|has failed)\b/i,
+  /\b(?:requires?|need(?:s|ed)?)\s+(?:authentication|authorization)\b/i,
+  /\b(?:bad|invalid) credentials\b/i,
+  /\b(?:invalid|expired|revoked|missing|no)\s+(?:oauth\s+)?(?:token|credentials)\b/i,
+  /\boauth\s+(?:token|authorization)\b/i,
+  /\bHTTP\s+401\b/i,
+];
 
 export interface GhClientOptions {
   cwd?: string;
@@ -73,7 +83,7 @@ function toGithubCliError(error: unknown, args: string[]): GithubCliError {
     });
   }
 
-  if (/not logged in|authentication|auth|oauth|token/i.test(messageText)) {
+  if (isGithubAuthRequiredMessage(messageText)) {
     return new GithubCliError({
       code: 'gh_auth_required',
       message: 'GitHub CLI authentication is required. Run `gh auth login` and retry.',
@@ -94,4 +104,8 @@ function toGithubCliError(error: unknown, args: string[]): GithubCliError {
     stderr,
     cause: error,
   });
+}
+
+export function isGithubAuthRequiredMessage(messageText: string): boolean {
+  return AUTH_REQUIRED_PATTERNS.some((pattern) => pattern.test(messageText));
 }

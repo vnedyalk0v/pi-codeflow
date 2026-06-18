@@ -1,6 +1,7 @@
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
 import { redactSecrets } from '../utils/redaction';
+import { renderSimpleTemplate } from '../utils/template';
 import {
   compactBlankLines,
   formatMarkdownBulletList,
@@ -72,13 +73,6 @@ export async function renderPrBody(
     usedDefaultTemplate: loadedTemplate.usedDefaultTemplate,
     warnings: loadedTemplate.warnings,
   };
-}
-
-function renderSimpleTemplate(templateText: string, values: Record<string, string>): string {
-  return Object.entries(values).reduce(
-    (current, [key, value]) => current.replaceAll(`{{${key}}}`, value),
-    templateText,
-  );
 }
 
 function formatMarkdownChecklist(items: string[], emptyItem: string): string {

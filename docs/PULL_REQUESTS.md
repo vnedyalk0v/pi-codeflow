@@ -119,8 +119,10 @@ The default template renders these sections in order:
 
 `changes` render as bullets. `verification` and `selfReview` render as checked
 Markdown checklist items. Linked issues use `Refs` by default, not closing
-keywords. Before output is sent to GitHub, Codeflow redacts likely secrets from
-the rendered title and body, including copied verification output.
+keywords. Payload text that contains literal `{{placeholder}}` examples is
+escaped so it is not re-expanded as template syntax. Before output is sent to
+GitHub, Codeflow redacts likely secrets from the rendered title and body,
+including copied verification output.
 
 If the configured template is missing, Codeflow uses the bundled default PR
 template and returns a warning. If a configured template exists but cannot be

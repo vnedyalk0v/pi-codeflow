@@ -1,5 +1,6 @@
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
+import { renderSimpleTemplate } from '../utils/template';
 import {
   hasUnresolvedTemplatePlaceholders,
   listUnresolvedTemplatePlaceholders,
@@ -45,9 +46,3 @@ export function summarizePrPayload(payload: CodeflowPrPayload): string {
   return payload.body.summary;
 }
 
-function renderSimpleTemplate(templateText: string, values: Record<string, string>): string {
-  return Object.entries(values).reduce(
-    (current, [key, value]) => current.replaceAll(`{{${key}}}`, value),
-    templateText,
-  );
-}

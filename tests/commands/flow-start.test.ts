@@ -176,6 +176,39 @@ describe('runFlowStart', () => {
     expect(result.workBranch).toBe('feat/add-google-oauth-login-2');
   });
 
+  it('preserves dirty-tree rejection when requireCleanWorkingTreeForStart is enabled by default', async () => {
+    const repo = await makeRepo();
+    await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');
+
+    await expect(
+      runFlowStart({
+        cwd: repo,
+        task: 'Add login',
+        dryRun: true,
+        config: getDefaultCodeflowConfig(),
+      }),
+    ).rejects.toMatchObject({ code: 'dirty_working_tree' });
+  });
+
+  it('warns and proceeds with a dirty tree when requireCleanWorkingTreeForStart is disabled', async () => {
+    const repo = await makeRepo();
+    await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      safety: { requireCleanWorkingTreeForStart: false },
+    } as Record<string, unknown>);
+
+    const result = await runFlowStart({
+      cwd: repo,
+      task: 'Add login',
+      dryRun: true,
+      config,
+    });
+
+    expect(result.warnings.join('\n')).toContain(
+      'safety.requireCleanWorkingTreeForStart is disabled',
+    );
+  });
+
   it('errors when the working tree is dirty', async () => {
     const repo = await makeRepo();
     await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');

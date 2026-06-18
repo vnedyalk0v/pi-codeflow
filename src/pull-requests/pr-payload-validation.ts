@@ -10,6 +10,7 @@ import Ajv2020, {
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
 import { cloneJson, isPlainObject, parseJson } from '../utils/json';
+import { redactSecrets } from '../utils/redaction';
 import type {
   CodeflowPrBodyPayload,
   CodeflowPrPayload,
@@ -196,7 +197,7 @@ function validateSemanticPayloadRules(
       path: '/title/summary',
       keyword: 'maxTitleLength',
       message: `Rendered PR title is ${title.length} characters; maximum is ${config.pullRequest.maxTitleLength}`,
-      details: { title, maxTitleLength: config.pullRequest.maxTitleLength },
+      details: { title: redactSecrets(title), maxTitleLength: config.pullRequest.maxTitleLength },
     });
   }
 

@@ -126,6 +126,30 @@ describe('validatePrPayload', () => {
     expect(warningResult.warnings.join('\n')).toContain('Rendered PR title');
   });
 
+  it('redacts overlong rendered title details on validation errors', () => {
+    const secret = 'ghp_1234567890abcdef1234567890abcdef1234';
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      pullRequest: { maxTitleLength: 24, titleLengthPolicy: 'error' },
+    } as Record<string, unknown>);
+    const result = validatePrPayload(
+      validPayload({
+        title: {
+          ...validPayload().title,
+          summary: `avoid leaking ${secret} in validation details`,
+        },
+      }),
+      { config },
+    );
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      const error = result.errors.find((issue) => issue.keyword === 'maxTitleLength');
+
+      expect(error?.details?.title).toContain('[REDACTED]');
+      expect(error?.details?.title).not.toContain(secret);
+    }
+  });
+
   it('rejects unknown fields when schema disallows them', () => {
     expectInvalid({ ...validPayload(), labels: ['feature'] }, '/labels');
   });

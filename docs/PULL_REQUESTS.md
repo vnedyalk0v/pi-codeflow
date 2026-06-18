@@ -101,7 +101,8 @@ docs: update configuration guide
 
 Title length is checked with `pullRequest.maxTitleLength` and
 `pullRequest.titleLengthPolicy`. Codeflow warns or fails based on config. It does
-not silently truncate titles.
+not silently truncate titles. Validation error details redact likely secrets from
+rendered title previews.
 
 ## PR body rendering
 

@@ -19,10 +19,12 @@ A spike in `spike/flow-watch/` checked GitHub CLI version 2.95.0. The installed
 `gh pr checks --help` documents JSON fields `bucket`, `completedAt`,
 `description`, `event`, `link`, `name`, `startedAt`, `state`, and `workflow`.
 It also documents the full `bucket` set as `pass`, `fail`, `pending`,
-`skipping`, and `cancel`. Real samples observed `state` values `SUCCESS` and
-`SKIPPED`, plus `bucket` values `pass` and `skipping`. `gh pr view --json
-statusCheckRollup,mergeStateStatus` returned a heterogeneous
-`statusCheckRollup` array of check-run objects and a `mergeStateStatus` string.
+`skipping`, and `cancel`, plus exit code `8` for pending checks. Real samples
+observed `state` values `SUCCESS` and `SKIPPED`, plus `bucket` values `pass` and
+`skipping`. `gh pr view --json statusCheckRollup,mergeStateStatus` returned a
+heterogeneous `statusCheckRollup` array of check-run objects and a
+`mergeStateStatus` string. The GitHub CLI source confirms the rollup can include
+classic `StatusContext` rows with `context`, `state`, and `targetUrl` fields.
 
 ## Decision
 
@@ -40,6 +42,13 @@ name,state,bucket,link,workflow`. `bucket` is authoritative when present because
 this installed `gh` version documents it as the stable categorization of
 `state`.
 
+`gh pr checks` exit code `8` means checks are pending. `GhClient.run` wraps
+non-zero exits as `GithubCliError`, so the implementation must inspect
+`exitCode` and `stdout`: when `exitCode` is `8` and `stdout` contains parseable
+check rows, normalize those rows normally instead of treating the command as
+`unavailable`. If exit `8` has no parseable rows, fall back to `gh pr view` or
+return `unavailable` with a warning.
+
 | `gh pr checks` bucket | Observed or documented `state` examples | Codeflow status | Notes |
 | --- | --- | --- | --- |
 | `pass` | observed `SUCCESS` | `passed` | Terminal success. |
@@ -51,15 +60,19 @@ this installed `gh` version documents it as the stable categorization of
 
 `gh pr view <number> --json statusCheckRollup,mergeStateStatus` may be used as a
 read-only fallback or diagnostic source when `pr checks` cannot provide rows.
-The fallback mapping is conservative:
+The fallback mapping is conservative and must handle both `CheckRun` and classic
+`StatusContext` rows:
 
-| `statusCheckRollup` fields | Codeflow status |
-| --- | --- |
-| `status` is `QUEUED`, `REQUESTED`, `WAITING`, `PENDING`, or `IN_PROGRESS` | `running` |
-| `status` is `COMPLETED` and `conclusion` is `SUCCESS`, `NEUTRAL`, or `SKIPPED` | `passed` |
-| `status` is `COMPLETED` and `conclusion` is `FAILURE`, `TIMED_OUT`, `ACTION_REQUIRED`, or `STARTUP_FAILURE` | `failed` |
-| `status` is `COMPLETED` and `conclusion` is `CANCELLED` | `unavailable` |
-| Empty rollup, missing fields, or unknown values | `unavailable` |
+| `statusCheckRollup` row shape | Fields | Codeflow status |
+| --- | --- | --- |
+| `CheckRun` | `status` is `QUEUED`, `REQUESTED`, `WAITING`, `PENDING`, or `IN_PROGRESS` | `running` |
+| `CheckRun` | `status` is `COMPLETED` and `conclusion` is `SUCCESS`, `NEUTRAL`, or `SKIPPED` | `passed` |
+| `CheckRun` | `status` is `COMPLETED` and `conclusion` is `FAILURE`, `TIMED_OUT`, `ACTION_REQUIRED`, or `STARTUP_FAILURE` | `failed` |
+| `CheckRun` | `status` is `COMPLETED` and `conclusion` is `CANCELLED` | `unavailable` |
+| `StatusContext` | `state` is `PENDING` or `EXPECTED` | `running` |
+| `StatusContext` | `state` is `SUCCESS` | `passed` |
+| `StatusContext` | `state` is `FAILURE` or `ERROR` | `failed` |
+| Any row | Empty rollup, missing discriminator, missing fields, or unknown values | `unavailable` |
 
 ### `ci_waiting` transition rules
 

@@ -27,6 +27,15 @@ The same help text says the `bucket` field categorizes `state` into exactly:
 pass, fail, pending, skipping, cancel
 ```
 
+It also documents this additional exit code:
+
+```text
+8: Checks pending
+```
+
+Because `GhClient.run` treats non-zero exits as errors, `/flow-watch` must parse
+JSON rows from stdout on exit `8` before falling back or blocking.
+
 `gh pr view --help` documents `statusCheckRollup` and `mergeStateStatus` as JSON
 fields.
 
@@ -118,6 +127,18 @@ Representative shape:
   ]
 }
 ```
+
+## Rollup fallback source check
+
+The GitHub CLI source for the pull request status rollup model defines the
+rollup nodes as a discriminated union of `CheckRun` and classic `StatusContext`
+rows (`api/queries_pr.go` in `cli/cli`). `StatusContext` rows carry `context`,
+`description`, `state`, `targetUrl`, and `createdAt`; their states are
+`EXPECTED`, `ERROR`, `FAILURE`, `PENDING`, and `SUCCESS`.
+
+For the v1 fallback design, this means `/flow-watch` must map StatusContext
+`PENDING`/`EXPECTED` to `running`, `SUCCESS` to `passed`, `FAILURE`/`ERROR` to
+`failed`, and unknown or missing fields to `unavailable`.
 
 ## Required-check probe
 

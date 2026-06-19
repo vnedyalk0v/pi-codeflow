@@ -45,22 +45,19 @@
       ],
       "properties": {
         "default": {
-          "type": "string",
-          "minLength": 1,
+          "$ref": "#/$defs/gitBranchName",
           "description": "Default base branch for new work."
         },
         "allowed": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/gitBranchName"
           },
           "uniqueItems": true,
           "minItems": 1
         },
         "fallback": {
-          "type": "string",
-          "minLength": 1,
+          "$ref": "#/$defs/gitBranchName",
           "description": "Fallback branch when default is missing and policy allows fallback."
         },
         "missingDefaultBehavior": {
@@ -306,8 +303,8 @@
           "description": "Template for deterministic PR titles. Supported placeholders include type, scope, scopeSuffix, summary, ticket, and ticketPrefix."
         },
         "baseBranch": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/gitBranchName",
+          "description": "Default PR base branch."
         },
         "draftByDefault": {
           "type": "boolean"
@@ -611,5 +608,13 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "gitBranchName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![-+])(?!refs/)(?!HEAD$)(?!@$)(?!/)(?!.*//)(?!.*\\s)(?!.*[\\u0000-\\u001f\\u007f])(?!.*\\.\\.)(?!.*@\\{)(?!.*[~^:?*\\[\\\\])(?!.*(?:^|/)\\.)(?!.*(?:^|/)[^/]*\\.lock(?:/|$))(?!.*[/.]$).+$",
+      "description": "Codeflow git branch name. Rejects option-like, refspec-like, fully-qualified refs/, pseudo-ref, whitespace/control, and Git-invalid path component forms."
+    }
+  }
 }

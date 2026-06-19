@@ -151,9 +151,10 @@ A workflow should enter `blocked` when:
 - a payload fails validation;
 - `/flow-commit` has no staged changes, is on a reserved branch, has failed
   required check state, or git commit fails;
-- `/flow-pr` has an invalid payload, missing remote base branch, reserved head branch,
-  base=head, failed required check state, missing GitHub CLI/authentication,
-  unpushed branch when pushing is disabled, or GitHub PR creation fails;
+- `/flow-pr` has an invalid payload, malformed base/head branch name, missing
+  remote base branch, reserved head branch, base=head, failed required check
+  state, missing GitHub CLI/authentication, unpushed branch when pushing is
+  disabled, or GitHub PR creation fails;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
 

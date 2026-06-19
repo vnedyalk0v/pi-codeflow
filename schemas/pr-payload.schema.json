@@ -119,13 +119,21 @@
       "type": "boolean"
     },
     "baseBranch": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/gitBranchName",
+      "description": "Optional PR base branch override."
     },
     "headBranch": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/gitBranchName",
+      "description": "Optional PR head branch override."
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "gitBranchName": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![-+])(?!refs/)(?!HEAD$)(?!@$)(?!/)(?!.*//)(?!.*\\s)(?!.*[\\u0000-\\u001f\\u007f])(?!.*\\.\\.)(?!.*@\\{)(?!.*[~^:?*\\[\\\\])(?!.*(?:^|/)\\.)(?!.*(?:^|/)[^/]*\\.lock(?:/|$))(?!.*[/.]$).+$",
+      "description": "Codeflow git branch name. Rejects option-like, refspec-like, fully-qualified refs/, pseudo-ref, whitespace/control, and Git-invalid path component forms."
+    }
+  }
 }

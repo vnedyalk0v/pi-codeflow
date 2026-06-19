@@ -166,6 +166,12 @@ Pull request base outside allowed base branches:
 - The schema requires `baseBranches.fallback` whenever fallback behavior is
   selected, so validation cannot pass without a branch to use.
 - The fallback branch should also appear in `baseBranches.allowed`.
+- Base branch names in `default`, `allowed`, `fallback`, and
+  `pullRequest.baseBranch` must use the same Codeflow git branch-name subset as
+  `/flow-pr` payload `baseBranch`/`headBranch`: no leading `-` or `+`, no
+  `refs/` prefix, no literal `HEAD` or `@`, no whitespace/control characters,
+  no Git ref metacharacters, no empty or leading-dot path components, no `.lock`
+  path components, and no trailing `/` or `.`.
 
 ## Top-level keys
 
@@ -243,7 +249,7 @@ rendering, branch safety, GitHub CLI behavior, and bounded PR state.
 | --- | --- |
 | `template` | PR body template path used when it differs from the package default. |
 | `titleTemplate` | Deterministic PR title template using `type`, `scopeSuffix`, `summary`, `ticket`, and `ticketPrefix`. |
-| `baseBranch` | Default PR base branch. |
+| `baseBranch` | Default PR base branch; must be a valid Codeflow git branch name and appear in `baseBranches.allowed`. |
 | `draftByDefault` | Opens draft PRs unless payload or command flags override it. |
 | `requireVerification` | Requires payload `body.verification` to contain at least one item. |
 | `requireSelfReview` | Requires payload `body.selfReview` to contain at least one item. |

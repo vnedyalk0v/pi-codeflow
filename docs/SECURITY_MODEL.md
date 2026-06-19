@@ -116,6 +116,9 @@ explicit `--base`, `--head`, `--title`, and `--body-file` arguments.
 Safety expectations for PRs:
 
 - never use `gh pr create --fill`;
+- validate resolved base/head names before git or GitHub CLI calls;
+- reject option/refspec-like or pseudo-ref branch names such as `-x`, `+x`,
+  `refs/heads/main`, `HEAD`, and malformed Git branch path components;
 - refuse normal PRs from reserved head branches;
 - refuse base=head PRs;
 - use `Refs` linked issues by default, not automatic closing keywords;

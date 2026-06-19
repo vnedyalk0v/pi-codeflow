@@ -49,6 +49,34 @@ describe('payload schemas', () => {
     expect(result.valid).toBe(true);
   });
 
+  it('rejects malformed PR branch overrides', () => {
+    const result = validateSchema('schemas/pr-payload.schema.json', {
+      title: {
+        type: 'feat',
+        summary: 'implement generated pull requests',
+      },
+      body: {
+        summary: 'Implemented /flow-pr.',
+        context: 'Codeflow needs deterministic PR formatting.',
+        changes: ['Added PR payload validation.'],
+        risk: 'Medium.',
+        rollback: 'Revert the PR.',
+      },
+      baseBranch: 'dev',
+      headBranch: 'refs/heads/main',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          instancePath: '/headBranch',
+          keyword: 'pattern',
+        }),
+      ]),
+    );
+  });
+
   it('rejects unknown PR payload fields', () => {
     const result = validateSchema('schemas/pr-payload.schema.json', {
       title: {

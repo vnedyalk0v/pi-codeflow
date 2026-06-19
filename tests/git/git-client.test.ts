@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
 import { GitClient } from '../../src/git/git-client';
+import type { GitError } from '../../src/git/git-errors';
 
 const execFileAsync = promisify(execFile);
 
@@ -55,5 +56,33 @@ describe('GitClient', () => {
     await expect(client.branchExists('feat/test')).resolves.toBe(true);
     await client.checkoutBranch('feat/test');
     await expect(client.getCurrentBranch()).resolves.toBe('feat/test');
+  });
+
+  it('counts commits ahead between refs', async () => {
+    const repo = await makeRepo();
+    const client = new GitClient({ cwd: repo });
+
+    await expect(client.getAheadCount('HEAD', 'HEAD')).resolves.toBe(0);
+
+    await git(repo, ['checkout', '-b', 'feat/ahead-count']);
+    await writeFile(path.join(repo, 'feature.txt'), 'feature\n', 'utf8');
+    await git(repo, ['add', 'feature.txt']);
+    await git(repo, ['commit', '-m', 'feature commit']);
+
+    await expect(client.getAheadCount('dev', 'feat/ahead-count')).resolves.toBeGreaterThan(0);
+  });
+
+  it('throws GitError for unparseable rev-list counts', async () => {
+    const client = new GitClient();
+    (client as unknown as {
+      run: (args: string[]) => Promise<{ stdout: string; stderr: string }>;
+    }).run = async () => ({ stdout: '\n', stderr: '' });
+
+    await expect(client.getAheadCount('dev', 'HEAD')).rejects.toMatchObject({
+      code: 'git_command_failed',
+      message: 'git rev-list --count returned unexpected output: ""',
+      command: 'git',
+      args: ['rev-list', '--count', 'dev..HEAD'],
+    } satisfies Partial<GitError>);
   });
 });

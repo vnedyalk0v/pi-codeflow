@@ -114,7 +114,19 @@ export class GitClient {
 
   async getAheadCount(baseRef: string, headRef = 'HEAD'): Promise<number> {
     const result = await this.run(['rev-list', '--count', `${baseRef}..${headRef}`]);
-    return Number.parseInt(result.stdout.trim(), 10);
+    const raw = result.stdout.trim();
+    const count = Number.parseInt(raw, 10);
+
+    if (!Number.isInteger(count) || count < 0) {
+      throw new GitError({
+        code: 'git_command_failed',
+        message: `git rev-list --count returned unexpected output: "${raw}"`,
+        command: 'git',
+        args: ['rev-list', '--count', `${baseRef}..${headRef}`],
+      });
+    }
+
+    return count;
   }
 
   async pushBranch(branchName: string, remote = 'origin'): Promise<void> {

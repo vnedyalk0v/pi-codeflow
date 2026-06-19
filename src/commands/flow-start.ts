@@ -225,8 +225,7 @@ export async function prepareCodeflowBranch(
     };
   }
 
-  await gitClient.createBranchFromRef(options.workBranch, base.baseRef);
-  await gitClient.checkoutBranch(options.workBranch);
+  await gitClient.checkoutNewBranchFromRef(options.workBranch, base.baseRef);
 
   return {
     baseBranch: base.baseBranch,

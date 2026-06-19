@@ -209,6 +209,29 @@ describe('runFlowStart', () => {
     );
   });
 
+  it('does not leave a work branch behind when a dirty-tree override cannot switch branches', async () => {
+    const repo = await makeRepo('dev');
+    await git(repo, ['checkout', '-b', 'topic']);
+    await writeFile(path.join(repo, 'README.md'), '# Topic\n', 'utf8');
+    await git(repo, ['add', 'README.md']);
+    await git(repo, ['commit', '-m', 'topic changes']);
+    await writeFile(path.join(repo, 'README.md'), '# Dirty topic\n', 'utf8');
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      safety: { requireCleanWorkingTreeForStart: false },
+    } as Record<string, unknown>);
+
+    await expect(
+      runFlowStart({
+        cwd: repo,
+        task: 'Add login',
+        config,
+      }),
+    ).rejects.toThrow(/local changes[\s\S]*would be overwritten/);
+
+    await expect(currentBranch(repo)).resolves.toBe('topic');
+    await expect(git(repo, ['branch', '--list', 'feat/add-login'])).resolves.toBe('');
+  });
+
   it('errors when the working tree is dirty', async () => {
     const repo = await makeRepo();
     await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');

@@ -584,22 +584,28 @@
       ],
       "properties": {
         "blockDirectWorkOnReservedBranches": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, Codeflow surfaces a guidance warning on reserved branches. Reserved-branch protection is always enforced regardless of this flag."
         },
         "allowDestructiveGitOperations": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Reserved for a future milestone. Destructive git operations are not implemented; this flag currently has no effect."
         },
         "allowForcePush": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Reserved for a future milestone. Force-push is not implemented; this flag currently has no effect."
         },
         "allowDirectPushToRemote": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Reserved for a future milestone. Feature-branch pushes are gated by pullRequest.pushBeforeCreate; this flag currently has no effect."
         },
         "requireCleanWorkingTreeForStart": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, /flow-start refuses to run with a dirty working tree. When false, /flow-start proceeds and warns instead."
         },
         "redactSecretsFromReports": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Secret redaction is always applied to summaries, reports, and PR bodies and cannot be disabled. This flag is reserved and currently has no effect."
         }
       },
       "additionalProperties": false

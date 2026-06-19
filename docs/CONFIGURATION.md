@@ -299,10 +299,13 @@ checks so the final summary can include more context.
 Safety behavior:
 
 - GitHub integration is read-only for check status.
-- No checks produce a `no_checks` status and never claim verified evidence.
+- Empty check samples in watch mode keep polling until checks appear or timeout.
+- No checks after timeout or single-sample mode produce a `no_checks` status and
+  never claim verified evidence.
 - Pending checks after timeout stay `pending` and keep the lifecycle in
   `ci_waiting`.
-- Failed, cancelled, or timed-out selected checks block the flow for local fixes.
+- Failed, skipped-only, cancelled, or timed-out selected checks block the flow
+  for local fixes or explicit confirmation.
 - `/flow-watch` does not rerun workflows, merge PRs, approve PRs, resolve
   comments, push branches, or delete branches.
 

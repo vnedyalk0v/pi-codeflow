@@ -275,11 +275,11 @@ function resolveTargetPrOption(
 }
 
 function getLifecyclePhaseForChecks(result: CodeflowPrChecksResult): CodeflowLifecyclePhase {
-  if (result.status === 'passed' || result.status === 'skipped') {
+  if (result.status === 'passed') {
     return 'verified';
   }
 
-  if (result.status === 'failed' || result.status === 'unknown') {
+  if (result.status === 'failed' || result.status === 'skipped' || result.status === 'unknown') {
     return 'blocked';
   }
 

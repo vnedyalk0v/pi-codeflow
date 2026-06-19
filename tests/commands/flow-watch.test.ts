@@ -167,6 +167,20 @@ describe('runFlowWatch', () => {
     expect(result.sessionState.lifecycle.phase).not.toBe('verified');
   });
 
+  it('keeps skipped-only checks from claiming verified without confirmation', async () => {
+    const result = await runFlowWatch({
+      watch: false,
+      config: getDefaultCodeflowConfig(),
+      ghClient: ghClient([], [{ name: 'docs', bucket: 'skipping', state: 'SKIPPED' }]),
+      sessionState: sessionWithPr(),
+    });
+
+    expect(result.checks.status).toBe('skipped');
+    expect(result.lifecyclePhase).toBe('blocked');
+    expect(result.sessionState.lifecycle.phase).toBe('blocked');
+    expect(result.nextExpectedActions.join('\n')).toContain('Confirm skipped checks are expected');
+  });
+
   it('does not merge, approve, push, rerun workflows, resolve comments, or delete branches', async () => {
     const calls: string[][] = [];
     await runFlowWatch({

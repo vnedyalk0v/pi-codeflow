@@ -46,7 +46,7 @@ state storage, review comment automation, and merge automation are later work.
 | `ci_waiting` | Remote checks are running. | `/flow-watch` |
 | `review_triage` | Reviewer comments are classified. | `/flow-comments` |
 | `fixing_review_findings` | Valid reviewer comments are addressed. | `/flow-fix-comments`, `/flow-check` |
-| `verified` | Local and relevant remote verification passed or was intentionally skipped. | `/flow-report` |
+| `verified` | Local and relevant remote verification passed or was explicitly accepted. | `/flow-report` |
 | `final_reported` | Work is summarized for the user. | `/flow-report` |
 | `blocked` | Agent cannot safely continue. | `/flow-status` |
 | `emergency` | Explicit emergency path is active. | `/flow-start`, `/flow-commit`, `/flow-pr`, `/flow-report` |
@@ -142,10 +142,13 @@ Pass, failure, pending, and empty behavior:
   provides them;
 - a watch timeout leaves the status `pending`, keeps `ci_waiting`, and says the
   watch timed out before completion;
+- watch mode keeps polling `no_checks` samples until checks appear or the
+  timeout is reached;
 - no checks produce `no_checks`, warn that remote verification was not proven,
   and must not be presented as `verified`;
-- skipped-only checks produce `skipped`; agents should confirm skipped checks are
-  expected before treating remote verification as satisfied;
+- skipped-only checks produce `skipped` and move to `blocked`; agents should
+  confirm skipped checks are expected before treating remote verification as
+  satisfied;
 - unknown GitHub states produce warnings and move to `blocked` rather than
   claiming pass.
 

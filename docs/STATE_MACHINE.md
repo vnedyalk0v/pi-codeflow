@@ -21,9 +21,10 @@ transitions through PR check watching:
 - `/flow-pr` validates a structured PR payload, renders the PR title/body, opens
   or updates a GitHub PR, and returns `pr_opened` on success.
 - `/flow-watch` reads GitHub PR checks, stores bounded latest GitHub checks
-  state, returns `ci_waiting` for pending or timed-out checks, returns
-  `verified` for passing or intentionally skipped selected checks, and returns
-  `blocked` for failed, cancelled, timed-out, or unknown selected check states.
+  state, returns `ci_waiting` for pending, timed-out, or still-empty check
+  samples, returns `verified` for passing selected checks, and returns `blocked`
+  for skipped-only, failed, cancelled, timed-out, or unknown selected check
+  states.
 - Persistent external state storage and later review-comment transitions are not
   implemented yet.
 
@@ -107,14 +108,14 @@ not a full mutation engine.
 | `ready_to_commit` | `committed` | Commit payload validates and commit succeeds. |
 | `ready_to_commit` | `blocked` | Payload invalid or staged diff is wrong. |
 | `committed` | `pr_opened` | PR payload validates and PR opens/updates. |
-| `pr_opened` | `ci_waiting` | `/flow-watch` finds checks pending or times out before completion. |
+| `pr_opened` | `ci_waiting` | `/flow-watch` finds checks pending, no checks yet, or times out before completion. |
 | `pr_opened` | `review_triage` | Review comments exist. |
-| `pr_opened` | `verified` | `/flow-watch` finds selected checks passed or skipped as expected. |
-| `pr_opened` | `blocked` | `/flow-watch` finds failed, cancelled, timed-out, missing, or unknown selected checks. |
-| `ci_waiting` | `ci_waiting` | `/flow-watch` finds checks still pending or times out before completion. |
-| `ci_waiting` | `verified` | `/flow-watch` finds selected checks passed or skipped as expected. |
+| `pr_opened` | `verified` | `/flow-watch` finds selected checks passed. |
+| `pr_opened` | `blocked` | `/flow-watch` finds skipped-only, failed, cancelled, timed-out, or unknown selected checks. |
+| `ci_waiting` | `ci_waiting` | `/flow-watch` finds checks still pending, no checks yet, or times out before completion. |
+| `ci_waiting` | `verified` | `/flow-watch` finds selected checks passed. |
 | `ci_waiting` | `review_triage` | Review comments arrive while CI is pending. |
-| `ci_waiting` | `blocked` | `/flow-watch` finds failed, cancelled, timed-out, missing, or unknown selected checks. |
+| `ci_waiting` | `blocked` | `/flow-watch` finds skipped-only, failed, cancelled, timed-out, or unknown selected checks. |
 | `review_triage` | `fixing_review_findings` | Valid comments require fixes. |
 | `review_triage` | `verified` | Comments are stale, already fixed, or no action needed. |
 | `review_triage` | `blocked` | Comment requires human decision. |
@@ -226,14 +227,18 @@ non-destructive fetch attempt made before base branch resolution.
 - Passing selected checks: `pr_opened` or `ci_waiting` -> `verified` with
   bounded GitHub checks state stored in session state.
 - Pending selected checks: `pr_opened` or `ci_waiting` -> `ci_waiting`.
+- Empty check samples in watch mode: keep polling until checks appear or the
+  watch timeout is reached.
 - Timeout while selected checks are pending: remain in `ci_waiting`; the result
   status stays `pending` and the summary says the watch timed out.
 - Failed selected checks: `pr_opened` or `ci_waiting` -> `blocked` with check
   names, statuses, durations, and details links when available.
 - Cancelled or timed-out selected check rows: `pr_opened` or `ci_waiting` ->
   `blocked` because they do not prove remote verification.
-- No checks found: remain in `ci_waiting` with `no_checks`; never claim
-  `verified`.
+- Skipped-only selected checks: `pr_opened` or `ci_waiting` -> `blocked` until
+  the skipped status is explicitly accepted.
+- No checks found after timeout or single-sample mode: remain in `ci_waiting`
+  with `no_checks`; never claim `verified`.
 - Unknown GitHub status: `pr_opened` or `ci_waiting` -> `blocked` with a warning
   that Codeflow could not normalize the returned state.
 - Dry-run: does not call GitHub and does not transition to `verified`.

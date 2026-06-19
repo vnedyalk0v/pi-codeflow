@@ -146,11 +146,14 @@ Safety expectations for GitHub checks:
 - use required-only mode by default and all-checks mode only when requested or
   configured;
 - do not fetch or store full CI logs in this foundation;
-- no checks produce `no_checks` and never claim remote verification;
+- empty check samples in watch mode keep polling until checks appear or timeout;
+- no checks after timeout or single-sample mode produce `no_checks` and never
+  claim remote verification;
 - pending checks after timeout remain `pending` and keep the flow in
   `ci_waiting`;
-- failed, cancelled, timed-out, or unknown selected checks block the flow until
-  the agent fixes the underlying issue or asks for human guidance;
+- failed, skipped-only, cancelled, timed-out, or unknown selected checks block
+  the flow until the agent fixes the underlying issue or asks for human
+  guidance;
 - never call `gh run rerun`, `gh workflow run`, mutating `gh api` calls, merge,
   review, comment, ready, close, edit, reopen, branch deletion, or approval
   commands from `/flow-watch`.

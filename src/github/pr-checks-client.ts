@@ -266,11 +266,15 @@ function emptyChecksResult(options: {
 }
 
 function shouldStopWatching(result: CodeflowPrChecksResult, failFast: boolean): boolean {
-  if (result.pendingChecks.length === 0) {
+  if (result.status === 'no_checks') {
+    return false;
+  }
+
+  if (failFast && result.failedChecks.length > 0) {
     return true;
   }
 
-  return failFast && result.failedChecks.length > 0;
+  return result.pendingChecks.length === 0;
 }
 
 function finalizeWatchResult(

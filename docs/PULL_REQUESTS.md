@@ -246,8 +246,11 @@ Behavior:
 - all-checks mode calls `gh pr checks --json ...` without the required filter;
 - passed selected checks move the lifecycle to `verified`;
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
-- failed, cancelled, timed-out, or unknown selected checks move to `blocked`;
-- no checks produce `no_checks` and must not be treated as verified evidence.
+- watch mode keeps polling empty check samples until checks appear or timeout;
+- failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
+  `blocked`;
+- no checks after timeout or single-sample mode produce `no_checks` and must not
+  be treated as verified evidence.
 
 `/flow-watch` does not implement review-comment triage. It also does not rerun
 workflows, merge, approve, request review, resolve comments, reply to comments,

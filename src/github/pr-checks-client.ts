@@ -68,10 +68,7 @@ export async function getGitHubPrChecks(
     const result = await ghClient.run(args);
     stdout = result.stdout;
   } catch (error) {
-    if (error instanceof GithubCliError && isExitCode(error.exitCode, 8) && error.stdout.trim().length > 0) {
-      stdout = error.stdout;
-      warnings.push('GitHub reported pending checks while returning check rows.');
-    } else if (error instanceof GithubCliError && looksLikeNoChecksMessage(error)) {
+    if (error instanceof GithubCliError && looksLikeNoChecksMessage(error)) {
       return emptyChecksResult({
         metadata,
         requiredOnly,
@@ -80,6 +77,14 @@ export async function getGitHubPrChecks(
         startedAtMs,
         warnings: ['No GitHub PR checks were found; Codeflow will not claim remote verification.'],
       });
+    }
+
+    if (shouldParseChecksStdout(error)) {
+      stdout = error.stdout;
+
+      if (isExitCode(error.exitCode, 8)) {
+        warnings.push('GitHub reported pending checks while returning check rows.');
+      }
     } else {
       throw mapGithubCliError(error, options.pr !== undefined ? 'pr_not_found' : 'no_pr_found');
     }
@@ -311,6 +316,14 @@ function finalizeWatchResult(
     attempts: options.attempts,
     timedOut: options.timedOut,
   };
+}
+
+function shouldParseChecksStdout(error: unknown): error is GithubCliError {
+  return (
+    error instanceof GithubCliError &&
+    error.code === 'gh_command_failed' &&
+    error.stdout.trim().length > 0
+  );
 }
 
 function mapGithubCliError(error: unknown, notFoundCode: 'no_pr_found' | 'pr_not_found'): CodeflowPrChecksError {

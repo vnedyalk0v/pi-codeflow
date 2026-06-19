@@ -244,6 +244,8 @@ Behavior:
 
 - required-only mode calls `gh pr checks --required --json ...`;
 - all-checks mode calls `gh pr checks --json ...` without the required filter;
+- non-zero `gh pr checks --json` exits with JSON rows are parsed before error
+  mapping so failed checks can be summarized;
 - passed selected checks move the lifecycle to `verified`;
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
 - watch mode keeps polling empty check samples until checks appear or timeout;

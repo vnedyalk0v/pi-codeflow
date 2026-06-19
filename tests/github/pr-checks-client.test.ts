@@ -111,6 +111,34 @@ describe('getGitHubPrChecks', () => {
     expect(result.warnings.join('\n')).toContain('pending checks');
   });
 
+  it('parses failed check rows when gh exits non-zero with JSON stdout', async () => {
+    const calls: string[][] = [];
+    const failedError = new GithubCliError({
+      code: 'gh_command_failed',
+      message: 'checks failed',
+      args: ['pr', 'checks', '123', '--json', 'bucket,state,name'],
+      exitCode: 1,
+      stdout: JSON.stringify([
+        {
+          name: 'test',
+          workflow: 'CI',
+          bucket: 'fail',
+          state: 'FAILURE',
+          link: 'https://github.com/org/repo/actions/runs/1',
+        },
+      ]),
+    });
+    const result = await getGitHubPrChecks({
+      pr: 123,
+      ghClient: ghClient(calls, [viewJson(), failedError]),
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.failedChecks).toHaveLength(1);
+    expect(result.summary).toContain('GitHub checks failed.');
+    expect(result.summary).toContain('Details: https://github.com/org/repo/actions/runs/1');
+  });
+
   it('handles missing gh, auth failure, and no PR found with Codeflow errors', async () => {
     await expect(
       getGitHubPrChecks({

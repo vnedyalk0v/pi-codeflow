@@ -183,6 +183,26 @@ Pull request base outside allowed base branches:
 | `guidance` | Proactive guidance and structured-output behavior. |
 | `safety` | Fallback safety boundaries. |
 
+## Safety flags
+
+The `safety` object is intentionally conservative. Some fields are reserved so
+config files can keep a stable shape without implying mutable runtime controls.
+
+- `requireCleanWorkingTreeForStart`: enforced by `/flow-start`. When true, a
+  dirty working tree is blocked. When false, `/flow-start` proceeds and reports
+  a warning instead.
+- `blockDirectWorkOnReservedBranches`: affects guidance messaging only.
+  Reserved-branch protection is always enforced regardless of this flag.
+- `redactSecretsFromReports`: reserved and non-disablable. Secret redaction is
+  always applied to summaries, reports, and PR bodies.
+- `allowDestructiveGitOperations`: reserved for a future milestone. Destructive
+  git operations are not implemented; this flag currently has no effect.
+- `allowForcePush`: reserved for a future milestone. Force-push is not
+  implemented; this flag currently has no effect.
+- `allowDirectPushToRemote`: reserved for a future milestone. Feature-branch
+  pushes are controlled by `pullRequest.pushBeforeCreate` or `/flow-pr --push`;
+  this flag currently has no effect.
+
 ## Commit policy
 
 The `commits` object controls structured commit payload validation, template

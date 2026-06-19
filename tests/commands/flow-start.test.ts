@@ -176,6 +176,62 @@ describe('runFlowStart', () => {
     expect(result.workBranch).toBe('feat/add-google-oauth-login-2');
   });
 
+  it('preserves dirty-tree rejection when requireCleanWorkingTreeForStart is enabled by default', async () => {
+    const repo = await makeRepo();
+    await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');
+
+    await expect(
+      runFlowStart({
+        cwd: repo,
+        task: 'Add login',
+        dryRun: true,
+        config: getDefaultCodeflowConfig(),
+      }),
+    ).rejects.toMatchObject({ code: 'dirty_working_tree' });
+  });
+
+  it('warns and proceeds with a dirty tree when requireCleanWorkingTreeForStart is disabled', async () => {
+    const repo = await makeRepo();
+    await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      safety: { requireCleanWorkingTreeForStart: false },
+    } as Record<string, unknown>);
+
+    const result = await runFlowStart({
+      cwd: repo,
+      task: 'Add login',
+      dryRun: true,
+      config,
+    });
+
+    const warningText = result.warnings.join('\n');
+    expect(warningText).toContain('safety.requireCleanWorkingTreeForStart is disabled');
+    expect(warningText).toContain('dirty changes remain in the working tree on the new branch');
+  });
+
+  it('does not leave a work branch behind when a dirty-tree override cannot switch branches', async () => {
+    const repo = await makeRepo('dev');
+    await git(repo, ['checkout', '-b', 'topic']);
+    await writeFile(path.join(repo, 'README.md'), '# Topic\n', 'utf8');
+    await git(repo, ['add', 'README.md']);
+    await git(repo, ['commit', '-m', 'topic changes']);
+    await writeFile(path.join(repo, 'README.md'), '# Dirty topic\n', 'utf8');
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      safety: { requireCleanWorkingTreeForStart: false },
+    } as Record<string, unknown>);
+
+    await expect(
+      runFlowStart({
+        cwd: repo,
+        task: 'Add login',
+        config,
+      }),
+    ).rejects.toThrow(/local changes[\s\S]*would be overwritten/);
+
+    await expect(currentBranch(repo)).resolves.toBe('topic');
+    await expect(git(repo, ['branch', '--list', 'feat/add-login'])).resolves.toBe('');
+  });
+
   it('errors when the working tree is dirty', async () => {
     const repo = await makeRepo();
     await writeFile(path.join(repo, 'README.md'), '# Dirty\n', 'utf8');

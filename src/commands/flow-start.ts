@@ -187,14 +187,20 @@ export async function prepareCodeflowBranch(
   const status = await gitClient.getStatus();
 
   if (!status.clean) {
-    throw new FlowStartError({
-      code: 'dirty_working_tree',
-      message:
-        'Working tree has uncommitted changes. Commit, stash, or revert them before running /flow-start; Codeflow will not discard or auto-stash changes.',
-      details: {
-        entries: status.entries,
-      },
-    });
+    if (options.config.safety.requireCleanWorkingTreeForStart) {
+      throw new FlowStartError({
+        code: 'dirty_working_tree',
+        message:
+          'Working tree has uncommitted changes. Commit, stash, or revert them before running /flow-start; Codeflow will not discard or auto-stash changes.',
+        details: {
+          entries: status.entries,
+        },
+      });
+    }
+
+    warnings.push(
+      'Working tree has uncommitted changes; starting anyway because safety.requireCleanWorkingTreeForStart is disabled. Codeflow will not stash, revert, or commit them; if branch checkout succeeds, compatible dirty changes remain in the working tree on the new branch and may be included in this flow.',
+    );
   }
 
   const base = await resolveBaseBranchRef(gitClient, options.config, options.dryRun === true);
@@ -219,8 +225,7 @@ export async function prepareCodeflowBranch(
     };
   }
 
-  await gitClient.createBranchFromRef(options.workBranch, base.baseRef);
-  await gitClient.checkoutBranch(options.workBranch);
+  await gitClient.checkoutNewBranchFromRef(options.workBranch, base.baseRef);
 
   return {
     baseBranch: base.baseBranch,

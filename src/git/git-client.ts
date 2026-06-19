@@ -95,6 +95,10 @@ export class GitClient {
     await this.run(['checkout', branchName]);
   }
 
+  async checkoutNewBranchFromRef(branchName: string, ref: string): Promise<void> {
+    await this.run(['checkout', '-b', branchName, ref]);
+  }
+
   async commitWithMessageFile(messageFilePath: string): Promise<void> {
     await this.run(['commit', '--file', messageFilePath]);
   }

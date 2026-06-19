@@ -25,6 +25,7 @@ export function getGitRefRejectionReason(value: string): string | null {
   if (value.length === 0) return 'it is empty';
   if (value.startsWith('-')) return 'it must not start with "-"';
   if (value.startsWith('+')) return 'it must not start with "+"';
+  if (value.startsWith('refs/')) return 'it must not start with "refs/"';
   if (/\s/.test(value)) return 'it must not contain whitespace';
   if (/[\x00-\x1f\x7f]/.test(value)) return 'it must not contain control characters';
   if (value.includes('..')) return 'it must not contain ".."';

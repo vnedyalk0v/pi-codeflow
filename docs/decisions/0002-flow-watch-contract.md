@@ -2,14 +2,14 @@
 
 ## Status
 
-Accepted
+Accepted; updated by #13 implementation.
 
 ## Context
 
 `/flow-watch` is named in the README command surface and maps to the existing
-`ci_waiting` lifecycle phase. The command is the planned bridge between a PR
-opened by `/flow-pr` and a verified or blocked result, but it must not ship in
-this design change.
+`ci_waiting` lifecycle phase. The command is the bridge between a PR opened by `/flow-pr` and a verified,
+ci-waiting, or blocked result. The #13 implementation now ships the read-only
+watcher foundation.
 
 The security model keeps `/flow-pr` and `/flow-commit` away from CI watching,
 review actions, and merge actions. `/flow-watch` is the only planned command
@@ -27,6 +27,19 @@ heterogeneous `statusCheckRollup` array of check-run objects and a
 classic `StatusContext` rows with `context`, `state`, and `targetUrl` fields.
 
 ## Decision
+
+### Implementation update from #13
+
+The shipped #13 implementation uses the Codeflow-owned check status enum
+`passed`, `failed`, `pending`, `skipped`, `cancelled`, `timed_out`, `neutral`,
+and `unknown`, with aggregate statuses `passed`, `failed`, `pending`, `skipped`,
+`no_checks`, and `unknown`. `gh pr checks` remains the primary source, and
+`--required` is used for required-only mode. No checks never claim verification.
+Failed, cancelled, timed-out, or unknown selected checks block the workflow;
+pending timeout keeps `ci_waiting`.
+
+The original v1 design notes below are retained as historical rationale, but the
+implemented API and docs in #13 are the current contract.
 
 ### Normalized status model
 

@@ -82,7 +82,11 @@
     "titleLengthPolicy": "warning",
     "requirePassedChecksBeforePr": false,
     "pushBeforeCreate": true,
-    "linkKeyword": "Refs"
+    "linkKeyword": "Refs",
+    "watchRequiredChecksOnly": true,
+    "checksWatchIntervalSeconds": 10,
+    "checksWatchTimeoutSeconds": 900,
+    "failFast": false
   },
   "checks": [
     {

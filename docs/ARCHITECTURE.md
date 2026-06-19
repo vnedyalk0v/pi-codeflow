@@ -1,12 +1,12 @@
 # Architecture
 
 pi-codeflow is intended to be a Pi package composed of extension code, skills,
-prompts, templates, config, schemas, and documentation. The v0.6 foundation
+prompts, templates, config, schemas, and documentation. The v0.7 foundation
 includes config loading, conservative merging, schema validation, proactive
 guidance generation, before-agent guidance injection, a small lifecycle state
 model, `/flow-start` semantic branch preparation, `/flow-check` local check
-running, `/flow-commit` generated commit messages, and `/flow-pr` generated PR
-title/body creation.
+running, `/flow-commit` generated commit messages, `/flow-pr` generated PR
+title/body creation, and `/flow-watch` GitHub PR checks watching.
 
 ## Components
 
@@ -34,10 +34,11 @@ title/body creation.
 
 - **Status:** `/flow-start` implemented foundation in v0.4; `/flow-check`
   implemented foundation in v0.5; `/flow-commit` implemented foundation in
-  v0.6; `/flow-pr` implemented foundation in v0.6; later commands are future
-  work.
+  v0.6; `/flow-pr` implemented foundation in v0.6; `/flow-watch` implemented
+  foundation in v0.7; later review and report commands are future work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
-  `/flow-commit`, `/flow-pr`, `/flow-comments`, and `/flow-report`.
+  `/flow-commit`, `/flow-pr`, `/flow-watch`, `/flow-comments`, and
+  `/flow-report`.
 - **Inputs:** user commands, agent payloads, and state.
 - **Outputs:** tool results and state transitions.
 - **Must not:** perform unsafe operations without policy approval.
@@ -70,14 +71,16 @@ title/body creation.
 ### GitHub Integration
 
 - **Status:** PR creation/update foundation is implemented in v0.6 for #12;
-  GitHub checks watching remains future work in #13.
-- **Responsibility:** open/update PRs now, and later watch checks, list review
-  comments, and apply allowed replies/resolutions.
-- **Inputs:** PR payloads, GitHub CLI/API output, and review policy.
-- **Outputs:** PR URLs and bounded PR metadata now; CI summaries and comment
-  triage later.
+  GitHub checks watching is implemented in v0.7 for #13. Review comment triage
+  remains future work in #14.
+- **Responsibility:** open/update PRs, watch GitHub PR checks, and later list
+  review comments and apply allowed replies/resolutions.
+- **Inputs:** PR payloads, PR check rows, GitHub CLI/API output, and review
+  policy.
+- **Outputs:** PR URLs, bounded PR metadata, CI summaries, and bounded GitHub
+  checks metadata now; comment triage later.
 - **Must not:** merge PRs, approve PRs, resolve reviewer comments without
-  policy, or bypass human review.
+  policy, rerun workflows, or bypass human review.
 
 ### Check Runner
 
@@ -96,8 +99,9 @@ title/body creation.
 - **Status:** lifecycle state helper foundation exists in v0.3; bounded latest
   check state is returned by `/flow-check` in v0.5; bounded latest commit
   metadata is returned by `/flow-commit` in v0.6; bounded latest PR metadata is
-  returned by `/flow-pr` in v0.6; persistent external storage is not implemented
-  yet.
+  returned by `/flow-pr` in v0.6; bounded latest GitHub checks metadata is
+  returned by `/flow-watch` in v0.7; persistent external storage is not
+  implemented yet.
 - **Responsibility:** track lifecycle phase, task metadata, check results,
   payloads, and reports in future milestones.
 - **Inputs:** tool results and guidance decisions.
@@ -161,11 +165,13 @@ title/body creation.
 10. `/flow-pr` validates a structured PR payload, renders the PR title/body,
     applies branch and check-state policy, pushes the feature branch when
     configured, and calls GitHub CLI with explicit PR arguments.
-11. State Store records phase, evidence, bounded check summaries, bounded commit
-    metadata, and bounded PR metadata.
-12. Future GitHub checks and review integrations perform later remote
-    operations.
-13. Safety Boundary blocks off-path behavior when needed.
+11. `/flow-watch` resolves the target PR, calls `gh pr checks`, normalizes check
+    status, and summarizes pending, passed, failed, skipped, cancelled,
+    timed-out, no-checks, and unknown outcomes.
+12. State Store records phase, evidence, bounded check summaries, bounded commit
+    metadata, bounded PR metadata, and bounded GitHub checks metadata.
+13. Future review integrations perform later read/comment operations.
+14. Safety Boundary blocks off-path behavior when needed.
 
 ## Implementation boundary
 
@@ -176,8 +182,10 @@ minimal lifecycle state helper. v0.4 implements the first command layer and safe
 semantic branch creation foundation through `/flow-start`. v0.5 implements the
 configured local check runner foundation through `/flow-check`. v0.6 implements
 the commit renderer and commit command foundation through `/flow-commit`, plus
-the PR renderer and PR command foundation through `/flow-pr`.
+the PR renderer and PR command foundation through `/flow-pr`. v0.7 implements the
+read-only GitHub checks watcher foundation through `/flow-watch`.
 
-Self-review automation, persistent external lifecycle storage, GitHub checks
-watching, review comment automation, and merge automation remain future
-implementation work. GitHub checks watcher work is next in #13.
+Self-review automation, persistent external lifecycle storage, review comment
+automation, and merge automation remain future implementation work. Review
+comment triage is the next v0.7 scope in #14 and remains separate from the checks
+watcher.

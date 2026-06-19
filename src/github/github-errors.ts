@@ -1,5 +1,19 @@
 export type GithubCliErrorCode = 'gh_missing' | 'gh_auth_required' | 'gh_command_failed';
 
+export type CodeflowPrChecksErrorCode =
+  | 'invalid_arguments'
+  | 'gh_missing'
+  | 'gh_auth_required'
+  | 'no_pr_found'
+  | 'pr_not_found'
+  | 'repository_not_found'
+  | 'permission_denied'
+  | 'network_error'
+  | 'no_checks_found'
+  | 'checks_timeout'
+  | 'unknown_json'
+  | 'gh_command_failed';
+
 export interface GithubCliErrorOptions {
   code: GithubCliErrorCode;
   message: string;
@@ -25,5 +39,24 @@ export class GithubCliError extends Error {
     this.exitCode = options.exitCode;
     this.stdout = options.stdout ?? '';
     this.stderr = options.stderr ?? '';
+  }
+}
+
+export interface CodeflowPrChecksErrorOptions {
+  code: CodeflowPrChecksErrorCode;
+  message: string;
+  details?: Record<string, unknown>;
+  cause?: unknown;
+}
+
+export class CodeflowPrChecksError extends Error {
+  readonly code: CodeflowPrChecksErrorCode;
+  readonly details?: Record<string, unknown>;
+
+  constructor(options: CodeflowPrChecksErrorOptions) {
+    super(options.message, { cause: options.cause });
+    this.name = 'CodeflowPrChecksError';
+    this.code = options.code;
+    this.details = options.details;
   }
 }

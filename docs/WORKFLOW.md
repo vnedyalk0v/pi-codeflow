@@ -6,11 +6,11 @@ valid next steps before unsafe actions become possible.
 
 ## Implementation status
 
-The v0.6 foundation exposes lifecycle phase types, initial in-memory lifecycle
+The v0.7 foundation exposes lifecycle phase types, initial in-memory lifecycle
 state creation, next expected action guidance, before-agent guidance injection,
 `/flow-start` semantic branch preparation, `/flow-check` local check running,
-`/flow-commit` template-rendered commit creation, and `/flow-pr` generated PR
-title/body creation.
+`/flow-commit` template-rendered commit creation, `/flow-pr` generated PR
+title/body creation, and `/flow-watch` GitHub PR checks watching.
 
 `/flow-start` moves a clean repository from `initialized` to `branch_prepared`
 by validating or inferring the branch type, rendering the branch name, selecting
@@ -22,9 +22,11 @@ commit message from the configured template, commits staged changes with a
 message file, and stores bounded commit metadata. `/flow-pr` validates a
 structured PR payload, renders the title/body from templates, safely pushes the
 feature branch when configured, opens or updates the GitHub PR, and stores
-bounded PR metadata. Self-review automation, persistent external state storage,
-GitHub checks watching, review comment automation, and merge automation are later
-work.
+bounded PR metadata. `/flow-watch` then reads GitHub PR checks through `gh pr
+checks`, supports required-only or all-checks mode, summarizes pass, fail,
+pending, skipped, cancelled, timed-out, no-checks, and unknown states, and stores
+bounded GitHub checks metadata. Self-review automation, persistent external
+state storage, review comment automation, and merge automation are later work.
 
 ## Phase reference
 
@@ -103,7 +105,7 @@ it, renders the final PR title/body from templates, resolves base/head branches,
 checks local safety policy, pushes the current feature branch when configured,
 and opens or updates the GitHub PR with explicit `gh` arguments. It never watches
 GitHub Actions, requests reviews, resolves comments, approves, merges, or deletes
-branches.
+branches; `/flow-watch` is the separate read-only CI watcher.
 
 Failure behavior:
 
@@ -122,6 +124,34 @@ Failure behavior:
 - existing PRs are updated when `pullRequest.updateExisting` is true, otherwise
   Codeflow reports the existing PR URL when discoverable;
 - dry-run renders the title/body preview and does not move to `pr_opened`.
+
+## After `/flow-watch`
+
+After a PR exists, `/flow-watch` loads the resolved config, determines the target
+PR from `--pr`, latest `/flow-pr` state, or the current branch PR, then reads
+GitHub PR checks. By default it watches required checks only with the configured
+interval and timeout. `--all` watches all returned PR checks, while `--required`
+keeps the required-only filter explicit.
+
+Pass, failure, pending, and empty behavior:
+
+- selected checks that pass move the lifecycle to `verified`;
+- pending checks keep the lifecycle in `ci_waiting`;
+- failed, cancelled, or timed-out selected checks move the lifecycle to
+  `blocked` and include check names, durations, and details links when GitHub
+  provides them;
+- a watch timeout leaves the status `pending`, keeps `ci_waiting`, and says the
+  watch timed out before completion;
+- no checks produce `no_checks`, warn that remote verification was not proven,
+  and must not be presented as `verified`;
+- skipped-only checks produce `skipped`; agents should confirm skipped checks are
+  expected before treating remote verification as satisfied;
+- unknown GitHub states produce warnings and move to `blocked` rather than
+  claiming pass.
+
+`/flow-watch` is read-only. It does not rerun workflows, cancel workflows, push,
+merge, approve, resolve comments, reply to comments, request reviews, delete
+branches, or perform review-comment triage.
 
 ## Phase details
 
@@ -268,14 +298,17 @@ Failure behavior:
 ### `ci_waiting`
 
 - **Purpose:** remote checks are running.
-- **Entry conditions:** PR exists and GitHub checks are available.
-- **Expected agent behavior:** watch checks and summarize status.
+- **Entry conditions:** PR exists and remote checks may be pending, passing,
+  failing, skipped, absent, or unknown.
+- **Expected agent behavior:** watch checks and summarize status without mutating
+  GitHub.
 - **Expected command/tool:** `/flow-watch`.
-- **Allowed transitions:** `verified`, `fixing_local_findings`,
-  `review_triage`, `blocked`.
-- **Failure transitions:** `fixing_local_findings` on CI failure; `blocked` on
-  unavailable status.
-- **Output artifacts:** CI summary.
+- **Allowed transitions:** `ci_waiting`, `verified`, `review_triage`, `blocked`.
+- **Failure transitions:** `blocked` on failed required or selected checks,
+  cancelled checks, timed-out checks, unknown status, missing auth, missing PR,
+  or other unavailable GitHub status.
+- **Output artifacts:** bounded GitHub checks summary and latest GitHub checks
+  state.
 
 ### `review_triage`
 
@@ -365,7 +398,7 @@ the blocker.
 | `ready_to_commit` | `committed`, `blocked` |
 | `committed` | `pr_opened`, `local_checks`, `blocked` |
 | `pr_opened` | `ci_waiting`, `review_triage`, `verified`, `blocked` |
-| `ci_waiting` | `verified`, `fixing_local_findings`, `review_triage`, `blocked` |
+| `ci_waiting` | `ci_waiting`, `verified`, `review_triage`, `blocked` |
 | `review_triage` | `fixing_review_findings`, `verified`, `blocked` |
 | `fixing_review_findings` | `local_checks`, `ci_waiting`, `review_triage`, `verified`, `blocked` |
 | `verified` | `final_reported`, `review_triage`, `blocked` |
@@ -377,10 +410,14 @@ the blocker.
 
 ### Failed checks
 
-- Move from `local_checks` or `ci_waiting` to `fixing_local_findings`.
-- Summarize the failing command, exit status, and relevant output.
+- Local `/flow-check` failures move from `local_checks` to
+  `fixing_local_findings`.
+- Remote `/flow-watch` failures move from `ci_waiting` to `blocked` with GitHub
+  check names, statuses, durations, and details links when available.
+- Summarize the failing command or check, exit status when local, and relevant
+  bounded context.
 - Fix only the failure scope unless the user approves broader work.
-- Re-run the failed check and any dependent checks.
+- Re-run local checks and then `/flow-watch` after the fix is pushed.
 
 ### Invalid config
 

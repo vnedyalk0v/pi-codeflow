@@ -4,6 +4,7 @@ import { createGitHubPullRequest, type GitHubPullRequestResult } from '../github
 import type { GhClientLike } from '../github/gh-client';
 import { GitClient } from '../git/git-client';
 import { GitError } from '../git/git-errors';
+import { assertValidGitRef } from '../git/git-ref';
 import type { GitStatus, GitStatusEntry } from '../git/git-status';
 import type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
 import { isReservedBranch } from '../safety/reserved-branch-policy';
@@ -204,18 +205,24 @@ function resolveBaseBranch(options: {
     options.config.baseBranches.default
   ).trim();
 
-  if (!options.config.baseBranches.allowed.includes(baseBranch)) {
+  const validBaseBranch = assertValidGitRef(baseBranch, 'PR base branch', {
+    onInvalid: (reason) => {
+      throw new CodeflowPrError({ code: 'invalid_ref', message: reason });
+    },
+  });
+
+  if (!options.config.baseBranches.allowed.includes(validBaseBranch)) {
     throw new CodeflowPrError({
       code: 'base_not_allowed',
-      message: `Base branch ${baseBranch} is not listed in Codeflow baseBranches.allowed.`,
+      message: `Base branch ${validBaseBranch} is not listed in Codeflow baseBranches.allowed.`,
       details: {
-        baseBranch,
+        baseBranch: validBaseBranch,
         allowed: options.config.baseBranches.allowed,
       },
     });
   }
 
-  return baseBranch;
+  return validBaseBranch;
 }
 
 function resolveHeadBranch(options: {
@@ -232,7 +239,11 @@ function resolveHeadBranch(options: {
     });
   }
 
-  return headBranch;
+  return assertValidGitRef(headBranch, 'PR head branch', {
+    onInvalid: (reason) => {
+      throw new CodeflowPrError({ code: 'invalid_ref', message: reason });
+    },
+  });
 }
 
 function validateBaseHeadPair(baseBranch: string, headBranch: string): void {

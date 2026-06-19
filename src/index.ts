@@ -14,6 +14,7 @@ export {
   type BranchType,
 } from './branching/branch-type';
 export { BranchPolicyError, type BranchPolicyErrorCode } from './branching/branch-errors';
+export { assertValidGitRef, getGitRefRejectionReason } from './git/git-ref';
 export { isReservedBranch } from './safety/reserved-branch-policy';
 export {
   prepareCodeflowBranch,

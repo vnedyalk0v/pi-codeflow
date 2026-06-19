@@ -186,6 +186,18 @@ describe('runFlowPr', () => {
     ).rejects.toMatchObject({ code: 'invalid_payload' });
   });
 
+  it('rejects malformed explicit head refs', async () => {
+    await expect(
+      runFlowPr({
+        payload: payload(),
+        dryRun: true,
+        headBranch: '--upload-pack=x',
+        gitClient: gitClient(),
+        sessionState: state(),
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_ref' });
+  });
+
   it('defaults base from config, explicit base overrides config, and head defaults to current branch', async () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       pullRequest: { baseBranch: 'develop' },

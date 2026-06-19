@@ -204,9 +204,9 @@ describe('runFlowStart', () => {
       config,
     });
 
-    expect(result.warnings.join('\n')).toContain(
-      'safety.requireCleanWorkingTreeForStart is disabled',
-    );
+    const warningText = result.warnings.join('\n');
+    expect(warningText).toContain('safety.requireCleanWorkingTreeForStart is disabled');
+    expect(warningText).toContain('dirty changes remain in the working tree on the new branch');
   });
 
   it('does not leave a work branch behind when a dirty-tree override cannot switch branches', async () => {

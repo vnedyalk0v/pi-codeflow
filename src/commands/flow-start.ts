@@ -199,7 +199,7 @@ export async function prepareCodeflowBranch(
     }
 
     warnings.push(
-      'Working tree has uncommitted changes; starting anyway because safety.requireCleanWorkingTreeForStart is disabled. Uncommitted changes are not moved to the new branch by Codeflow.',
+      'Working tree has uncommitted changes; starting anyway because safety.requireCleanWorkingTreeForStart is disabled. Codeflow will not stash, revert, or commit them; if branch checkout succeeds, compatible dirty changes remain in the working tree on the new branch and may be included in this flow.',
     );
   }
 

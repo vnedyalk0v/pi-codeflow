@@ -8,7 +8,7 @@
 > the index.
 >
 > **Drift check (run first)**:
-> `git diff --stat dbb2b8c..HEAD -- docs/decisions/0002-flow-watch-contract.md src/github src/checks src/commands src/extension.ts src/state src/index.ts tests docs schemas`
+> `git diff --stat 60021a8..HEAD -- docs/decisions/0002-flow-watch-contract.md src/github src/checks src/commands src/extension.ts src/state src/index.ts tests docs schemas`
 > If the ADR or any in-scope implementation area changed since this plan was
 > written, compare the contract below against the live code before proceeding.
 > Stop if `/flow-watch` already exists or if the live ADR contradicts this plan.
@@ -20,7 +20,7 @@
 - **Risk**: MED
 - **Depends on**: ADR 0002 (`docs/decisions/0002-flow-watch-contract.md`)
 - **Category**: feature (read-only GitHub checks watcher)
-- **Planned at**: commit `dbb2b8c`, 2026-06-19
+- **Planned at**: commit `60021a8`, 2026-06-19
 
 ## Why this matters
 

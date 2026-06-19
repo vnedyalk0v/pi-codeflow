@@ -74,15 +74,22 @@ describe('GitClient', () => {
 
   it('throws GitError for unparseable rev-list counts', async () => {
     const client = new GitClient();
-    (client as unknown as {
+    const mockRun = client as unknown as {
       run: (args: string[]) => Promise<{ stdout: string; stderr: string }>;
-    }).run = async () => ({ stdout: '\n', stderr: '' });
+    };
 
-    await expect(client.getAheadCount('dev', 'HEAD')).rejects.toMatchObject({
-      code: 'git_command_failed',
-      message: 'git rev-list --count returned unexpected output: ""',
-      command: 'git',
-      args: ['rev-list', '--count', 'dev..HEAD'],
-    } satisfies Partial<GitError>);
+    for (const [stdout, raw] of [
+      ['\n', ''],
+      ['1 extra\n', '1 extra'],
+    ]) {
+      mockRun.run = async () => ({ stdout, stderr: '' });
+
+      await expect(client.getAheadCount('dev', 'HEAD')).rejects.toMatchObject({
+        code: 'git_command_failed',
+        message: `git rev-list --count returned unexpected output: "${raw}"`,
+        command: 'git',
+        args: ['rev-list', '--count', 'dev..HEAD'],
+      } satisfies Partial<GitError>);
+    }
   });
 });

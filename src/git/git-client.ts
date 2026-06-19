@@ -117,7 +117,7 @@ export class GitClient {
     const raw = result.stdout.trim();
     const count = Number.parseInt(raw, 10);
 
-    if (!Number.isInteger(count) || count < 0) {
+    if (!/^\d+$/.test(raw) || !Number.isInteger(count) || count < 0) {
       throw new GitError({
         code: 'git_command_failed',
         message: `git rev-list --count returned unexpected output: "${raw}"`,

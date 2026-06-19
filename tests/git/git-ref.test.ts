@@ -9,6 +9,7 @@ describe('git ref validation', () => {
     ['release-1.2', 'release-1.2'],
     ['feat/foo+bar', 'feat/foo+bar'],
     ['feat/refs/heads/main', 'feat/refs/heads/main'],
+    ['feat/HEAD', 'feat/HEAD'],
   ])('accepts valid branch name %s', (input, expected) => {
     const onInvalid = vi.fn((reason: string): never => {
       throw new Error(reason);
@@ -29,6 +30,7 @@ describe('git ref validation', () => {
     ['a@{0}', 'it must not contain "@{"'],
     ['a:b', 'it must not contain git refspec metacharacters'],
     ['@', 'it must not be "@"'],
+    ['HEAD', 'it must not be "HEAD"'],
     ['/head', 'it must not contain empty path components'],
     ['feat//x', 'it must not contain empty path components'],
     ['head/', 'it has an invalid suffix'],

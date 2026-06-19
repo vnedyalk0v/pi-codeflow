@@ -186,7 +186,7 @@ describe('runFlowPr', () => {
     ).rejects.toMatchObject({ code: 'invalid_payload' });
   });
 
-  it.each(['--upload-pack=x', '+foo', 'refs/heads/main', 'feat.', '.feat/x', 'feat//x', 'feat.lock/x'])(
+  it.each(['--upload-pack=x', '+foo', 'refs/heads/main', 'HEAD', 'feat.', '.feat/x', 'feat//x', 'feat.lock/x'])(
     'rejects malformed explicit head ref %s',
     async (headBranch) => {
       await expect(

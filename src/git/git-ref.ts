@@ -42,6 +42,7 @@ export function getGitRefRejectionReason(value: string): string | null {
     return 'it must not contain git refspec metacharacters';
   }
   if (value === '@') return 'it must not be "@"';
+  if (value === 'HEAD') return 'it must not be "HEAD"';
   if (value.startsWith('/') || value.includes('//')) {
     return 'it must not contain empty path components';
   }

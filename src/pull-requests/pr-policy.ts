@@ -198,12 +198,11 @@ function resolveBaseBranch(options: {
   explicitBaseBranch?: string;
   payloadBaseBranch?: string;
 }): string {
-  const baseBranch = (
+  const baseBranch =
     options.explicitBaseBranch ??
     options.payloadBaseBranch ??
     options.config.pullRequest.baseBranch ??
-    options.config.baseBranches.default
-  ).trim();
+    options.config.baseBranches.default;
 
   const validBaseBranch = assertValidGitRef(baseBranch, 'PR base branch', {
     onInvalid: (reason) => {
@@ -230,9 +229,9 @@ function resolveHeadBranch(options: {
   payloadHeadBranch?: string;
   currentBranch: string | null;
 }): string {
-  const headBranch = (options.explicitHeadBranch ?? options.payloadHeadBranch ?? options.currentBranch)?.trim();
+  const headBranch = options.explicitHeadBranch ?? options.payloadHeadBranch ?? options.currentBranch;
 
-  if (!headBranch) {
+  if (headBranch === null || headBranch === undefined) {
     throw new CodeflowPrError({
       code: 'missing_head_branch',
       message: 'Could not determine the PR head branch; provide --head or run from a named branch.',

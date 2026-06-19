@@ -186,7 +186,17 @@ describe('runFlowPr', () => {
     ).rejects.toMatchObject({ code: 'invalid_payload' });
   });
 
-  it.each(['--upload-pack=x', '+foo', 'refs/heads/main', 'HEAD', 'feat.', '.feat/x', 'feat//x', 'feat.lock/x'])(
+  it.each([
+    '--upload-pack=x',
+    '+foo',
+    'refs/heads/main',
+    'HEAD',
+    'feat/x ',
+    'feat.',
+    '.feat/x',
+    'feat//x',
+    'feat.lock/x',
+  ])(
     'rejects malformed explicit head ref %s',
     async (headBranch) => {
       await expect(
@@ -200,6 +210,18 @@ describe('runFlowPr', () => {
       ).rejects.toMatchObject({ code: 'invalid_ref' });
     },
   );
+
+  it('rejects malformed explicit base refs before the allow-list check', async () => {
+    await expect(
+      runFlowPr({
+        payload: payload(),
+        dryRun: true,
+        baseBranch: ' dev',
+        gitClient: gitClient(),
+        sessionState: state(),
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_ref' });
+  });
 
   it('defaults base from config, explicit base overrides config, and head defaults to current branch', async () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {

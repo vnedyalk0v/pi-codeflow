@@ -11,7 +11,7 @@ export function assertValidGitRef(
   label: string,
   options: GitRefValidationOptions,
 ): string {
-  const value = ref.trim();
+  const value = ref;
   const reason = getGitRefRejectionReason(value);
 
   if (reason) {

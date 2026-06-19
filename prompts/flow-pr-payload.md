@@ -58,4 +58,16 @@ Optional fields:
 - `baseBranch`
 - `headBranch`
 
+Branch fields:
+
+- Omit `baseBranch` unless overriding the configured PR base.
+- Omit `headBranch` unless overriding the current branch.
+- If present, both must be Codeflow git branch names: no leading `-` or `+`, no
+  `refs/` prefix, no literal `HEAD` or `@`, no whitespace/control characters,
+  no Git ref metacharacters (`..`, `@{`, `~`, `^`, `:`, `?`, `*`, `[`, `\\`),
+  no empty or leading-dot path components, no `.lock` path components, and no
+  trailing `/` or `.`.
+- Use branch names such as `dev` or `feat/example`, not fully qualified refs
+  such as `refs/heads/dev`.
+
 Use `refs` values such as `#12`. Codeflow renders them with `Refs` by default.

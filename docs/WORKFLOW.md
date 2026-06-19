@@ -108,6 +108,7 @@ branches.
 Failure behavior:
 
 - invalid payload blocks with validation errors;
+- malformed base/head branch names block before git or GitHub CLI calls;
 - missing remote base branch blocks normal creation;
 - reserved head branch blocks unless an explicit emergency override is allowed;
 - base=head blocks because a PR cannot target itself;

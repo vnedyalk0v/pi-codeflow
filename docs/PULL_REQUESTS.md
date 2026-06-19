@@ -145,9 +145,17 @@ Head branch resolution order:
 2. `payload.headBranch`;
 3. the current git branch.
 
+Resolved base/head values must be Codeflow git branch names before any git or
+GitHub CLI call sees them. Codeflow rejects empty values, option/refspec-like
+forms (leading `-` or `+`, `refs/` prefixes, `HEAD`, `@`), whitespace/control
+characters, Git ref metacharacters (`..`, `@{`, `~`, `^`, `:`, `?`, `*`, `[`,
+`\\`), empty path components, leading-dot path components, `.lock` path
+components, and trailing `/` or `.`.
+
 Codeflow refuses normal PR creation when:
 
 - the configured base branch is missing on origin;
+- base or head is not a valid Codeflow git branch name;
 - base and head are the same;
 - the head branch is reserved;
 - the base branch is outside `baseBranches.allowed`;

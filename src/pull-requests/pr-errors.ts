@@ -10,6 +10,7 @@ export type CodeflowPrErrorCode =
   | 'unresolved_template_placeholder'
   | 'missing_pr_body'
   | 'base_not_allowed'
+  | 'invalid_ref'
   | 'missing_base_branch'
   | 'missing_head_branch'
   | 'reserved_branch'

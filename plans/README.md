@@ -14,7 +14,7 @@ before the larger 001; the design plan (004) ships no production code.
 | Plan | Title | Priority | Effort | Risk | Depends on | Status |
 |------|-------|----------|--------|------|------------|--------|
 | 001 | Enforce-or-document every `safety.*` config flag | P1 | M | MED | — | DONE |
-| 002 | Validate base/head refs before they reach git/gh | P2 | S | LOW | — | TODO |
+| 002 | Validate base/head refs before they reach git/gh | P2 | S | LOW | — | DONE |
 | 003 | Stop `getAheadCount` from returning NaN | P3 | S | LOW | — | TODO |
 | 004 | Design `/flow-watch` (GitHub checks watcher) — design + spike | P2 (direction) | M | LOW | — | TODO |
 

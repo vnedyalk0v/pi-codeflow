@@ -109,6 +109,25 @@ describe('validateCodeflowConfig', () => {
     }
   });
 
+  it('rejects malformed configured base branches', () => {
+    const config = cloneDefault();
+    config.baseBranches.allowed = ['dev', 'refs/heads/main'];
+    config.pullRequest.baseBranch = 'dev';
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/baseBranches/allowed/1',
+            keyword: 'pattern',
+          }),
+        ]),
+      );
+    }
+  });
+
   it('rejects a pull request base branch outside allowed base branches', () => {
     const config = cloneDefault();
     config.baseBranches.allowed = ['dev'];

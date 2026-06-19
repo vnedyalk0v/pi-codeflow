@@ -25,8 +25,14 @@ describe('git ref validation', () => {
     ['a@{0}', 'it must not contain "@{"'],
     ['a:b', 'it must not contain git refspec metacharacters'],
     ['@', 'it must not be "@"'],
+    ['/head', 'it must not contain empty path components'],
+    ['feat//x', 'it must not contain empty path components'],
     ['head/', 'it has an invalid suffix'],
+    ['feat.', 'it has an invalid suffix'],
     ['head.lock', 'it has an invalid suffix'],
+    ['.feat/x', 'path components must not start with "."'],
+    ['feat/.x', 'path components must not start with "."'],
+    ['feat.lock/x', 'path components must not end with ".lock"'],
   ])('rejects %s because %s', (input, reason) => {
     expect(getGitRefRejectionReason(input)).toBe(reason);
   });

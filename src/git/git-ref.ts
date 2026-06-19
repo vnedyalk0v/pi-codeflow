@@ -40,6 +40,17 @@ export function getGitRefRejectionReason(value: string): string | null {
     return 'it must not contain git refspec metacharacters';
   }
   if (value === '@') return 'it must not be "@"';
-  if (value.endsWith('/') || value.endsWith('.lock')) return 'it has an invalid suffix';
+  if (value.startsWith('/') || value.includes('//')) {
+    return 'it must not contain empty path components';
+  }
+  if (value.endsWith('/') || value.endsWith('.') || value.endsWith('.lock')) {
+    return 'it has an invalid suffix';
+  }
+
+  for (const component of value.split('/')) {
+    if (component.startsWith('.')) return 'path components must not start with "."';
+    if (component.endsWith('.lock')) return 'path components must not end with ".lock"';
+  }
+
   return null;
 }

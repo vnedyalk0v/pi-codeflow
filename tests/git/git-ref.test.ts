@@ -5,7 +5,7 @@ import { assertValidGitRef, getGitRefRejectionReason } from '../../src/index';
 describe('git ref validation', () => {
   it.each([
     ['feat/x', 'feat/x'],
-    [' fix/BILL-142-thing ', 'fix/BILL-142-thing'],
+    ['fix/BILL-142-thing', 'fix/BILL-142-thing'],
     ['release-1.2', 'release-1.2'],
     ['feat/foo+bar', 'feat/foo+bar'],
     ['feat/refs/heads/main', 'feat/refs/heads/main'],
@@ -24,6 +24,8 @@ describe('git ref validation', () => {
     ['-foo', 'it must not start with "-"'],
     ['+foo', 'it must not start with "+"'],
     ['refs/heads/main', 'it must not start with "refs/"'],
+    [' feat/x', 'it must not contain whitespace'],
+    ['feat/x ', 'it must not contain whitespace'],
     ['feat/ x', 'it must not contain whitespace'],
     ['a\u0000b', 'it must not contain control characters'],
     ['a..b', 'it must not contain ".."'],

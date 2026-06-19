@@ -318,6 +318,17 @@ describe('runFlowPr', () => {
     );
   });
 
+  it('warns when PR head has no commits ahead of base', async () => {
+    const result = await runFlowPr({
+      payload: payload(),
+      dryRun: true,
+      gitClient: gitClient({ getAheadCount: async () => 0 }),
+      sessionState: state(),
+    });
+
+    expect(result.warnings.join('\n')).toContain('has no commits ahead');
+  });
+
   it('creates a PR, stores metadata, and does not commit, merge, delete branches, or resolve comments', async () => {
     const calls: string[][] = [];
     const pushed: string[] = [];

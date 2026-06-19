@@ -80,6 +80,7 @@ describe('summarizeGitHubPrChecks', () => {
       status: 'failed',
       bucket: 'fail',
       detailsUrl: 'https://github.com/org/repo/actions/runs/2',
+      description: '\u001B[31mfailed\u001B[0m token=ghp_abcdefghijklmnopqrstuvwxyz123456 password=hunter2',
       durationMs: 131000,
     });
     const pending = check({ name: 'e2e', status: 'pending', bucket: 'pending', durationMs: 245000 });
@@ -88,6 +89,10 @@ describe('summarizeGitHubPrChecks', () => {
     expect(summary).toContain('GitHub checks failed.');
     expect(summary).toContain('- test (CI): failed after 2m 11s');
     expect(summary).toContain('Details: https://github.com/org/repo/actions/runs/2');
+    expect(summary).toContain('Context: failed token=[REDACTED] password=[REDACTED]');
+    expect(summary).not.toContain('\u001B');
+    expect(summary).not.toContain('hunter2');
+    expect(summary).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
     expect(summary).toContain('Pending:');
     expect(summary).toContain('Inspect the failed check logs');
   });

@@ -1,3 +1,4 @@
+import { truncateForSummary } from '../checks/check-summary';
 import { formatDurationMs } from '../utils/time';
 import type { CodeflowPrCheck, CodeflowPrChecksResult } from './pr-checks-parser';
 
@@ -113,7 +114,7 @@ function formatFailureCheckBlock(check: CodeflowPrCheck): string[] {
   }
 
   if (check.description) {
-    lines.push(`  Context: ${check.description}`);
+    lines.push(`  Context: ${truncateForSummary(check.description)}`);
   }
 
   return lines;

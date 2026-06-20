@@ -112,9 +112,9 @@ export function buildReviewThreadsGraphqlArgs(
     'graphql',
     '-f',
     `query=${PR_REVIEW_THREADS_GRAPHQL_QUERY}`,
-    '-F',
+    '-f',
     `owner=${options.owner}`,
-    '-F',
+    '-f',
     `name=${options.repo}`,
     '-F',
     `number=${options.prNumber}`,
@@ -125,7 +125,7 @@ export function buildReviewThreadsGraphqlArgs(
   ];
 
   if (options.threadCursor) {
-    args.push('-F', `threadCursor=${options.threadCursor}`);
+    args.push('-f', `threadCursor=${options.threadCursor}`);
   }
 
   return args;
@@ -139,14 +139,14 @@ export function buildReviewThreadCommentsGraphqlArgs(
     'graphql',
     '-f',
     `query=${PR_REVIEW_THREAD_COMMENTS_GRAPHQL_QUERY}`,
-    '-F',
+    '-f',
     `threadId=${options.threadId}`,
     '-F',
     `commentsFirst=${options.commentsFirst}`,
   ];
 
   if (options.commentsCursor) {
-    args.push('-F', `commentsCursor=${options.commentsCursor}`);
+    args.push('-f', `commentsCursor=${options.commentsCursor}`);
   }
 
   return args;

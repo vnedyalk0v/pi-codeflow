@@ -18,8 +18,10 @@ describe('review thread GraphQL query builders', () => {
     });
 
     expect(args.slice(0, 3)).toEqual(['api', 'graphql', '-f']);
+    expect(args[args.indexOf('owner=org') - 1]).toBe('-f');
+    expect(args[args.indexOf('name=repo') - 1]).toBe('-f');
+    expect(args[args.indexOf('number=123') - 1]).toBe('-F');
     expect(args).toEqual(expect.arrayContaining([
-      '-F',
       'owner=org',
       'name=repo',
       'number=123',
@@ -34,14 +36,17 @@ describe('review thread GraphQL query builders', () => {
   });
 
   it('builds thread and comment pagination args without GraphQL mutations', () => {
-    expect(buildReviewThreadsGraphqlArgs({
+    const threadArgs = buildReviewThreadsGraphqlArgs({
       owner: 'org',
       repo: 'repo',
       prNumber: 123,
       threadsFirst: 10,
       threadCursor: 'cursor-1',
       commentsFirst: 20,
-    })).toEqual(expect.arrayContaining(['threadCursor=cursor-1']));
+    });
+
+    expect(threadArgs).toEqual(expect.arrayContaining(['threadCursor=cursor-1']));
+    expect(threadArgs[threadArgs.indexOf('threadCursor=cursor-1') - 1]).toBe('-f');
 
     const commentsArgs = buildReviewThreadCommentsGraphqlArgs({
       threadId: 'PRRT_thread_1',
@@ -50,6 +55,8 @@ describe('review thread GraphQL query builders', () => {
     });
 
     expect(commentsArgs).toEqual(expect.arrayContaining(['threadId=PRRT_thread_1', 'commentsCursor=comment-cursor']));
+    expect(commentsArgs[commentsArgs.indexOf('threadId=PRRT_thread_1') - 1]).toBe('-f');
+    expect(commentsArgs[commentsArgs.indexOf('commentsCursor=comment-cursor') - 1]).toBe('-f');
     expect(PR_REVIEW_THREAD_COMMENTS_GRAPHQL_QUERY.toLowerCase()).not.toContain('mutation');
   });
 });

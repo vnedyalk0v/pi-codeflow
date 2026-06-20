@@ -63,6 +63,22 @@ describe('summarizeGitHubPrChecks', () => {
     expect(summary).toContain('- build (CI): passed in 1m 14s');
   });
 
+  it('formats mixed passed and skipped summaries without duplicating skipped checks', () => {
+    const summary = summarizeGitHubPrChecks(result({
+      status: 'passed',
+      checks: [
+        check({ name: 'build', status: 'passed', bucket: 'pass' }),
+        check({ name: 'docs', status: 'skipped', bucket: 'skipping', rawState: 'SKIPPED' }),
+      ],
+    }));
+
+    expect(summary).toContain('GitHub checks passed.');
+    expect(summary).toContain('- build (CI): passed in 1m 14s');
+    expect(summary).toContain('Skipped:\n- docs (CI): skipped');
+    expect(summary).not.toContain('- docs (CI): skipped in');
+    expect(summary.match(/docs \(CI\): skipped/g)).toHaveLength(1);
+  });
+
   it('formats pending summaries with pending durations', () => {
     const summary = summarizeGitHubPrChecks(result({
       status: 'pending',

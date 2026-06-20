@@ -17,7 +17,7 @@ export function summarizeGitHubPrChecks(result: CodeflowPrChecksResult): string 
   }
 
   if (result.status === 'passed') {
-    lines.push('', ...result.checks.map((check) => formatCheckLine(check, 'passed')));
+    lines.push('', ...result.passedChecks.map((check) => formatCheckLine(check, 'passed')));
   }
 
   if (result.status === 'skipped') {

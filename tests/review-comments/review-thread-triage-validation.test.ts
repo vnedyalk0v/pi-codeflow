@@ -94,6 +94,23 @@ describe('validateReviewCommentTriage', () => {
     expect(allowed.valid).toBe(true);
   });
 
+  it('rejects duplicate triage thread IDs', () => {
+    const result = validateReviewCommentTriage({
+      threads: [
+        item({ threadId: 'PRRT_thread_1' }),
+        item({
+          threadId: 'PRRT_thread_1',
+          classification: 'needs_human',
+          requiresHumanDecision: true,
+          canResolveAfterChecks: false,
+        }),
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((error) => error.keyword)).toContain('duplicateThreadId');
+  });
+
   it('rejects missing selected thread IDs when complete triage is required', () => {
     const result = validateReviewCommentTriage({ threads: [item({ threadId: 'PRRT_thread_1' })] }, {
       fetchedThreads: [fetchedThread('PRRT_thread_1'), fetchedThread('PRRT_thread_2')],

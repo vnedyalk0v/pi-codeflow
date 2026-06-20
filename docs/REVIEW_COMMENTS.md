@@ -180,8 +180,8 @@ Implemented behavior:
 - normalize thread IDs separately from comment IDs;
 - validate optional structured triage payloads against
   `schemas/review-comment-triage.schema.json`;
-- reject triage payload thread IDs that do not match the selected filtered
-  threads and reject payloads that omit selected threads;
+- reject duplicate triage thread IDs, IDs that do not match the selected
+  filtered threads, and payloads that omit selected threads;
 - produce deterministic summaries with bounded comment body previews;
 - store bounded latest review-comments state;
 - move lifecycle to `review_triage` when unresolved threads are found;

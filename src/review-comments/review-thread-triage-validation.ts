@@ -111,6 +111,15 @@ function validateSemanticRules(
       });
     }
 
+    if (triagedThreadIds.has(thread.threadId)) {
+      errors.push({
+        path: `/threads/${index}/threadId`,
+        keyword: 'duplicateThreadId',
+        message: `threadId ${thread.threadId} is duplicated in the triage payload`,
+        details: { threadId: thread.threadId },
+      });
+    }
+
     triagedThreadIds.add(thread.threadId);
 
     if (allowedThreadIds && !allowedThreadIds.has(thread.threadId)) {

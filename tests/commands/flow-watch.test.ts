@@ -89,6 +89,8 @@ describe('runFlowWatch', () => {
     });
 
     expect(result.checks.summary).toContain('dry-run');
+    expect(result.nextExpectedActions.join('\n')).toContain('Run /flow-watch without --dry-run');
+    expect(result.nextExpectedActions.join('\n')).not.toContain('unknown');
     expect(result.lifecyclePhase).not.toBe('verified');
     expect(calls).toEqual([]);
   });

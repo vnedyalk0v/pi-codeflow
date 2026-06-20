@@ -138,8 +138,8 @@ Pass, failure, pending, and empty behavior:
 - selected checks that pass move the lifecycle to `verified`;
 - pending checks keep the lifecycle in `ci_waiting`;
 - failed, cancelled, or timed-out selected checks move the lifecycle to
-  `blocked` and include check names, durations, and details links when GitHub
-  provides them;
+  `blocked` and include check names, durations, and redacted details links when
+  GitHub provides them;
 - a watch timeout leaves the status `pending`, keeps `ci_waiting`, and says the
   watch timed out before completion;
 - watch mode keeps polling `no_checks` samples until checks appear or the
@@ -416,7 +416,7 @@ the blocker.
 - Local `/flow-check` failures move from `local_checks` to
   `fixing_local_findings`.
 - Remote `/flow-watch` failures move from `ci_waiting` to `blocked` with GitHub
-  check names, statuses, durations, and details links when available.
+  check names, statuses, durations, and redacted details links when available.
 - Summarize the failing command or check, exit status when local, and relevant
   bounded context.
 - Fix only the failure scope unless the user approves broader work.

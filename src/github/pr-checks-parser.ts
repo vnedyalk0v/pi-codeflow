@@ -1,3 +1,4 @@
+import { redactSecrets, stripAnsi } from '../utils/redaction';
 import { CodeflowPrChecksError } from './github-errors';
 import {
   getChecksByStatus,
@@ -158,7 +159,7 @@ export function normalizeGitHubPrCheck(
     completedAt: normalizeTimestamp(completedAt),
     durationMs: calculateDurationMs(startedAt, completedAt, options.now),
     description: normalizeNullableString(source.description),
-    detailsUrl: normalizeNullableString(source.link),
+    detailsUrl: normalizeDetailsUrl(source.link),
     required: options.required === true,
   };
 }
@@ -377,6 +378,17 @@ function normalizePrNumber(value: number | null | undefined): number | null {
 function normalizeNullableString(value: unknown): string | null {
   const text = readString(value)?.trim();
   return text && text.length > 0 ? text : null;
+}
+
+function normalizeDetailsUrl(value: unknown): string | null {
+  const text = normalizeNullableString(value);
+
+  if (text === null) {
+    return null;
+  }
+
+  const redacted = redactSecrets(stripAnsi(text)).trim();
+  return redacted.length > 0 ? redacted : null;
 }
 
 function readString(value: unknown): string | null {

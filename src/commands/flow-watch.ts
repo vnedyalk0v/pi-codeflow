@@ -87,7 +87,7 @@ export async function runFlowWatch(
     return {
       checks: result,
       lifecyclePhase: sessionState.lifecycle.phase,
-      nextExpectedActions: getFlowWatchNextExpectedActions(result),
+      nextExpectedActions: getFlowWatchDryRunNextExpectedActions(),
       warnings: result.warnings,
       sessionState,
     };
@@ -284,6 +284,13 @@ function getLifecyclePhaseForChecks(result: CodeflowPrChecksResult): CodeflowLif
   }
 
   return 'ci_waiting';
+}
+
+function getFlowWatchDryRunNextExpectedActions(): string[] {
+  return [
+    'Run /flow-watch without --dry-run when ready to read GitHub checks.',
+    'Do not claim remote verification from a dry-run plan.',
+  ];
 }
 
 function getFlowWatchNextExpectedActions(result: CodeflowPrChecksResult): string[] {

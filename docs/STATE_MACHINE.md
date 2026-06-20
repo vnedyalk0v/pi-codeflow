@@ -232,7 +232,7 @@ non-destructive fetch attempt made before base branch resolution.
 - Timeout while selected checks are pending: remain in `ci_waiting`; the result
   status stays `pending` and the summary says the watch timed out.
 - Failed selected checks: `pr_opened` or `ci_waiting` -> `blocked` with check
-  names, statuses, durations, and details links when available.
+  names, statuses, durations, and redacted details links when available.
 - Cancelled or timed-out selected check rows: `pr_opened` or `ci_waiting` ->
   `blocked` because they do not prove remote verification.
 - Skipped-only selected checks: `pr_opened` or `ci_waiting` -> `blocked` until

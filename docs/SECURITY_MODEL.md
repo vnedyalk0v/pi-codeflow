@@ -138,7 +138,8 @@ this layer changes.
 
 `/flow-watch` reads GitHub PR check status after a PR exists. It uses read-only
 GitHub CLI calls to resolve the PR and read check metadata, then stores bounded
-check names, statuses, details links, durations, and a summary in session state.
+check names, statuses, redacted details links, durations, and a summary in
+session state.
 
 Safety expectations for GitHub checks:
 
@@ -146,6 +147,7 @@ Safety expectations for GitHub checks:
 - use required-only mode by default and all-checks mode only when requested or
   configured;
 - do not fetch or store full CI logs in this foundation;
+- redact secret-like values from details links before rendering or storing them;
 - empty check samples in watch mode keep polling until checks appear or timeout;
 - no checks after timeout or single-sample mode produce `no_checks` and never
   claim remote verification;

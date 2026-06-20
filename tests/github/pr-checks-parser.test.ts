@@ -92,6 +92,23 @@ describe('parseGitHubPrChecksJson', () => {
     });
   });
 
+  it('redacts sensitive details links before summary or state storage', () => {
+    const result = parseRows([
+      {
+        name: 'deploy',
+        workflow: 'CI',
+        bucket: 'fail',
+        state: 'FAILURE',
+        link: '\u001B[31mhttps://ci.example.test/build/1?access_token=super-secret-token&job=deploy\u001B[0m',
+      },
+    ]);
+
+    expect(result.checks[0]?.detailsUrl).toBe('https://ci.example.test/build/1?access_token=[REDACTED]');
+    expect(result.summary).toContain('Details: https://ci.example.test/build/1?access_token=[REDACTED]');
+    expect(JSON.stringify(result)).not.toContain('super-secret-token');
+    expect(JSON.stringify(result)).not.toContain('\u001B');
+  });
+
   it('produces a warning for unknown states', () => {
     const result = parseRows([{ name: 'mystery', bucket: 'weird', state: 'ODD' }]);
 

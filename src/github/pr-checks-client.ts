@@ -125,27 +125,40 @@ export async function watchGitHubPrChecks(
   let latest: CodeflowPrChecksResult | null = null;
 
   while (true) {
+    const beforePollMs = nowMs();
+
+    if (latest !== null && beforePollMs - startedAtMs >= timeoutMs) {
+      return finalizeWatchResult(latest, {
+        startedAtMs,
+        finishedAtMs: beforePollMs,
+        attempts,
+        timedOut: true,
+      });
+    }
+
     attempts += 1;
     latest = await getGitHubPrChecks({
       ...options,
       watched: true,
     });
 
+    const afterPollMs = nowMs();
+
     if (shouldStopWatching(latest, options.failFast === true)) {
       return finalizeWatchResult(latest, {
         startedAtMs,
-        finishedAtMs: nowMs(),
+        finishedAtMs: afterPollMs,
         attempts,
         timedOut: false,
       });
     }
 
-    const elapsedMs = nowMs() - startedAtMs;
+    const elapsedMs = afterPollMs - startedAtMs;
 
     if (elapsedMs >= timeoutMs) {
       return finalizeWatchResult(latest, {
         startedAtMs,
-        finishedAtMs: nowMs(),
+        finishedAtMs: afterPollMs,
         attempts,
         timedOut: true,
       });

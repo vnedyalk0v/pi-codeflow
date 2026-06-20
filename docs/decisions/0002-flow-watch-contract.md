@@ -39,9 +39,10 @@ required because all-checks JSON has no per-row requirement metadata. Non-zero
 `gh pr checks --json` exits with JSON rows are parsed before error mapping, so
 failed checks still produce summaries. Descriptions and details links are
 redacted before they are returned, rendered, or stored. Dry-run results return
-dry-run next actions rather than unknown-status guidance. Empty check samples in
-watch mode poll until checks appear or timeout. GitHub CLI `no required checks
-reported` responses normalize to `no_checks`. No checks never claim
+dry-run next actions rather than unknown-status guidance. Watch mode checks the
+deadline before each new poll; empty check samples poll until checks appear or
+timeout. GitHub CLI `no required checks reported` responses normalize to
+`no_checks`. No checks never claim
 verification. Unknown selected checks take priority over pending checks. Failed,
 skipped-only, cancelled, timed-out, or unknown selected checks block the
 workflow; pending timeout keeps `ci_waiting`.

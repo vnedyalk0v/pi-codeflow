@@ -254,6 +254,30 @@ describe('watchGitHubPrChecks', () => {
     expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
   });
 
+  it('does not start another poll after the watch deadline', async () => {
+    const calls: string[][] = [];
+    let index = 0;
+    const times = [0, 0, 500, 1000];
+    const result = await watchGitHubPrChecks({
+      pr: 123,
+      intervalSeconds: 1,
+      timeoutSeconds: 1,
+      nowMs: () => times[index++] ?? 1000,
+      sleep: async () => undefined,
+      ghClient: ghClient(calls, [
+        viewJson(),
+        JSON.stringify([{ name: 'test', bucket: 'pending', state: 'IN_PROGRESS' }]),
+        viewJson(),
+        JSON.stringify([{ name: 'test', bucket: 'pass', state: 'SUCCESS' }]),
+      ]),
+    });
+
+    expect(result.status).toBe('pending');
+    expect(result.timedOut).toBe(true);
+    expect(result.attempts).toBe(1);
+    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
+  });
+
   it('returns pending with a timeout warning when polling exceeds the bound', async () => {
     const calls: string[][] = [];
     let index = 0;

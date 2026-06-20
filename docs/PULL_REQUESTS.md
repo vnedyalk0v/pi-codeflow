@@ -255,7 +255,8 @@ Behavior:
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
 - unknown selected checks take priority over pending checks and move to
   `blocked` conservatively;
-- watch mode keeps polling empty check samples until checks appear or timeout;
+- watch mode checks the deadline before each new poll and keeps polling empty
+  check samples only until checks appear or timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;
 - no checks after timeout or single-sample mode, including GitHub CLI `no

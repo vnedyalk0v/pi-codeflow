@@ -145,8 +145,8 @@ Pass, failure, pending, and empty behavior:
   watch timed out before completion;
 - watch mode keeps polling transient empty `no_checks` samples until checks
   appear or the timeout is reached;
-- terminal GitHub CLI no-selected-checks responses, such as no required checks
-  reported, stop without waiting for the full timeout;
+- terminal GitHub CLI no-selected-required-checks responses, such as no
+  required checks reported, stop without waiting for the full timeout;
 - no checks produce `no_checks`, warn that remote verification was not proven,
   and must not be presented as `verified`;
 - skipped-only checks produce `skipped` and move to `blocked`; agents should

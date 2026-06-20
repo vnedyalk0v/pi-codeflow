@@ -263,6 +263,34 @@ describe('watchGitHubPrChecks', () => {
     expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
   });
 
+  it('keeps polling generic no-checks errors until checks appear', async () => {
+    const calls: string[][] = [];
+    const noChecksError = new GithubCliError({
+      code: 'gh_command_failed',
+      message: 'no checks reported on the current branch',
+      args: ['pr', 'checks', '123'],
+      exitCode: 1,
+      stderr: 'no checks reported on the current branch',
+    });
+    const result = await watchGitHubPrChecks({
+      pr: 123,
+      requiredOnly: false,
+      intervalSeconds: 1,
+      timeoutSeconds: 30,
+      sleep: async () => undefined,
+      ghClient: ghClient(calls, [
+        viewJson(),
+        noChecksError,
+        viewJson(),
+        JSON.stringify([{ name: 'test', bucket: 'pass', state: 'SUCCESS' }]),
+      ]),
+    });
+
+    expect(result.status).toBe('passed');
+    expect(result.attempts).toBe(2);
+    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(2);
+  });
+
   it('stops watching immediately when an unknown check is mixed with pending checks', async () => {
     const calls: string[][] = [];
     const result = await watchGitHubPrChecks({

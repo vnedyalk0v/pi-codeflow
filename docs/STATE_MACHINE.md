@@ -237,8 +237,8 @@ non-destructive fetch attempt made before base branch resolution.
 - Pending selected checks: `pr_opened` or `ci_waiting` -> `ci_waiting`.
 - Transient empty check samples in watch mode: keep polling until checks appear
   or the watch timeout is reached.
-- Terminal no-selected-checks responses from GitHub CLI: return `no_checks`
-  without waiting for the full watch timeout.
+- Terminal no-selected-required-checks responses from GitHub CLI: return
+  `no_checks` without waiting for the full watch timeout.
 - Timeout while selected checks are pending: remain in `ci_waiting`; the result
   status stays `pending` and the summary says the watch timed out.
 - Failed selected checks: `pr_opened` or `ci_waiting` -> `blocked` with check
@@ -247,8 +247,8 @@ non-destructive fetch attempt made before base branch resolution.
   `blocked` because they do not prove remote verification.
 - Skipped-only selected checks: `pr_opened` or `ci_waiting` -> `blocked` until
   the skipped status is explicitly accepted.
-- No checks found after timeout, terminal no-selected-checks responses, or
-  single-sample mode: remain in `ci_waiting` with `no_checks`; never claim
+- No checks found after timeout, terminal no-selected-required-checks responses,
+  or single-sample mode: remain in `ci_waiting` with `no_checks`; never claim
   `verified`.
 - Unknown GitHub status, even when mixed with pending checks: `pr_opened` or
   `ci_waiting` -> `blocked` with a warning that Codeflow could not normalize the

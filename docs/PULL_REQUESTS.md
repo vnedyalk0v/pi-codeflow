@@ -258,11 +258,11 @@ Behavior:
   `blocked` conservatively;
 - watch mode checks the deadline before each new poll and keeps polling
   transient empty check samples only until checks appear or timeout;
-- terminal no-selected-checks responses from GitHub CLI, including `no required
-  checks reported`, stop without waiting for the full timeout;
+- terminal no-selected-required-checks responses from GitHub CLI, including
+  `no required checks reported`, stop without waiting for the full timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;
-- no checks after timeout, terminal no-selected-checks responses, or
+- no checks after timeout, terminal no-selected-required-checks responses, or
   single-sample mode produce `no_checks` and must not be treated as verified
   evidence.
 

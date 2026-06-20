@@ -1,3 +1,4 @@
+import { truncateForSummary } from '../checks/check-summary';
 import { redactSecrets, stripAnsi } from '../utils/redaction';
 import { CodeflowPrChecksError } from './github-errors';
 import {
@@ -129,7 +130,7 @@ export function parseGitHubPrChecksJson(
 
   return buildCodeflowPrChecksResult(
     parsed.map((row) => normalizeGitHubPrCheck(row, {
-      required: options.requiredOnly,
+      required: true,
       now: options.now,
     })),
     options,
@@ -158,7 +159,7 @@ export function normalizeGitHubPrCheck(
     startedAt: normalizeTimestamp(startedAt),
     completedAt: normalizeTimestamp(completedAt),
     durationMs: calculateDurationMs(startedAt, completedAt, options.now),
-    description: normalizeNullableString(source.description),
+    description: normalizeDescription(source.description),
     detailsUrl: normalizeDetailsUrl(source.link),
     required: options.required === true,
   };
@@ -378,6 +379,17 @@ function normalizePrNumber(value: number | null | undefined): number | null {
 function normalizeNullableString(value: unknown): string | null {
   const text = readString(value)?.trim();
   return text && text.length > 0 ? text : null;
+}
+
+function normalizeDescription(value: unknown): string | null {
+  const text = normalizeNullableString(value);
+
+  if (text === null) {
+    return null;
+  }
+
+  const redacted = truncateForSummary(text).trim();
+  return redacted.length > 0 ? redacted : null;
 }
 
 function normalizeDetailsUrl(value: unknown): string | null {

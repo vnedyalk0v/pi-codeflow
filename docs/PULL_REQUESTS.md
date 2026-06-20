@@ -244,9 +244,12 @@ Behavior:
 
 - required-only mode calls `gh pr checks --required --json ...`;
 - all-checks mode calls `gh pr checks --json ...` without the required filter;
+- all returned v1 check rows are treated as required because GitHub CLI JSON has
+  no per-row requirement metadata;
 - non-zero `gh pr checks --json` exits with JSON rows are parsed before error
   mapping so failed checks can be summarized;
-- details links are redacted before they are rendered or stored;
+- descriptions and details links are redacted before they are returned, rendered,
+  or stored;
 - `--dry-run` returns dry-run next actions instead of unknown-status guidance;
 - passed selected checks move the lifecycle to `verified`;
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;

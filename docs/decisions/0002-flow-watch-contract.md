@@ -34,14 +34,16 @@ The shipped #13 implementation uses the Codeflow-owned check status enum
 `passed`, `failed`, `pending`, `skipped`, `cancelled`, `timed_out`, `neutral`,
 and `unknown`, with aggregate statuses `passed`, `failed`, `pending`, `skipped`,
 `no_checks`, and `unknown`. `gh pr checks` remains the primary source, and
-`--required` is used for required-only mode. Non-zero `gh pr checks --json`
-exits with JSON rows are parsed before error mapping, so failed checks still
-produce summaries. Details links are redacted before they are rendered or stored.
-Dry-run results return dry-run next actions rather than unknown-status guidance.
-Empty check samples in watch mode poll until checks appear or timeout. No checks
-never claim verification. Unknown selected checks take priority over pending
-checks. Failed, skipped-only, cancelled, timed-out, or unknown selected checks
-block the workflow; pending timeout keeps `ci_waiting`.
+`--required` is used for required-only mode. All v1 returned rows are marked
+required because all-checks JSON has no per-row requirement metadata. Non-zero
+`gh pr checks --json` exits with JSON rows are parsed before error mapping, so
+failed checks still produce summaries. Descriptions and details links are
+redacted before they are returned, rendered, or stored. Dry-run results return
+dry-run next actions rather than unknown-status guidance. Empty check samples in
+watch mode poll until checks appear or timeout. No checks never claim
+verification. Unknown selected checks take priority over pending checks. Failed,
+skipped-only, cancelled, timed-out, or unknown selected checks block the
+workflow; pending timeout keeps `ci_waiting`.
 
 The original v1 design notes below are retained as historical rationale, but the
 implemented API and docs in #13 are the current contract.

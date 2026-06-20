@@ -109,6 +109,36 @@ describe('parseGitHubPrChecksJson', () => {
     expect(JSON.stringify(result)).not.toContain('\u001B');
   });
 
+  it('redacts sensitive descriptions before returning structured results', () => {
+    const result = parseRows([
+      {
+        name: 'deploy',
+        workflow: 'CI',
+        bucket: 'fail',
+        state: 'FAILURE',
+        description: '\u001B[31mfailed token=ghp_abcdefghijklmnopqrstuvwxyz123456 password=hunter2\u001B[0m',
+      },
+    ]);
+
+    expect(result.checks[0]?.description).toBe('failed token=[REDACTED] password=[REDACTED]');
+    expect(result.summary).toContain('Context: failed token=[REDACTED] password=[REDACTED]');
+    expect(JSON.stringify(result)).not.toContain('hunter2');
+    expect(JSON.stringify(result)).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
+    expect(JSON.stringify(result)).not.toContain('\u001B');
+  });
+
+  it('treats all returned v1 check rows as required in all-checks mode', () => {
+    const result = parseGitHubPrChecksJson(
+      JSON.stringify([{ name: 'optional-looking', bucket: 'pass', state: 'SUCCESS' }]),
+      {
+        requiredOnly: false,
+      },
+    );
+
+    expect(result.requiredOnly).toBe(false);
+    expect(result.checks[0]?.required).toBe(true);
+  });
+
   it('produces a warning for unknown states', () => {
     const result = parseRows([{ name: 'mystery', bucket: 'weird', state: 'ODD' }]);
 

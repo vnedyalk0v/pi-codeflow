@@ -480,6 +480,10 @@ function getLifecyclePhaseForComments(options: {
     return 'blocked';
   }
 
+  if ((options.triage?.classificationCounts.valid ?? 0) > 0) {
+    return 'fixing_review_findings';
+  }
+
   if (options.status === 'found') {
     return 'review_triage';
   }

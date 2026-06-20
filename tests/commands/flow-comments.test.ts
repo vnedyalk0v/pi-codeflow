@@ -239,6 +239,8 @@ describe('runFlowComments', () => {
     });
 
     expect(result.triage?.classificationCounts.valid).toBe(1);
+    expect(result.lifecyclePhase).toBe('fixing_review_findings');
+    expect(result.sessionState.lifecycle.phase).toBe('fixing_review_findings');
     expect(result.summary).toContain('triage summary');
     expect(result.sessionState.reviewComments?.lastRun?.classificationCounts.valid).toBe(1);
   });

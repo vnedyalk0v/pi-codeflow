@@ -191,8 +191,8 @@ Behavior:
 - no unresolved threads leave the lifecycle at the prior safe phase, commonly
   `verified` after passing checks, only when the GitHub scan completed; incomplete
   scans move to `blocked` and never claim no comments or `final_reported`;
-- valid comments make the next expected action fixing findings, then
-  `/flow-check`;
+- valid comments move the lifecycle to `fixing_review_findings` with next
+  expected actions to fix findings, then run `/flow-check`;
 - `needs_human` comments move to `blocked` with a clear human-decision request;
 - dry-run does not read GitHub, update state, or transition lifecycle;
 - no replies, resolution, code changes, commits, pushes, or merges occur.

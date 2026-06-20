@@ -267,8 +267,9 @@ non-destructive fetch attempt made before base branch resolution.
 - Incomplete scan because the max thread bound was reached before pagination
   ended: move to `blocked` and require increasing `reviewComments.maxThreadsPerRun`
   or passing `--max-threads` before claiming no selected threads.
-- Valid threads in a provided triage payload: stay in `review_triage` and make
-  fixing findings plus `/flow-check` the next expected action.
+- Valid threads in a provided triage payload: move to
+  `fixing_review_findings` and make fixing findings plus `/flow-check` the next
+  expected action.
 - Stale or already fixed threads: remain in `review_triage` until evidence is
   recorded; reply and resolution remain future work.
 - Invalid threads: remain in `review_triage` for a concise explanation draft, or

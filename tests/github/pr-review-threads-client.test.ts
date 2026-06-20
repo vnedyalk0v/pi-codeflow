@@ -14,10 +14,6 @@ function fixture(name: string): string {
   return readFileSync(path.join(repoRoot, 'tests/fixtures/github', name), 'utf8');
 }
 
-function repoView() {
-  return JSON.stringify({ nameWithOwner: 'org/repo', url: 'https://github.com/org/repo' });
-}
-
 function prView(number = 123) {
   return JSON.stringify({ number, url: `https://github.com/org/repo/pull/${number}` });
 }
@@ -38,25 +34,26 @@ function ghClient(calls: string[][], outputs: Array<string | Error>): GhClientLi
 }
 
 describe('listGitHubReviewThreads', () => {
-  it('uses gh repo view, gh pr view, and gh api graphql without mutations', async () => {
+  it('uses the PR URL repository for gh api graphql without mutations', async () => {
     const calls: string[][] = [];
     const result = await listGitHubReviewThreads({
       pr: 123,
-      ghClient: ghClient(calls, [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient(calls, [prView(), fixture('review-threads.graphql.json')]),
     });
 
     expect(result.prNumber).toBe(123);
+    expect(result.owner).toBe('org');
+    expect(result.repo).toBe('repo');
     expect(result.threads).toHaveLength(2);
-    expect(calls[0]).toEqual(['repo', 'view', '--json', 'nameWithOwner,url']);
-    expect(calls[1]).toEqual(['pr', 'view', '123', '--json', 'number,url']);
-    expect(calls[2]?.slice(0, 2)).toEqual(['api', 'graphql']);
+    expect(calls[0]).toEqual(['pr', 'view', '123', '--json', 'number,url']);
+    expect(calls[1]?.slice(0, 2)).toEqual(['api', 'graphql']);
     expect(calls.flat().join(' ').toLowerCase()).not.toContain('mutation');
   });
 
   it('handles empty reviewThreads responses', async () => {
     const result = await listGitHubReviewThreads({
       pr: 123,
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads-empty.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads-empty.graphql.json')]),
     });
 
     expect(result.threads).toEqual([]);
@@ -75,7 +72,7 @@ describe('listGitHubReviewThreads', () => {
     const result = await listGitHubReviewThreads({
       pr: 123,
       maxThreads: 1,
-      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+      ghClient: ghClient([], [prView(), JSON.stringify(raw)]),
     });
 
     expect(result.threads).toHaveLength(1);
@@ -116,12 +113,12 @@ describe('listGitHubReviewThreads', () => {
     const result = await listGitHubReviewThreads({
       pr: 123,
       maxThreads: 2,
-      ghClient: ghClient(calls, [repoView(), prView(), firstPage, secondPage]),
+      ghClient: ghClient(calls, [prView(), firstPage, secondPage]),
     });
 
     expect(result.threads.map((thread) => thread.threadId)).toEqual(['PRRT_thread_1', 'PRRT_thread_2']);
     expect(calls.filter((args) => args[0] === 'api' && args[1] === 'graphql')).toHaveLength(2);
-    expect(calls[3]).toEqual(expect.arrayContaining(['threadCursor=cursor-1']));
+    expect(calls[2]).toEqual(expect.arrayContaining(['threadCursor=cursor-1']));
   });
 
   it('paginates comments inside a thread when GitHub marks comments hasNextPage', async () => {
@@ -161,7 +158,7 @@ describe('listGitHubReviewThreads', () => {
     const calls: string[][] = [];
     const result = await listGitHubReviewThreads({
       pr: 123,
-      ghClient: ghClient(calls, [repoView(), prView(), JSON.stringify(raw), commentPage]),
+      ghClient: ghClient(calls, [prView(), JSON.stringify(raw), commentPage]),
     });
 
     expect(result.threads[0]?.comments).toHaveLength(2);
@@ -182,19 +179,18 @@ describe('listGitHubReviewThreads', () => {
 
     await expect(listGitHubReviewThreads({
       pr: 123,
-      ghClient: ghClient([], [repoView(), prView(), JSON.stringify({ errors: [{ message: 'Resource not accessible by integration' }] })]),
+      ghClient: ghClient([], [prView(), JSON.stringify({ errors: [{ message: 'Resource not accessible by integration' }] })]),
     })).rejects.toMatchObject({ code: 'permission_denied' });
 
     await expect(listGitHubReviewThreads({
       pr: 123,
-      ghClient: ghClient([], [repoView(), prView(), JSON.stringify({ data: { repository: {} } })]),
+      ghClient: ghClient([], [prView(), JSON.stringify({ data: { repository: {} } })]),
     })).rejects.toBeInstanceOf(CodeflowReviewCommentsError);
   });
 
   it('returns a no_pr_found error when no PR is associated with the current branch', async () => {
     await expect(listGitHubReviewThreads({
       ghClient: ghClient([], [
-        repoView(),
         new GithubCliError({
           code: 'gh_command_failed',
           message: 'no pull requests found for branch',

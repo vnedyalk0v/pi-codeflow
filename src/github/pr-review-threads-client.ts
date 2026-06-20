@@ -68,8 +68,8 @@ export async function listGitHubReviewThreads(
     MAX_GRAPHQL_PAGE_SIZE,
     resolvePositiveInteger(options.commentsFirst ?? DEFAULT_COMMENTS_FIRST, 'commentsFirst'),
   );
-  const repository = await getRepositoryMetadata(ghClient);
   const pullRequest = await getPullRequestMetadata(ghClient, options.pr);
+  const repository = getRepositoryMetadataFromPullRequest(pullRequest);
   const rawThreads: Record<string, unknown>[] = [];
   const warnings: string[] = [];
   let cursor: string | null = null;
@@ -128,28 +128,37 @@ export async function listGitHubReviewThreads(
   };
 }
 
-async function getRepositoryMetadata(ghClient: GhClientLike): Promise<RepositoryMetadata> {
-  try {
-    const result = await ghClient.run(['repo', 'view', '--json', 'nameWithOwner,url']);
-    const parsed = parseJsonObject(result.stdout, 'GitHub CLI returned invalid repository metadata JSON.');
-    const nameWithOwner = readString(parsed.nameWithOwner);
-    const [owner, repo] = nameWithOwner?.split('/', 2) ?? [];
+function getRepositoryMetadataFromPullRequest(
+  pullRequest: PullRequestMetadata,
+): RepositoryMetadata {
+  if (!pullRequest.url) {
+    throw new CodeflowReviewCommentsError({
+      code: 'unexpected_response',
+      message: 'GitHub CLI pull request metadata did not include a PR URL.',
+      details: { prNumber: pullRequest.number },
+    });
+  }
 
-    if (!owner || !repo) {
-      throw new CodeflowReviewCommentsError({
-        code: 'unexpected_response',
-        message: 'GitHub CLI repository metadata did not include nameWithOwner.',
-        details: { outputPreview: truncateText(result.stdout, 1000) },
-      });
+  try {
+    const url = new URL(pullRequest.url);
+    const [, owner, repo, resource, number] = url.pathname.split('/');
+
+    if (!owner || !repo || resource !== 'pull' || number !== String(pullRequest.number)) {
+      throw new Error('unexpected pull request URL path');
     }
 
     return {
       owner,
       repo,
-      url: readString(parsed.url),
+      url: `${url.origin}/${owner}/${repo}`,
     };
   } catch (error) {
-    throw mapGithubCliOrCodeflowError(error, 'repository_not_found');
+    throw new CodeflowReviewCommentsError({
+      code: 'unexpected_response',
+      message: 'Could not derive the GitHub repository from pull request metadata.',
+      details: { prNumber: pullRequest.number, prUrl: pullRequest.url },
+      cause: error,
+    });
   }
 }
 

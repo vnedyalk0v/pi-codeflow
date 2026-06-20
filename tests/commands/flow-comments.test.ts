@@ -22,10 +22,6 @@ function fixture(name: string): string {
   return readFileSync(path.join(repoRoot, 'tests/fixtures/github', name), 'utf8');
 }
 
-function repoView() {
-  return JSON.stringify({ nameWithOwner: 'org/repo', url: 'https://github.com/org/repo' });
-}
-
 function prView(number = 123) {
   return JSON.stringify({ number, url: `https://github.com/org/repo/pull/${number}` });
 }
@@ -110,19 +106,19 @@ describe('runFlowComments', () => {
     const calls: string[][] = [];
     const result = await runFlowComments({
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient(calls, [repoView(), prView(456), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient(calls, [prView(456), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(456),
     });
 
     expect(result.prNumber).toBe(456);
-    expect(calls[1]).toEqual(['pr', 'view', '456', '--json', 'number,url']);
+    expect(calls[0]).toEqual(['pr', 'view', '456', '--json', 'number,url']);
   });
 
   it('lists unresolved review threads by default and moves to review_triage', async () => {
     const result = await runFlowComments({
       pr: 123,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 
@@ -137,7 +133,7 @@ describe('runFlowComments', () => {
       pr: 123,
       includeResolved: true,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads-resolved.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads-resolved.graphql.json')]),
       sessionState: sessionWithPr(),
     });
     const authorPath = await runFlowComments({
@@ -145,20 +141,20 @@ describe('runFlowComments', () => {
       authors: ['alice'],
       paths: ['src/bar.ts'],
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     });
     const outdatedExcluded = await runFlowComments({
       pr: 123,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads-outdated.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads-outdated.graphql.json')]),
       sessionState: sessionWithPr(),
     });
     const outdatedIncluded = await runFlowComments({
       pr: 123,
       includeOutdated: true,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads-outdated.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads-outdated.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 
@@ -178,7 +174,7 @@ describe('runFlowComments', () => {
       pr: 123,
       maxThreads: 1,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+      ghClient: ghClient([], [prView(), JSON.stringify(raw)]),
       sessionState: sessionWithPr(),
     });
 
@@ -202,7 +198,7 @@ describe('runFlowComments', () => {
       pr: 123,
       maxThreads: 1,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+      ghClient: ghClient([], [prView(), JSON.stringify(raw)]),
       sessionState: sessionWithPr(),
     });
 
@@ -247,7 +243,7 @@ describe('runFlowComments', () => {
         ],
       },
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 
@@ -280,7 +276,7 @@ describe('runFlowComments', () => {
         ],
       },
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     })).rejects.toMatchObject({ code: 'invalid_triage_payload' });
   });
@@ -319,7 +315,7 @@ describe('runFlowComments', () => {
         ],
       },
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 
@@ -331,7 +327,7 @@ describe('runFlowComments', () => {
     const result = await runFlowComments({
       pr: 123,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads-empty.graphql.json')]),
+      ghClient: ghClient([], [prView(), fixture('review-threads-empty.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 
@@ -345,7 +341,6 @@ describe('runFlowComments', () => {
     await expect(runFlowComments({
       config: getDefaultCodeflowConfig(),
       ghClient: ghClient([], [
-        repoView(),
         new GithubCliError({
           code: 'gh_command_failed',
           message: 'no pull requests found for branch',
@@ -365,7 +360,7 @@ describe('runFlowComments', () => {
     await runFlowComments({
       pr: 123,
       config: getDefaultCodeflowConfig(),
-      ghClient: ghClient(calls, [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      ghClient: ghClient(calls, [prView(), fixture('review-threads.graphql.json')]),
       sessionState: sessionWithPr(),
     });
 

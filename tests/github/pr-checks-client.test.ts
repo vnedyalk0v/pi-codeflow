@@ -233,7 +233,7 @@ describe('watchGitHubPrChecks', () => {
     expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(2);
   });
 
-  it('stops watching terminal no-required-checks responses', async () => {
+  it('keeps polling no-required-checks responses until checks appear', async () => {
     const calls: string[][] = [];
     const noRequiredChecksError = new GithubCliError({
       code: 'gh_command_failed',
@@ -256,11 +256,9 @@ describe('watchGitHubPrChecks', () => {
       ]),
     });
 
-    expect(result.status).toBe('no_checks');
-    expect(result.timedOut).toBe(false);
-    expect(result.attempts).toBe(1);
-    expect(result.terminalNoChecks).toBe(true);
-    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
+    expect(result.status).toBe('passed');
+    expect(result.attempts).toBe(2);
+    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(2);
   });
 
   it('keeps polling generic no-checks errors until checks appear', async () => {

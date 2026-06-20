@@ -75,9 +75,8 @@ export async function getGitHubPrChecks(
         watched: options.watched === true,
         startedAt,
         startedAtMs,
-        terminalNoChecks: looksLikeTerminalNoSelectedChecksMessage(error, requiredOnly),
         warnings: [
-          getNoChecksWarning(error, requiredOnly),
+          'No GitHub PR checks were found yet; Codeflow will not claim remote verification.',
         ],
       });
     }
@@ -269,7 +268,6 @@ function emptyChecksResult(options: {
   startedAt: string;
   startedAtMs: number;
   warnings: string[];
-  terminalNoChecks?: boolean;
 }): CodeflowPrChecksResult {
   const finishedAtMs = Date.now();
   return buildCodeflowPrChecksResult([], {
@@ -284,13 +282,12 @@ function emptyChecksResult(options: {
     finishedAt: new Date(finishedAtMs).toISOString(),
     durationMs: Math.max(0, finishedAtMs - options.startedAtMs),
     warnings: options.warnings,
-    terminalNoChecks: options.terminalNoChecks === true,
   });
 }
 
 function shouldStopWatching(result: CodeflowPrChecksResult, failFast: boolean): boolean {
   if (result.status === 'no_checks') {
-    return result.terminalNoChecks === true;
+    return false;
   }
 
   if (result.status === 'unknown') {
@@ -331,7 +328,6 @@ function finalizeWatchResult(
     finishedAt: new Date(options.finishedAtMs).toISOString(),
     durationMs: Math.max(0, options.finishedAtMs - options.startedAtMs),
     warnings,
-    terminalNoChecks: result.terminalNoChecks === true,
   });
 
   return {
@@ -430,29 +426,8 @@ function mapGithubCliError(error: unknown, notFoundCode: 'no_pr_found' | 'pr_not
 
 function looksLikeNoChecksMessage(error: GithubCliError): boolean {
   return /no (?:required\s+)?checks? (?:reported|found)|no (?:required\s+)?check runs?/i.test(
-    getGithubErrorText(error),
+    `${error.stdout}\n${error.stderr}\n${error.message}`,
   );
-}
-
-function looksLikeTerminalNoSelectedChecksMessage(
-  error: GithubCliError,
-  requiredOnly: boolean,
-): boolean {
-  return requiredOnly && /no required checks? (?:reported|found)|no required check runs?/i.test(
-    getGithubErrorText(error),
-  );
-}
-
-function getNoChecksWarning(error: GithubCliError, requiredOnly: boolean): string {
-  if (looksLikeTerminalNoSelectedChecksMessage(error, requiredOnly)) {
-    return 'GitHub reported no selected required PR checks; Codeflow will not claim remote verification.';
-  }
-
-  return 'No GitHub PR checks were found yet; Codeflow will not claim remote verification.';
-}
-
-function getGithubErrorText(error: GithubCliError): string {
-  return `${error.stdout}\n${error.stderr}\n${error.message}`;
 }
 
 function looksLikeNoPrFound(value: string): boolean {

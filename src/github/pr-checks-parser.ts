@@ -66,7 +66,6 @@ export interface CodeflowPrChecksResult {
   skippedChecks: CodeflowPrCheck[];
   summary: string;
   warnings: string[];
-  terminalNoChecks?: boolean;
 }
 
 export interface CodeflowPrChecksWatchResult extends CodeflowPrChecksResult {
@@ -90,7 +89,6 @@ export interface ParseGitHubPrChecksOptions extends GitHubPrChecksMetadata {
   durationMs?: number;
   now?: Date;
   warnings?: string[];
-  terminalNoChecks?: boolean;
 }
 
 interface GitHubPrCheckRow {
@@ -197,7 +195,6 @@ export function buildCodeflowPrChecksResult(
     checks,
     ...grouped,
     warnings: uniqueWarnings(warnings),
-    terminalNoChecks: options.terminalNoChecks === true,
   };
 
   const result = {

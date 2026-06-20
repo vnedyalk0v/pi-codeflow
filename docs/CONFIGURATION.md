@@ -300,13 +300,10 @@ checks so the final summary can include more context.
 Safety behavior:
 
 - GitHub integration is read-only for check status.
-- Transient empty check samples in watch mode keep polling until checks appear
-  or timeout.
-- Terminal no-selected-required-checks responses from GitHub CLI stop without
-  waiting for the full timeout.
-- No checks after timeout, terminal no-selected-required-checks responses, or
-  single-sample mode produce a `no_checks` status and never claim verified
-  evidence.
+- Empty or no-required-checks samples in watch mode keep polling until checks
+  appear or timeout.
+- No checks after timeout or single-sample mode produce a `no_checks` status and
+  never claim verified evidence.
 - Pending checks after timeout stay `pending` and keep the lifecycle in
   `ci_waiting`.
 - Failed, skipped-only, cancelled, or timed-out selected checks block the flow

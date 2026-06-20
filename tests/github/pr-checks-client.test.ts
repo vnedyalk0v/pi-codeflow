@@ -214,6 +214,27 @@ describe('watchGitHubPrChecks', () => {
     expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(2);
   });
 
+  it('stops watching immediately when an unknown check is mixed with pending checks', async () => {
+    const calls: string[][] = [];
+    const result = await watchGitHubPrChecks({
+      pr: 123,
+      intervalSeconds: 1,
+      timeoutSeconds: 30,
+      sleep: async () => undefined,
+      ghClient: ghClient(calls, [
+        viewJson(),
+        JSON.stringify([
+          { name: 'future-check', bucket: 'new', state: 'ODD' },
+          { name: 'test', bucket: 'pending', state: 'IN_PROGRESS' },
+        ]),
+      ]),
+    });
+
+    expect(result.status).toBe('unknown');
+    expect(result.attempts).toBe(1);
+    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
+  });
+
   it('returns pending with a timeout warning when polling exceeds the bound', async () => {
     const calls: string[][] = [];
     let index = 0;

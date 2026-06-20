@@ -121,6 +121,22 @@ describe('runFlowWatch', () => {
     expect(result.sessionState.githubChecks?.lastRun?.status).toBe('pending');
   });
 
+  it('moves mixed pending and unknown checks to blocked', async () => {
+    const result = await runFlowWatch({
+      watch: false,
+      config: getDefaultCodeflowConfig(),
+      ghClient: ghClient([], [
+        { name: 'future-check', bucket: 'new', state: 'ODD' },
+        { name: 'test', bucket: 'pending', state: 'IN_PROGRESS' },
+      ]),
+      sessionState: sessionWithPr(),
+    });
+
+    expect(result.checks.status).toBe('unknown');
+    expect(result.lifecyclePhase).toBe('blocked');
+    expect(result.sessionState.lifecycle.phase).toBe('blocked');
+  });
+
   it('moves passing checks to verified', async () => {
     const result = await runFlowWatch({
       watch: false,

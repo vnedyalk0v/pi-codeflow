@@ -250,6 +250,8 @@ Behavior:
 - `--dry-run` returns dry-run next actions instead of unknown-status guidance;
 - passed selected checks move the lifecycle to `verified`;
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
+- unknown selected checks take priority over pending checks and move to
+  `blocked` conservatively;
 - watch mode keeps polling empty check samples until checks appear or timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;

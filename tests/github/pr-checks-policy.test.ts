@@ -30,6 +30,10 @@ describe('GitHub PR checks policy', () => {
     expect(getPrChecksAggregateStatus([check('pending'), check('cancelled')])).toBe('failed');
   });
 
+  it('prioritizes unknown checks over pending checks', () => {
+    expect(getPrChecksAggregateStatus([check('pending'), check('unknown')])).toBe('unknown');
+  });
+
   it('classifies pending, skipped-only, passed, and unknown status sets', () => {
     expect(getPrChecksAggregateStatus([check('pending')])).toBe('pending');
     expect(getPrChecksAggregateStatus([check('skipped')])).toBe('skipped');

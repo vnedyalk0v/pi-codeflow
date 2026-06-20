@@ -239,8 +239,9 @@ non-destructive fetch attempt made before base branch resolution.
   the skipped status is explicitly accepted.
 - No checks found after timeout or single-sample mode: remain in `ci_waiting`
   with `no_checks`; never claim `verified`.
-- Unknown GitHub status: `pr_opened` or `ci_waiting` -> `blocked` with a warning
-  that Codeflow could not normalize the returned state.
+- Unknown GitHub status, even when mixed with pending checks: `pr_opened` or
+  `ci_waiting` -> `blocked` with a warning that Codeflow could not normalize the
+  returned state.
 - Dry-run: does not call GitHub and does not transition to `verified`.
 
 ## Retry transitions

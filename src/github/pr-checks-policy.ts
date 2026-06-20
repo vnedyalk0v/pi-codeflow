@@ -31,16 +31,16 @@ export function getPrChecksAggregateStatus(
     return 'failed';
   }
 
+  if (checks.some((check) => check.status === 'unknown')) {
+    return 'unknown';
+  }
+
   if (checks.some((check) => isPendingPrCheckStatus(check.status))) {
     return 'pending';
   }
 
   if (checks.every((check) => isSkippedPrCheckStatus(check.status))) {
     return 'skipped';
-  }
-
-  if (checks.some((check) => check.status === 'unknown')) {
-    return 'unknown';
   }
 
   if (checks.every((check) => isPassedPrCheckStatus(check.status) || isSkippedPrCheckStatus(check.status))) {

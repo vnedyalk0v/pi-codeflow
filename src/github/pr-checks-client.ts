@@ -275,6 +275,10 @@ function shouldStopWatching(result: CodeflowPrChecksResult, failFast: boolean): 
     return false;
   }
 
+  if (result.status === 'unknown') {
+    return true;
+  }
+
   if (failFast && result.failedChecks.length > 0) {
     return true;
   }

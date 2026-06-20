@@ -149,8 +149,8 @@ Pass, failure, pending, and empty behavior:
 - skipped-only checks produce `skipped` and move to `blocked`; agents should
   confirm skipped checks are expected before treating remote verification as
   satisfied;
-- unknown GitHub states produce warnings and move to `blocked` rather than
-  claiming pass.
+- unknown GitHub states, even alongside pending checks, produce warnings and
+  move to `blocked` rather than claiming pass.
 
 `/flow-watch` is read-only. It does not rerun workflows, cancel workflows, push,
 merge, approve, resolve comments, reply to comments, request reviews, delete

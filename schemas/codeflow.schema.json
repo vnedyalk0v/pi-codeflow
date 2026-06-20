@@ -503,6 +503,31 @@
           "minLength": 1
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "requireHumanForInvalid": {
+                "const": true
+              }
+            },
+            "required": [
+              "requireHumanForInvalid"
+            ]
+          },
+          "then": {
+            "properties": {
+              "autoResolveClassifications": {
+                "not": {
+                  "contains": {
+                    "const": "invalid"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "emergency": {

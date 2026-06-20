@@ -419,7 +419,7 @@ It does not make the current package reply to or resolve GitHub threads.
 | `includeOutdated` | Includes outdated threads when true. Defaults to false. |
 | `autoReply` | Allows future mutating commands to post replies. Defaults to false. |
 | `autoResolve` | Allows future mutating commands to resolve safe threads. Defaults to false. |
-| `autoResolveClassifications` | Classifications eligible for auto-resolution when `autoResolve` is true; `needs_human` is excluded. |
+| `autoResolveClassifications` | Classifications eligible for auto-resolution when `autoResolve` is true; `needs_human` is excluded, and `invalid` is rejected while `requireHumanForInvalid` is true. |
 | `requireChecksBeforeResolve` | Requires verification before any automatic resolution. Defaults to true. |
 | `requireHumanForInvalid` | Blocks automatic invalid-comment resolution by default. |
 | `requireHumanForNeedsHuman` | Ensures `needs_human` threads are never auto-resolved. |

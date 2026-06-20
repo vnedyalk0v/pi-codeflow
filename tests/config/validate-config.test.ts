@@ -187,6 +187,30 @@ describe('validateCodeflowConfig', () => {
     }
   });
 
+  it('rejects invalid auto-resolution when invalid comments require humans', () => {
+    const config = cloneDefault();
+    config.reviewComments.autoResolve = true;
+    config.reviewComments.requireHumanForInvalid = true;
+    config.reviewComments.autoResolveClassifications = [
+      'stale',
+      'already_fixed',
+      'invalid',
+    ];
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/reviewComments/autoResolveClassifications',
+            keyword: 'not',
+          }),
+        ]),
+      );
+    }
+  });
+
   it('returns a warning when a schema-valid config contains extends', () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       extends: './base.codeflow.json',

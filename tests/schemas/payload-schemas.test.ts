@@ -151,7 +151,7 @@ describe('payload schemas', () => {
           filesToInspect: ['schemas/review-comment-triage.schema.json'],
           filesToChange: ['schemas/review-comment-triage.schema.json'],
           checksToRun: ['npm test'],
-          replyBody: 'Fixed the schema and added coverage.',
+          replyBody: 'Draft after fix and checks: update the schema and add coverage.',
           canResolveAfterChecks: true,
           requiresHumanDecision: false,
         },

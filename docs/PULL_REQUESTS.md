@@ -249,7 +249,7 @@ Behavior:
 - non-zero `gh pr checks --json` exits with JSON rows are parsed before error
   mapping so failed checks can be summarized;
 - descriptions and details links are redacted before they are returned, rendered,
-  or stored;
+  or stored, and stored per-check strings are bounded;
 - `--dry-run` returns dry-run next actions instead of unknown-status guidance;
 - passed selected checks move the lifecycle to `verified`, with skipped checks
   listed separately from passed checks in summaries;

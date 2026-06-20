@@ -139,7 +139,8 @@ this layer changes.
 `/flow-watch` reads GitHub PR check status after a PR exists. It uses read-only
 GitHub CLI calls to resolve the PR and read check metadata, then stores bounded
 check names, statuses, redacted descriptions and details links, durations, and a
-summary in session state.
+summary in session state. Stored per-check strings are truncated before
+persistence.
 
 Safety expectations for GitHub checks:
 

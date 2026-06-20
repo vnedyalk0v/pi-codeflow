@@ -7,6 +7,7 @@ import { truncateText } from '../utils/text';
 
 const MAX_STORED_SUMMARY_CHARS = 2000;
 const MAX_STORED_CHECKS = 100;
+const MAX_STORED_CHECK_STRING_CHARS = 500;
 
 export interface CodeflowStoredGitHubCheck {
   name: string;
@@ -69,11 +70,15 @@ export function toStoredGitHubChecksRun(
 
 function toStoredGitHubCheck(check: CodeflowPrCheck): CodeflowStoredGitHubCheck {
   return {
-    name: check.name,
-    workflow: check.workflow,
-    status: check.status,
-    detailsUrl: check.detailsUrl,
+    name: truncateText(check.name, MAX_STORED_CHECK_STRING_CHARS),
+    workflow: truncateNullableText(check.workflow),
+    status: truncateText(check.status, MAX_STORED_CHECK_STRING_CHARS),
+    detailsUrl: truncateNullableText(check.detailsUrl),
     durationMs: check.durationMs,
     required: check.required,
   };
+}
+
+function truncateNullableText(value: string | null): string | null {
+  return value === null ? null : truncateText(value, MAX_STORED_CHECK_STRING_CHARS);
 }

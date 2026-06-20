@@ -38,7 +38,8 @@ and `unknown`, with aggregate statuses `passed`, `failed`, `pending`, `skipped`,
 required because all-checks JSON has no per-row requirement metadata. Non-zero
 `gh pr checks --json` exits with JSON rows are parsed before error mapping, so
 failed checks still produce summaries. Descriptions and details links are
-redacted before they are returned, rendered, or stored. Dry-run results return
+redacted before they are returned, rendered, or stored; stored per-check strings
+are truncated before persistence. Dry-run results return
 dry-run next actions rather than unknown-status guidance. Watch mode checks the
 deadline before each new poll; empty check samples poll until checks appear or
 timeout. GitHub CLI `no required checks reported` responses normalize to

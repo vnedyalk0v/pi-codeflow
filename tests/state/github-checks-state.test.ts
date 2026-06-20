@@ -62,6 +62,29 @@ describe('Codeflow GitHub checks state', () => {
     expect(state.lastRun?.summary.length ?? 0).toBeLessThanOrEqual(2000);
   });
 
+  it('bounds per-check strings in stored GitHub checks state', () => {
+    const run = result('failed');
+    const longName = `check-${'n'.repeat(2000)}`;
+    const longWorkflow = `workflow-${'w'.repeat(2000)}`;
+    const longDetailsUrl = `https://ci.example.test/run?log=${'x'.repeat(2000)}`;
+    run.checks[0] = {
+      ...run.checks[0]!,
+      name: longName,
+      workflow: longWorkflow,
+      detailsUrl: longDetailsUrl,
+    };
+
+    const state = updateGitHubChecksStateWithResult(createInitialGitHubChecksState(), run);
+    const stored = state.lastRun?.checks[0];
+
+    expect(stored?.name.length).toBeLessThanOrEqual(500);
+    expect(stored?.workflow?.length).toBeLessThanOrEqual(500);
+    expect(stored?.detailsUrl?.length).toBeLessThanOrEqual(500);
+    expect(JSON.stringify(state)).not.toContain(longName);
+    expect(JSON.stringify(state)).not.toContain(longWorkflow);
+    expect(JSON.stringify(state)).not.toContain(longDetailsUrl);
+  });
+
   it('updates session lifecycle with latest GitHub checks result', () => {
     const session = createCodeflowSessionState({ phase: 'ci_waiting' });
     const updated = updateSessionStateWithGitHubChecks(session, result('passed'), 'verified');

@@ -22,7 +22,12 @@ export type CodeflowReviewClassification =
   | 'already_fixed'
   | 'needs_human';
 
-export type CodeflowReviewAutoResolveReason = 'fixed' | 'stale' | 'already_fixed';
+export type CodeflowReviewAutoResolveClassification = Exclude<
+  CodeflowReviewClassification,
+  'needs_human'
+>;
+
+export type CodeflowReviewProvider = 'github-graphql';
 
 export type CodeflowEmergencyPath = 'hotfix_branch' | 'human_only';
 
@@ -95,11 +100,20 @@ export interface CodeflowCheckConfig {
 }
 
 export interface CodeflowReviewCommentsConfig {
-  classifications: CodeflowReviewClassification[];
-  autoResolveWhen: CodeflowReviewAutoResolveReason[];
-  resolveValidOnlyAfterFix: boolean;
-  invalidRequiresHumanReview: boolean;
-  needsHumanBlocks: boolean;
+  enabled: boolean;
+  provider: CodeflowReviewProvider;
+  includeAuthors: string[];
+  excludeAuthors: string[];
+  unresolvedOnly: boolean;
+  includeOutdated: boolean;
+  autoReply: boolean;
+  autoResolve: boolean;
+  autoResolveClassifications: CodeflowReviewAutoResolveClassification[];
+  requireChecksBeforeResolve: boolean;
+  requireHumanForInvalid: boolean;
+  requireHumanForNeedsHuman: boolean;
+  maxThreadsPerRun: number;
+  replyTemplate: string;
 }
 
 export interface CodeflowEmergencyConfig {

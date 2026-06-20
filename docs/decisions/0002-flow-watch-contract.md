@@ -41,12 +41,13 @@ failed checks still produce summaries. Descriptions and details links are
 redacted before they are returned, rendered, or stored; stored per-check strings
 are truncated before persistence. Dry-run results return
 dry-run next actions rather than unknown-status guidance. Watch mode checks the
-deadline before each new poll; empty check samples poll until checks appear or
-timeout. GitHub CLI `no required checks reported` responses normalize to
-`no_checks`. No checks never claim
-verification. Unknown selected checks take priority over pending checks. Failed,
-skipped-only, cancelled, timed-out, or unknown selected checks block the
-workflow; pending timeout keeps `ci_waiting`.
+deadline before each new poll; empty or no-required-checks samples poll until
+checks appear or timeout. GitHub CLI `no required checks reported` responses
+normalize to `no_checks`, but watch mode treats them as retryable because checks
+can appear shortly after PR creation. No checks never claim verification.
+Unknown selected checks take priority over pending checks. Failed, skipped-only,
+cancelled, timed-out, or unknown selected checks block the workflow; pending
+timeout keeps `ci_waiting`.
 
 The original v1 design notes below are retained as historical rationale, but the
 implemented API and docs in #13 are the current contract.

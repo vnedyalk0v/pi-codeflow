@@ -44,8 +44,9 @@ The default config lives in `config/default.codeflow.json`. It is conservative:
 - emergency flow requires a final report;
 - GitHub checks watching defaults to required checks only, a 10 second polling
   interval, a 900 second timeout, and fail-fast disabled;
-- review comments are auto-resolved only when fixed, stale, or already fixed
-  according to policy.
+- review comments use GitHub GraphQL as the planned provider;
+- review-comment auto-reply and auto-resolution both default to disabled;
+- review-thread resolution requires checks before resolve by default.
 
 ## Project config path
 
@@ -100,7 +101,7 @@ return a warning for `extends`, but it does not load extended files.
 - Invalid config moves the workflow to `blocked`.
 - Missing base branch moves the workflow to `blocked` unless fallback is enabled.
 - Unknown branch or commit types are invalid.
-- Unknown review comment classifications are invalid.
+- Unknown review comment classifications in triage payloads are invalid.
 - Template paths that cannot be resolved are invalid before rendering.
 
 The v0.2 loader exposes typed load failures for missing explicit files, invalid
@@ -188,7 +189,7 @@ Pull request base outside allowed base branches:
 | `commits` | Commit template and structured payload rules. |
 | `pullRequest` | PR title/body templates, base branch, draft, checks, GitHub checks watcher defaults, push, and payload policy. |
 | `checks` | Ordered local checks. |
-| `reviewComments` | Review comment classifications and resolution policy. |
+| `reviewComments` | Future review-thread provider, filters, and reply/resolution policy. |
 | `emergency` | Emergency override and hotfix policy. |
 | `templates` | Named template paths. |
 | `guidance` | Proactive guidance and structured-output behavior. |
@@ -299,7 +300,8 @@ checks so the final summary can include more context.
 Safety behavior:
 
 - GitHub integration is read-only for check status.
-- Empty check samples in watch mode keep polling until checks appear or timeout.
+- Empty or no-required-checks samples in watch mode keep polling until checks
+  appear or timeout.
 - No checks after timeout or single-sample mode produce a `no_checks` status and
   never claim verified evidence.
 - Pending checks after timeout stay `pending` and keep the lifecycle in
@@ -403,9 +405,29 @@ Emergency config controls:
 - whether structured commits and PRs are still required;
 - whether final reports and backport notes are required.
 
-## Review comment classification configuration
+## Review comment triage configuration
 
-Review comments use these classifications:
+`reviewComments` config is a policy design for future review-thread commands.
+It does not make the current package reply to or resolve GitHub threads.
+
+| Field | Purpose |
+| --- | --- |
+| `enabled` | Enables future review-thread triage commands when they exist. |
+| `provider` | Planned provider. The only supported design value is `github-graphql`. |
+| `includeAuthors` | Optional allow-list of GitHub logins to include. Empty means no allow-list. |
+| `excludeAuthors` | Optional deny-list of GitHub logins to exclude. |
+| `unresolvedOnly` | Lists unresolved review threads by default. |
+| `includeOutdated` | Includes outdated threads when true. Defaults to false. |
+| `autoReply` | Allows future mutating commands to post replies. Defaults to false. |
+| `autoResolve` | Allows future mutating commands to resolve safe threads. Defaults to false. |
+| `autoResolveClassifications` | Classifications eligible for auto-resolution when `autoResolve` is true; `needs_human` is excluded, and `invalid` is rejected while `requireHumanForInvalid` is true. |
+| `requireChecksBeforeResolve` | Requires verification before any automatic resolution. Defaults to true. |
+| `requireHumanForInvalid` | Blocks automatic invalid-comment resolution by default. |
+| `requireHumanForNeedsHuman` | Ensures `needs_human` threads are never auto-resolved. |
+| `maxThreadsPerRun` | Bounds review-thread reads and model payload size. |
+| `replyTemplate` | Template path for future review-thread replies. |
+
+Review comments use these classifications in triage payloads:
 
 - `valid`
 - `invalid`
@@ -413,8 +435,9 @@ Review comments use these classifications:
 - `already_fixed`
 - `needs_human`
 
-Resolution policy should be conservative. Valid comments are resolved only after
-a fix and verification. Invalid comments normally require human review.
+Resolution policy must be conservative. Valid comments are resolved only after a
+fix is committed and checks pass. Invalid comments normally require human review.
+`needs_human` comments are never auto-resolved.
 
 ## Complete example `.pi/codeflow.json`
 
@@ -509,11 +532,20 @@ a fix and verification. Invalid comments normally require human review.
   },
   "checks": [],
   "reviewComments": {
-    "classifications": ["valid", "invalid", "stale", "already_fixed", "needs_human"],
-    "autoResolveWhen": ["fixed", "stale", "already_fixed"],
-    "resolveValidOnlyAfterFix": true,
-    "invalidRequiresHumanReview": true,
-    "needsHumanBlocks": true
+    "enabled": true,
+    "provider": "github-graphql",
+    "includeAuthors": [],
+    "excludeAuthors": [],
+    "unresolvedOnly": true,
+    "includeOutdated": false,
+    "autoReply": false,
+    "autoResolve": false,
+    "autoResolveClassifications": ["stale", "already_fixed"],
+    "requireChecksBeforeResolve": true,
+    "requireHumanForInvalid": true,
+    "requireHumanForNeedsHuman": true,
+    "maxThreadsPerRun": 50,
+    "replyTemplate": "templates/review-reply.md"
   },
   "emergency": {
     "enabled": true,

@@ -256,17 +256,30 @@ Behavior:
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
 - unknown selected checks take priority over pending checks and move to
   `blocked` conservatively;
-- watch mode checks the deadline before each new poll and keeps polling empty
-  check samples only until checks appear or timeout;
+- watch mode checks the deadline before each new poll and keeps polling empty or
+  no-required-checks samples only until checks appear or timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;
-- no checks after timeout or single-sample mode, including GitHub CLI `no
-  required checks reported` responses, produce `no_checks` and must not be
-  treated as verified evidence.
+- no checks after timeout or single-sample mode produce `no_checks` and must not
+  be treated as verified evidence.
 
 `/flow-watch` does not implement review-comment triage. It also does not rerun
 workflows, merge, approve, request review, resolve comments, reply to comments,
 push commits, or delete branches.
+
+## Review comments after PR checks
+
+Future review-comment work should start with read-only `/flow-comments` after a
+PR exists and local or remote verification evidence is available. The primary
+input is inline pull request review threads from GitHub GraphQL, not ordinary PR
+issue comments. The read-only command should list unresolved threads, classify
+them, produce a triage report, and store bounded triage state without replies,
+resolution, code changes, commits, pushes, or merge automation.
+
+Future `/flow-fix-comments` may use that triage state to fix valid findings,
+rerun `/flow-check`, commit through `/flow-commit`, watch remote checks with
+`/flow-watch`, and only then reply or resolve safe classifications when policy
+allows it. Review thread resolution must use GitHub review thread IDs.
 
 ## Out of scope
 

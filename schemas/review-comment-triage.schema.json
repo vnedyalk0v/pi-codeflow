@@ -1,81 +1,149 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/review-comment-triage.schema.json",
-  "title": "Codeflow review comment triage",
-  "description": "Structured classification of unresolved review comments.",
+  "title": "Codeflow review thread triage",
+  "description": "Structured classification of normalized GitHub pull request review threads.",
   "type": "object",
   "required": [
-    "comments"
+    "threads"
   ],
   "properties": {
-    "comments": {
+    "threads": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "classification",
-          "rationale",
-          "action",
-          "mayResolveAfterVerification"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "url": {
-            "type": "string",
-            "format": "uri",
-            "minLength": 1
-          },
-          "classification": {
-            "type": "string",
-            "enum": [
-              "valid",
-              "invalid",
-              "stale",
-              "already_fixed",
-              "needs_human"
-            ]
-          },
-          "rationale": {
-            "type": "string",
-            "minLength": 1
-          },
-          "action": {
-            "type": "string",
-            "minLength": 1
-          },
-          "resolution": {
-            "type": "string",
-            "enum": [
-              "fix_then_resolve",
-              "reply_only",
-              "resolve_as_stale",
-              "resolve_as_already_fixed",
-              "escalate_to_human",
-              "do_not_resolve"
-            ]
-          },
-          "mayResolveAfterVerification": {
-            "type": "boolean"
-          }
-        },
-        "anyOf": [
-          {
-            "required": [
-              "id"
-            ]
-          },
-          {
-            "required": [
-              "url"
-            ]
-          }
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/triagedThread"
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "classification": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "invalid",
+        "stale",
+        "already_fixed",
+        "needs_human"
+      ]
+    },
+    "pathList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "checkList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "triagedThread": {
+      "type": "object",
+      "required": [
+        "threadId",
+        "classification",
+        "confidence",
+        "reason",
+        "recommendedAction",
+        "filesToInspect",
+        "filesToChange",
+        "checksToRun",
+        "replyBody",
+        "canResolveAfterChecks",
+        "requiresHumanDecision"
+      ],
+      "properties": {
+        "threadId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "GitHub pull request review thread node ID, not an issue comment ID."
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendedAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "filesToInspect": {
+          "$ref": "#/$defs/pathList"
+        },
+        "filesToChange": {
+          "$ref": "#/$defs/pathList"
+        },
+        "checksToRun": {
+          "$ref": "#/$defs/checkList"
+        },
+        "replyBody": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Concise draft reply text. /flow-comments stores it but must not post it."
+        },
+        "canResolveAfterChecks": {
+          "type": "boolean"
+        },
+        "requiresHumanDecision": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "const": "needs_human"
+              }
+            },
+            "required": [
+              "classification"
+            ]
+          },
+          "then": {
+            "properties": {
+              "requiresHumanDecision": {
+                "const": true
+              },
+              "canResolveAfterChecks": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "requiresHumanDecision": {
+                "const": true
+              }
+            },
+            "required": [
+              "requiresHumanDecision"
+            ]
+          },
+          "then": {
+            "properties": {
+              "canResolveAfterChecks": {
+                "const": false
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
 }

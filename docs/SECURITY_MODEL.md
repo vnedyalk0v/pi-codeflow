@@ -102,7 +102,11 @@ The extension should not automatically:
 - approve or merge PRs;
 - rerun workflows without explicit documented scope;
 - bypass branch protection;
-- resolve invalid review comments without policy support;
+- reply to review threads before verification and policy checks;
+- resolve valid review findings before checks pass;
+- resolve invalid review comments without explicit policy support;
+- resolve `needs_human` review threads;
+- mass-resolve bot review comments;
 - publish packages;
 - rotate or inspect secrets;
 - rewrite public history;
@@ -150,7 +154,8 @@ Safety expectations for GitHub checks:
 - do not fetch or store full CI logs in this foundation;
 - redact secret-like values from descriptions and details links before returning,
   rendering, or storing them;
-- empty check samples in watch mode keep polling until checks appear or timeout;
+- empty or no-required-checks samples in watch mode keep polling until checks
+  appear or timeout;
 - no checks after timeout or single-sample mode produce `no_checks` and never
   claim remote verification;
 - pending checks after timeout remain `pending` and keep the flow in
@@ -164,6 +169,33 @@ Safety expectations for GitHub checks:
 
 Reviewers should focus on required-check handling, status normalization,
 timeout/fail-fast behavior, error handling, and bounded state whenever this
+layer changes.
+
+## Review thread triage and resolution safety
+
+Future review-thread commands must preserve reviewer authority. The read-only
+phase should list and classify GitHub pull request review threads without
+posting replies, resolving threads, fixing code, committing, pushing, approving,
+or merging.
+
+Safety expectations for review threads:
+
+- use GitHub GraphQL review thread IDs for thread operations;
+- do not resolve a review thread just because the agent believes it is wrong;
+- do not resolve valid findings before checks pass;
+- do not resolve `needs_human` threads;
+- do not mass-resolve bot comments;
+- do not treat CodeRabbit, Codex, or other bot comments as automatically true;
+- do not treat CodeRabbit, Codex, or other bot comments as automatically false;
+- verify every finding against the current code before acting;
+- preserve human reviewer authority;
+- keep replies concise and specific;
+- require explicit classification before reply or resolution;
+- require passing verification before resolution when configured;
+- keep auto-reply and auto-resolution disabled by default.
+
+Reviewers should focus on GraphQL data modeling, classification semantics,
+checks-before-resolve behavior, and human-decision boundaries whenever this
 layer changes.
 
 ## Local commit execution

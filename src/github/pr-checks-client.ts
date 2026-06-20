@@ -75,7 +75,9 @@ export async function getGitHubPrChecks(
         watched: options.watched === true,
         startedAt,
         startedAtMs,
-        warnings: ['No GitHub PR checks were found; Codeflow will not claim remote verification.'],
+        warnings: [
+          'No GitHub PR checks were found yet; Codeflow will not claim remote verification.',
+        ],
       });
     }
 

@@ -3,19 +3,24 @@
 Implementation PRs should stay small and target one executable foundation layer
 at a time.
 
-## Current implementation PR
+## Current design-hardening PR
 
 Target issue:
 
-- #13 Implement GitHub checks watcher.
+- #14 Implement review comments triage loop.
 
-This PR implements the v0.7 GitHub checks watcher foundation. It consumes the
-validated config layer from #7, guidance/lifecycle foundation from #8, semantic
-branch command foundation from #9, local check runner foundation from #10,
-commit renderer foundation from #11, and PR renderer foundation from #12. It adds
-`/flow-watch`, GitHub PR checks fetching and bounded polling, required-only and
-all-checks modes, status normalization, failure and pending summaries, timeout
-and fail-fast behavior, bounded latest GitHub checks state, tests, and docs.
+This PR prepares #14 for implementation. It is design/spec only and does not add
+`/flow-comments`, `/flow-fix-comments`, review-thread replies, review-thread
+resolution, automatic code fixes, runtime dependencies, or merge automation.
+
+Design scope:
+
+- clarify GitHub PR issue comments, inline review comments, and review threads;
+- define a GraphQL-first review-thread provider using `gh api graphql`;
+- define normalized review thread and comment data models;
+- define triage classifications and structured payload schema;
+- document safety policy for replies, resolution, bots, and human decisions;
+- split future implementation into read-only triage and mutating fix phases.
 
 ## Implemented #7 scope
 
@@ -118,11 +123,41 @@ and fail-fast behavior, bounded latest GitHub checks state, tests, and docs.
 - Branch deletion.
 - Rerunning workflows.
 
-## Next intended implementation issue
+## Next intended implementation split for #14
 
-#14 review comments triage loop is next after #13, but it remains separate and
-should still follow its issue status. If #14 remains `needs-design`, design work
-must happen before production implementation.
+#14 review comments triage loop should be implemented after this design is
+reviewed and the issue moves from `status:needs-design` to a ready state.
+Implementation should be split into two small PRs.
+
+### PR 14B: read-only `/flow-comments`
+
+- Add command registration and arguments for unresolved-only, all threads,
+  author filters, and path filters.
+- Query pull request review threads through `gh api graphql`.
+- Normalize GitHub review thread and comment data.
+- List unresolved review threads by default.
+- Classify threads as `valid`, `invalid`, `stale`, `already_fixed`, or
+  `needs_human` when the payload/model path supports it.
+- Store bounded triage state in session state.
+- Add tests for GraphQL argument construction, response parsing, classification
+  schema validation, summaries, filters, and state updates.
+- Do not reply, resolve, fix code, commit, push, approve, merge, or add runtime
+  dependencies.
+
+### PR 14C: mutating `/flow-fix-comments`
+
+- Consume stored triage state.
+- Fix `valid` findings only within reviewed scope.
+- Run `/flow-check` after fixes.
+- Commit through `/flow-commit` after checks pass.
+- Reply to addressed threads using `templates/review-reply.md`.
+- Resolve only allowed `valid`, `stale`, or `already_fixed` threads after
+  verification and policy checks.
+- Never auto-resolve `needs_human`.
+- Never auto-resolve `invalid` unless project policy explicitly allows it.
+- Update state and final reports with review-comment outcomes.
+- Add tests for safety gates, checks-before-resolve, reply rendering, GraphQL
+  mutation arguments, and blocked human-decision paths.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.
@@ -147,5 +182,8 @@ work before Codeflow should claim full pre-commit verification automation.
 - Unit tests for GitHub check parsing, status normalization, required-only and
   all-checks modes, summaries, timeout and fail-fast behavior, CLI error
   handling, lifecycle transitions, and bounded GitHub checks state.
-- Manual check that review comment automation, auto-approval, merge automation,
-  branch deletion, and workflow reruns remain out of scope.
+- Unit tests for future review-thread GraphQL parsing, normalization, triage
+  schema validation, filters, state storage, reply rendering, checks-before-
+  resolve gates, and human-decision blockers.
+- Manual check that unplanned review comment automation, auto-approval, merge
+  automation, branch deletion, and workflow reruns remain out of scope.

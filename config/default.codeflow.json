@@ -92,21 +92,23 @@
   },
   "checks": [],
   "reviewComments": {
-    "classifications": [
-      "valid",
-      "invalid",
-      "stale",
-      "already_fixed",
-      "needs_human"
-    ],
-    "autoResolveWhen": [
-      "fixed",
+    "enabled": true,
+    "provider": "github-graphql",
+    "includeAuthors": [],
+    "excludeAuthors": [],
+    "unresolvedOnly": true,
+    "includeOutdated": false,
+    "autoReply": false,
+    "autoResolve": false,
+    "autoResolveClassifications": [
       "stale",
       "already_fixed"
     ],
-    "resolveValidOnlyAfterFix": true,
-    "invalidRequiresHumanReview": true,
-    "needsHumanBlocks": true
+    "requireChecksBeforeResolve": true,
+    "requireHumanForInvalid": true,
+    "requireHumanForNeedsHuman": true,
+    "maxThreadsPerRun": 50,
+    "replyTemplate": "templates/review-reply.md"
   },
   "emergency": {
     "enabled": true,

@@ -410,7 +410,7 @@ function mapGithubCliError(error: unknown, notFoundCode: 'no_pr_found' | 'pr_not
 }
 
 function looksLikeNoChecksMessage(error: GithubCliError): boolean {
-  return /no checks? (?:reported|found)|no check runs?/i.test(
+  return /no (?:required\s+)?checks? (?:reported|found)|no (?:required\s+)?check runs?/i.test(
     `${error.stdout}\n${error.stderr}\n${error.message}`,
   );
 }

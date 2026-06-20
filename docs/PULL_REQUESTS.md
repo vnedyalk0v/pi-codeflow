@@ -258,8 +258,9 @@ Behavior:
 - watch mode keeps polling empty check samples until checks appear or timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;
-- no checks after timeout or single-sample mode produce `no_checks` and must not
-  be treated as verified evidence.
+- no checks after timeout or single-sample mode, including GitHub CLI `no
+  required checks reported` responses, produce `no_checks` and must not be
+  treated as verified evidence.
 
 `/flow-watch` does not implement review-comment triage. It also does not rerun
 workflows, merge, approve, request review, resolve comments, reply to comments,

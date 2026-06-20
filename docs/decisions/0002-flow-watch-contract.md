@@ -40,7 +40,8 @@ required because all-checks JSON has no per-row requirement metadata. Non-zero
 failed checks still produce summaries. Descriptions and details links are
 redacted before they are returned, rendered, or stored. Dry-run results return
 dry-run next actions rather than unknown-status guidance. Empty check samples in
-watch mode poll until checks appear or timeout. No checks never claim
+watch mode poll until checks appear or timeout. GitHub CLI `no required checks
+reported` responses normalize to `no_checks`. No checks never claim
 verification. Unknown selected checks take priority over pending checks. Failed,
 skipped-only, cancelled, timed-out, or unknown selected checks block the
 workflow; pending timeout keeps `ci_waiting`.

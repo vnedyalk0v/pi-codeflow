@@ -139,6 +139,25 @@ describe('getGitHubPrChecks', () => {
     expect(result.summary).toContain('Details: https://github.com/org/repo/actions/runs/1');
   });
 
+  it('treats no required checks messages as no_checks', async () => {
+    const calls: string[][] = [];
+    const noRequiredChecksError = new GithubCliError({
+      code: 'gh_command_failed',
+      message: 'no required checks reported on the current branch',
+      args: ['pr', 'checks', '123', '--required'],
+      exitCode: 1,
+      stderr: 'no required checks reported on the current branch',
+    });
+    const result = await getGitHubPrChecks({
+      pr: 123,
+      requiredOnly: true,
+      ghClient: ghClient(calls, [viewJson(), noRequiredChecksError]),
+    });
+
+    expect(result.status).toBe('no_checks');
+    expect(result.warnings.join('\n')).toContain('No GitHub PR checks were found');
+  });
+
   it('handles missing gh, auth failure, and no PR found with Codeflow errors', async () => {
     await expect(
       getGitHubPrChecks({

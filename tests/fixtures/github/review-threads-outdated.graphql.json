@@ -1,0 +1,54 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "number": 123,
+        "url": "https://github.com/org/repo/pull/123",
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          },
+          "nodes": [
+            {
+              "id": "PRRT_outdated_1",
+              "isResolved": false,
+              "isOutdated": true,
+              "path": "src/old.ts",
+              "line": null,
+              "startLine": null,
+              "originalStartLine": 11,
+              "viewerCanResolve": true,
+              "viewerCanReply": true,
+              "comments": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                },
+                "nodes": [
+                  {
+                    "id": "PRRC_outdated_comment_1",
+                    "databaseId": "1004",
+                    "author": {
+                      "login": "codex"
+                    },
+                    "authorAssociation": "NONE",
+                    "body": "This outdated comment may no longer apply.",
+                    "path": "src/old.ts",
+                    "line": null,
+                    "createdAt": "2026-01-01T00:06:00Z",
+                    "updatedAt": "2026-01-01T00:07:00Z",
+                    "url": "https://github.com/org/repo/pull/123#discussion_r4",
+                    "isMinimized": false,
+                    "viewerCanUpdate": false,
+                    "viewerCanDelete": false
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

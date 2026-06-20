@@ -58,6 +58,14 @@ export {
   type FlowWatchOptions,
   type FlowWatchResult,
 } from './commands/flow-watch';
+export {
+  runFlowComments,
+  parseFlowCommentsArguments,
+  formatFlowCommentsResult,
+  readReviewCommentTriagePayloadFile,
+  type FlowCommentsOptions,
+  type FlowCommentsResult,
+} from './commands/flow-comments';
 export { validateCommitPayload } from './commits/commit-payload-validation';
 export { renderCommitMessage } from './commits/commit-message-renderer';
 export { createGitCommitFromPayload } from './commits/commit-policy';
@@ -78,8 +86,13 @@ export {
   getGitHubPrChecks,
   watchGitHubPrChecks,
 } from './github/pr-checks-client';
+export { listGitHubReviewThreads } from './github/pr-review-threads-client';
 export { normalizeGitHubPrCheck } from './github/pr-checks-parser';
 export { summarizeGitHubPrChecks } from './github/pr-checks-summary';
+export { normalizeReviewThreads } from './review-comments/review-thread-normalizer';
+export { filterReviewThreads } from './review-comments/review-thread-filters';
+export { summarizeReviewThreads } from './review-comments/review-thread-summary';
+export { validateReviewCommentTriage } from './review-comments/review-thread-triage-validation';
 export type {
   CodeflowPrPayload,
   CodeflowPrValidationResult,
@@ -92,11 +105,26 @@ export type {
   CodeflowPrChecksResult,
   CodeflowPrChecksWatchResult,
 } from './github/pr-checks-parser';
+export type { CodeflowReviewComment } from './review-comments/review-comment';
+export type {
+  CodeflowReviewThread,
+  CodeflowReviewThreadFilter,
+  CodeflowReviewThreadSummary,
+} from './review-comments/review-thread';
+export type {
+  CodeflowReviewCommentTriage,
+  CodeflowReviewCommentTriageResult,
+} from './review-comments/review-thread-triage';
+export type { CodeflowReviewCommentsState } from './state/review-comments-state';
 export { CodeflowPrError, type CodeflowPrErrorCode } from './pull-requests/pr-errors';
 export {
   CodeflowPrChecksError,
   type CodeflowPrChecksErrorCode,
 } from './github/github-errors';
+export {
+  CodeflowReviewCommentsError,
+  type CodeflowReviewCommentsErrorCode,
+} from './review-comments/review-comments-errors';
 export {
   runCodeflowChecks,
   type RunCodeflowChecksOptions,

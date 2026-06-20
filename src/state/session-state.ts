@@ -27,6 +27,12 @@ import {
   updateGitHubChecksStateWithResult,
   type CodeflowGitHubChecksState,
 } from './github-checks-state';
+import {
+  createInitialReviewCommentsState,
+  updateReviewCommentsStateWithResult,
+  type CodeflowReviewCommentsState,
+  type StoreReviewCommentsStateInput,
+} from './review-comments-state';
 import type { CodeflowPrChecksResult } from '../github/pr-checks-parser';
 
 export interface CodeflowSessionState {
@@ -35,6 +41,7 @@ export interface CodeflowSessionState {
   commits: CodeflowCommitState;
   pullRequests: CodeflowPrState;
   githubChecks?: CodeflowGitHubChecksState;
+  reviewComments?: CodeflowReviewCommentsState;
   updatedAt: string;
 }
 
@@ -54,6 +61,7 @@ export function createCodeflowSessionState(
     commits: createInitialCommitState(),
     pullRequests: createInitialPrState(),
     githubChecks: createInitialGitHubChecksState(),
+    reviewComments: createInitialReviewCommentsState(),
     updatedAt: nowIso(),
   };
 }
@@ -101,6 +109,7 @@ export function updateSessionStateWithPullRequest(
     },
     pullRequests: updatePrStateWithPullRequest(state.pullRequests, input),
     githubChecks: state.githubChecks ?? createInitialGitHubChecksState(),
+    reviewComments: state.reviewComments ?? createInitialReviewCommentsState(),
     updatedAt: nowIso(),
   };
 }
@@ -119,6 +128,25 @@ export function updateSessionStateWithGitHubChecks(
     githubChecks: updateGitHubChecksStateWithResult(
       state.githubChecks ?? createInitialGitHubChecksState(),
       result,
+    ),
+    updatedAt: nowIso(),
+  };
+}
+
+export function updateSessionStateWithReviewComments(
+  state: CodeflowSessionState,
+  input: StoreReviewCommentsStateInput,
+  phase: CodeflowLifecyclePhase,
+): CodeflowSessionState {
+  return {
+    ...state,
+    lifecycle: {
+      ...state.lifecycle,
+      phase,
+    },
+    reviewComments: updateReviewCommentsStateWithResult(
+      state.reviewComments ?? createInitialReviewCommentsState(),
+      input,
     ),
     updatedAt: nowIso(),
   };

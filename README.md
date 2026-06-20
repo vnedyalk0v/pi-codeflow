@@ -8,8 +8,9 @@ Pi package for consistent AI coding workflows.
 > config loading, validation, guidance injection, lifecycle state helpers,
 > `/flow-start` semantic branch preparation, `/flow-check` local check running,
 > `/flow-commit` generated commit messages, `/flow-pr` generated PR
-> title/body creation, and `/flow-watch` GitHub PR checks watching, but it does
-> not enforce the full workflow in real projects.
+> title/body creation, `/flow-watch` GitHub PR checks watching, and read-only
+> `/flow-comments` review-thread triage, but it does not enforce the full
+> workflow in real projects.
 
 pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
 lifecycle:
@@ -34,8 +35,8 @@ lifecycle:
   final reports.
 - Load project-specific workflow configuration from `.pi/codeflow.json`.
 - Run configured local checks and summarize results.
-- Help agents triage GitHub review comments and only resolve comments that were
-  addressed or proven stale/already fixed.
+- Help agents triage GitHub review comments read-only; future mutating commands
+  should only resolve comments that were addressed or proven stale/already fixed.
 - Keep safety rules visible, auditable, and conservative by default.
 
 ## What this package will not do
@@ -59,7 +60,7 @@ lifecycle:
 | `/flow-commit` | Render and create a commit from a structured payload. |
 | `/flow-pr` | Render and open a templated pull request. |
 | `/flow-watch` | Watch GitHub checks. |
-| `/flow-comments` | Future read-only review-thread listing and triage. |
+| `/flow-comments` | Read-only review-thread listing, filtering, and triage validation. |
 | `/flow-fix-comments` | Future verified fixes, replies, and safe resolution for triaged threads. |
 | `/flow-report` | Produce a final delivery report. |
 
@@ -102,10 +103,12 @@ This repository now includes the first production foundations for configuration
 loading, validation, guidance generation, before-agent guidance injection,
 in-memory lifecycle state helpers, `/flow-start` semantic branch preparation,
 `/flow-check` configured local check running, `/flow-commit` generated commit
-messages from structured payloads, and `/flow-pr` generated PR title/body
-creation through GitHub CLI, and `/flow-watch` GitHub PR checks watching.
+messages from structured payloads, `/flow-pr` generated PR title/body creation
+through GitHub CLI, `/flow-watch` GitHub PR checks watching, and read-only
+`/flow-comments` review-thread listing, filtering, triage validation, summaries,
+and bounded session state.
 
-It still does not implement self-review automation, review comment automation,
+It still does not implement self-review automation, `/flow-fix-comments`,
 review-thread replies, review-thread resolution, automatic code fixes from
 review comments, merge automation, auto-approval, or persistent lifecycle storage
 beyond the minimal in-command session-state result.

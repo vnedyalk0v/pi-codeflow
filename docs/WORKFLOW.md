@@ -25,9 +25,12 @@ feature branch when configured, opens or updates the GitHub PR, and stores
 bounded PR metadata. `/flow-watch` then reads GitHub PR checks through `gh pr
 checks`, supports required-only or all-checks mode, summarizes pass, fail,
 pending, skipped, cancelled, timed-out, no-checks, and unknown states, and stores
-bounded GitHub checks metadata. Self-review automation, persistent external
-state storage, review comment automation, and merge automation are later work.
-The #14 design defines the future review-comment loop but does not implement it.
+bounded GitHub checks metadata. `/flow-comments` reads GitHub review threads
+through GraphQL, lists unresolved threads by default, filters them, validates
+optional triage payloads, summarizes findings, and stores bounded review-comment
+state. Self-review automation, persistent external state storage beyond in-memory
+session results, mutating review-comment fixes/replies/resolution, and merge
+automation are later work.
 
 ## Phase reference
 
@@ -157,23 +160,41 @@ Pass, failure, pending, and empty behavior:
 merge, approve, resolve comments, reply to comments, request reviews, delete
 branches, or perform review-comment triage.
 
-## Future `/flow-comments`
+## After `/flow-comments`
 
-`/flow-comments` is the planned read-only review-thread triage command. After a
-PR is open and checks are available, it may move the lifecycle to
+`/flow-comments` is the implemented read-only review-thread triage command. After
+a PR is open and checks are available, it may move the lifecycle to
 `review_triage` by listing unresolved inline review threads, normalizing GitHub
-GraphQL thread data, classifying threads, producing a triage report, and storing
-bounded triage state.
+GraphQL thread data, validating optional triage payloads, producing a triage
+report, and storing bounded triage state.
 
-Expected behavior:
+Usage examples:
+
+```text
+/flow-comments
+/flow-comments --pr 123
+/flow-comments --all
+/flow-comments --author coderabbitai
+/flow-comments --path src/foo.ts
+/flow-comments --include-outdated
+/flow-comments --max-threads 100
+/flow-comments --triage-payload .pi/codeflow/review-comment-triage.json
+/flow-comments --dry-run
+```
+
+Behavior:
 
 - unresolved review threads are listed by default;
-- all threads, author filters, and path filters may be optional flags;
-- no unresolved threads move toward `verified` or `final_reported` when prior
-  verification evidence is complete;
-- valid comments move toward `fixing_review_findings`;
-- `needs_human` comments move to `blocked` or keep `review_triage` with a clear
-  human decision request;
+- `--all` includes resolved threads;
+- `--include-outdated` includes outdated threads;
+- `--author` and `--path` narrow the listed threads;
+- no unresolved threads leave the lifecycle at the prior safe phase, commonly
+  `verified` after passing checks, only when the GitHub scan completed; incomplete
+  scans move to `blocked` and never claim no comments or `final_reported`;
+- valid comments make the next expected action fixing findings, then
+  `/flow-check`;
+- `needs_human` comments move to `blocked` with a clear human-decision request;
+- dry-run does not read GitHub, update state, or transition lifecycle;
 - no replies, resolution, code changes, commits, pushes, or merges occur.
 
 ## Future `/flow-fix-comments`
@@ -357,7 +378,7 @@ Expected behavior:
   local or remote verification evidence is available.
 - **Expected agent behavior:** classify each thread before acting, distinguish
   thread IDs from comment IDs, and stop for human decisions.
-- **Expected command/tool:** future `/flow-comments`.
+- **Expected command/tool:** `/flow-comments`.
 - **Allowed transitions:** `fixing_review_findings`, `verified`,
   `final_reported`, `blocked`.
 - **Failure transitions:** `blocked` when a thread needs human decision or the

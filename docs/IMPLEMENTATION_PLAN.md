@@ -3,24 +3,26 @@
 Implementation PRs should stay small and target one executable foundation layer
 at a time.
 
-## Current design-hardening PR
+## Current implementation PR
 
 Target issue:
 
 - #14 Implement review comments triage loop.
 
-This PR prepares #14 for implementation. It is design/spec only and does not add
-`/flow-comments`, `/flow-fix-comments`, review-thread replies, review-thread
-resolution, automatic code fixes, runtime dependencies, or merge automation.
+PR 14B implements the read-only `/flow-comments` foundation. It does not add
+`/flow-fix-comments`, review-thread replies, review-thread resolution, automatic
+code fixes, runtime dependencies, GitHub mutations, or merge automation.
 
-Design scope:
+Implementation scope:
 
-- clarify GitHub PR issue comments, inline review comments, and review threads;
-- define a GraphQL-first review-thread provider using `gh api graphql`;
-- define normalized review thread and comment data models;
-- define triage classifications and structured payload schema;
-- document safety policy for replies, resolution, bots, and human decisions;
-- split future implementation into read-only triage and mutating fix phases.
+- add `/flow-comments` command registration and argument parsing;
+- query GitHub review threads with `gh api graphql` and variables;
+- normalize review thread and comment data models;
+- filter unresolved/all/outdated threads plus authors and paths;
+- validate structured triage payloads;
+- produce deterministic triage summaries;
+- store bounded latest review-comments state;
+- document that PR 14C is next for mutating fixes, replies, and safe resolution.
 
 ## Implemented #7 scope
 
@@ -123,26 +125,24 @@ Design scope:
 - Branch deletion.
 - Rerunning workflows.
 
-## Next intended implementation split for #14
-
-#14 review comments triage loop should be implemented after this design is
-reviewed and the issue moves from `status:needs-design` to a ready state.
-Implementation should be split into two small PRs.
+## #14 implementation split
 
 ### PR 14B: read-only `/flow-comments`
 
-- Add command registration and arguments for unresolved-only, all threads,
-  author filters, and path filters.
-- Query pull request review threads through `gh api graphql`.
-- Normalize GitHub review thread and comment data.
-- List unresolved review threads by default.
-- Classify threads as `valid`, `invalid`, `stale`, `already_fixed`, or
-  `needs_human` when the payload/model path supports it.
-- Store bounded triage state in session state.
-- Add tests for GraphQL argument construction, response parsing, classification
-  schema validation, summaries, filters, and state updates.
-- Do not reply, resolve, fix code, commit, push, approve, merge, or add runtime
-  dependencies.
+Implemented in the current slice:
+
+- command registration and arguments for unresolved-only, all threads, outdated
+  threads, author filters, and path filters;
+- pull request review thread reads through `gh api graphql`;
+- normalized GitHub review thread and comment data;
+- unresolved review threads by default;
+- structured triage payload validation for `valid`, `invalid`, `stale`,
+  `already_fixed`, and `needs_human`;
+- bounded triage state in session state;
+- tests for GraphQL argument construction, response parsing, classification
+  schema validation, summaries, filters, lifecycle behavior, and state updates;
+- no replies, resolution, code fixes, commits, pushes, approvals, merges, or
+  runtime dependencies.
 
 ### PR 14C: mutating `/flow-fix-comments`
 
@@ -182,8 +182,9 @@ work before Codeflow should claim full pre-commit verification automation.
 - Unit tests for GitHub check parsing, status normalization, required-only and
   all-checks modes, summaries, timeout and fail-fast behavior, CLI error
   handling, lifecycle transitions, and bounded GitHub checks state.
-- Unit tests for future review-thread GraphQL parsing, normalization, triage
-  schema validation, filters, state storage, reply rendering, checks-before-
-  resolve gates, and human-decision blockers.
+- Unit tests for review-thread GraphQL parsing, normalization, triage schema
+  validation, filters, summaries, lifecycle transitions, state storage, and
+  human-decision blockers; future `/flow-fix-comments` tests should add reply
+  rendering and checks-before-resolve gates.
 - Manual check that unplanned review comment automation, auto-approval, merge
   automation, branch deletion, and workflow reruns remain out of scope.

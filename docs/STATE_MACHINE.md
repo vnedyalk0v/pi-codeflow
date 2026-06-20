@@ -25,9 +25,13 @@ transitions through PR check watching:
   samples, returns `verified` for passing selected checks, and returns `blocked`
   for skipped-only, failed, cancelled, timed-out, or unknown selected check
   states.
-- Persistent external state storage and later review-comment transitions are not
-  implemented yet. The #14 design defines the intended review-thread transitions
-  before implementation.
+- `/flow-comments` reads GitHub review threads through GraphQL, stores bounded
+  latest review-comments state, returns `review_triage` when unresolved threads
+  are found, returns `blocked` when provided triage requires a human decision,
+  and leaves the prior safe phase unchanged when no unresolved threads are found
+  or when dry-run is used.
+- Persistent external state storage and mutating review-comment fix, reply, and
+  resolution behavior are not implemented yet.
 
 ## Lifecycle phases
 
@@ -61,10 +65,11 @@ and `git commit` all succeed. `/flow-pr` performs the `committed` ->
 `pr_opened` mutation only when PR payload validation, base/head safety,
 check-state policy, branch push policy, and GitHub CLI PR creation all succeed.
 `/flow-watch` performs the `pr_opened` or `ci_waiting` check-status transition
-from read-only GitHub PR checks. Future `/flow-comments` should perform a
-read-only transition into `review_triage`; future `/flow-fix-comments` should
-return to checks and commits before any reply or resolution. Other action text
-remains proactive guidance, not a full mutation engine.
+from read-only GitHub PR checks. `/flow-comments` performs the read-only review
+thread transition into `review_triage` or `blocked` for human decisions; future
+`/flow-fix-comments` should return to checks and commits before any reply or
+resolution. Other action text remains proactive guidance, not a full mutation
+engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -252,21 +257,26 @@ non-destructive fetch attempt made before base branch resolution.
   returned state.
 - Dry-run: does not call GitHub and does not transition to `verified`.
 
-## Future `/flow-comments` transition details
+## `/flow-comments` transition details
 
 - Read-only thread listing: `pr_opened`, `ci_waiting`, or `verified` ->
   `review_triage` when unresolved review threads exist.
-- No unresolved threads: remain `verified` or move to `final_reported` when all
-  prior verification evidence is complete.
-- Valid threads: `review_triage` -> `fixing_review_findings`.
+- No unresolved threads with a complete scan: remain at the prior safe phase,
+  commonly `verified` after passing checks; `/flow-comments` does not claim
+  `final_reported`.
+- Incomplete scan because the max thread bound was reached before pagination
+  ended: move to `blocked` and require increasing `reviewComments.maxThreadsPerRun`
+  or passing `--max-threads` before claiming no selected threads.
+- Valid threads in a provided triage payload: stay in `review_triage` and make
+  fixing findings plus `/flow-check` the next expected action.
 - Stale or already fixed threads: remain in `review_triage` until evidence is
-  recorded; then move to `verified` when no fixes are needed.
-- Invalid threads: remain in `review_triage` for a concise explanation, or move
-  to `blocked` when policy requires human review.
-- `needs_human` threads: move to `blocked` or remain in `review_triage` with a
-  human decision request.
-- Dry-run or read-only runs never reply, resolve, edit files, commit, push, or
-  merge.
+  recorded; reply and resolution remain future work.
+- Invalid threads: remain in `review_triage` for a concise explanation draft, or
+  move to `blocked` when policy requires human review.
+- `needs_human` threads: move to `blocked` with a human decision request.
+- Dry-run does not read GitHub, update state, or transition lifecycle.
+- `/flow-comments` never replies, resolves, edits files, commits, pushes,
+  approves, merges, or calls GraphQL mutations.
 
 ## Future `/flow-fix-comments` transition details
 
@@ -339,9 +349,10 @@ pr_opened
 -> verified
 ```
 
-The comment is classified as `invalid`. Codeflow replies with rationale if
-configured, does not change code solely for the invalid comment, and does not
-resolve it unless policy allows.
+The comment is classified as `invalid`. Read-only `/flow-comments` records the
+classification and draft rationale only; it does not change code, post the
+reply, or resolve the thread. Reply and resolution policy remains future
+`/flow-fix-comments` work.
 
 ### Emergency hotfix flow
 

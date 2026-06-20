@@ -6,7 +6,8 @@ includes config loading, conservative merging, schema validation, proactive
 guidance generation, before-agent guidance injection, a small lifecycle state
 model, `/flow-start` semantic branch preparation, `/flow-check` local check
 running, `/flow-commit` generated commit messages, `/flow-pr` generated PR
-title/body creation, and `/flow-watch` GitHub PR checks watching.
+title/body creation, `/flow-watch` GitHub PR checks watching, and read-only
+`/flow-comments` review-thread triage.
 
 ## Components
 
@@ -35,7 +36,8 @@ title/body creation, and `/flow-watch` GitHub PR checks watching.
 - **Status:** `/flow-start` implemented foundation in v0.4; `/flow-check`
   implemented foundation in v0.5; `/flow-commit` implemented foundation in
   v0.6; `/flow-pr` implemented foundation in v0.6; `/flow-watch` implemented
-  foundation in v0.7; later review and report commands are future work.
+  foundation in v0.7; `/flow-comments` read-only review triage implemented
+  foundation in v0.7; later mutating review and report commands are future work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
   `/flow-commit`, `/flow-pr`, `/flow-watch`, `/flow-comments`,
   `/flow-fix-comments`, and `/flow-report`.
@@ -71,20 +73,23 @@ title/body creation, and `/flow-watch` GitHub PR checks watching.
 ### GitHub Integration
 
 - **Status:** PR creation/update foundation is implemented in v0.6 for #12;
-  GitHub checks watching is implemented in v0.7 for #13. Review comment triage
-  remains future work in #14; this design hardening defines it before code.
-- **Responsibility:** open/update PRs, watch GitHub PR checks, and later list
-  review threads and apply allowed replies/resolutions.
+  GitHub checks watching is implemented in v0.7 for #13. Read-only review
+  comment triage is implemented in v0.7 for the first #14 slice; mutating fixes,
+  replies, and resolution remain future work.
+- **Responsibility:** open/update PRs, watch GitHub PR checks, list review
+  threads read-only, and later apply allowed replies/resolutions.
 - **Inputs:** PR payloads, PR check rows, GitHub CLI/API output, GraphQL review
   thread data, and review policy.
-- **Outputs:** PR URLs, bounded PR metadata, CI summaries, and bounded GitHub
-  checks metadata now; bounded review-thread triage state later.
+- **Outputs:** PR URLs, bounded PR metadata, CI summaries, bounded GitHub
+  checks metadata, read-only review-thread summaries, and bounded review-comment
+  triage state.
 - **Review-thread provider:** prefer `gh api graphql` for review threads because
   GraphQL exposes thread IDs, resolved state, and outdated state. Do not add
   Octokit for the initial implementation.
 - **Must not:** merge PRs, approve PRs, resolve reviewer comments without
   policy, resolve threads before checks pass, mass-resolve bot comments, rerun
-  workflows, or bypass human review.
+  workflows, mutate review comments from `/flow-comments`, or bypass human
+  review.
 
 ### Check Runner
 
@@ -174,9 +179,10 @@ title/body creation, and `/flow-watch` GitHub PR checks watching.
     timed-out, no-checks, and unknown outcomes.
 12. State Store records phase, evidence, bounded check summaries, bounded commit
     metadata, bounded PR metadata, and bounded GitHub checks metadata.
-13. Future `/flow-comments` reads GitHub review threads with `gh api graphql`,
-    normalizes thread/comment data, classifies threads, and stores bounded
-    triage state without mutation.
+13. `/flow-comments` reads GitHub review threads with `gh api graphql`,
+    normalizes thread/comment data, validates optional structured triage
+    payloads, filters and summarizes threads, and stores bounded triage state
+    without mutation.
 14. Future `/flow-fix-comments` uses stored triage state, local checks, commit
     evidence, and GitHub check evidence before any reply or resolution.
 15. Safety Boundary blocks off-path behavior when needed.
@@ -191,11 +197,10 @@ semantic branch creation foundation through `/flow-start`. v0.5 implements the
 configured local check runner foundation through `/flow-check`. v0.6 implements
 the commit renderer and commit command foundation through `/flow-commit`, plus
 the PR renderer and PR command foundation through `/flow-pr`. v0.7 implements the
-read-only GitHub checks watcher foundation through `/flow-watch`.
+read-only GitHub checks watcher foundation through `/flow-watch` and the
+read-only review comments triage foundation through `/flow-comments`.
 
-Self-review automation, persistent external lifecycle storage, review comment
-automation, and merge automation remain future implementation work. Review
-comment triage is the next v0.7 scope in #14 and remains separate from the checks
-watcher. The intended split is a read-only `/flow-comments` implementation first,
-then a mutating `/flow-fix-comments` implementation with replies and safe
-resolution after verification.
+Self-review automation, persistent external lifecycle storage, mutating review
+comment automation, and merge automation remain future implementation work. The
+remaining #14 scope is `/flow-fix-comments`, which should add focused fixes,
+reply drafts rendered from templates, and safe resolution after verification.

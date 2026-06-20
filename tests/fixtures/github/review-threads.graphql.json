@@ -1,0 +1,90 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "number": 123,
+        "url": "https://github.com/org/repo/pull/123",
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          },
+          "nodes": [
+            {
+              "id": "PRRT_thread_1",
+              "isResolved": false,
+              "isOutdated": false,
+              "path": "src/foo.ts",
+              "line": 42,
+              "startLine": null,
+              "originalStartLine": null,
+              "viewerCanResolve": true,
+              "viewerCanReply": true,
+              "comments": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                },
+                "nodes": [
+                  {
+                    "id": "PRRC_comment_1",
+                    "databaseId": "1001",
+                    "author": {
+                      "login": "coderabbitai"
+                    },
+                    "authorAssociation": "NONE",
+                    "body": "Potential null access in payment handler.",
+                    "path": "src/foo.ts",
+                    "line": 42,
+                    "createdAt": "2026-01-01T00:00:00Z",
+                    "updatedAt": "2026-01-01T00:01:00Z",
+                    "url": "https://github.com/org/repo/pull/123#discussion_r1",
+                    "isMinimized": false,
+                    "viewerCanUpdate": false,
+                    "viewerCanDelete": false
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PRRT_thread_2",
+              "isResolved": false,
+              "isOutdated": false,
+              "path": "src/bar.ts",
+              "line": 18,
+              "startLine": 16,
+              "originalStartLine": 16,
+              "viewerCanResolve": false,
+              "viewerCanReply": true,
+              "comments": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                },
+                "nodes": [
+                  {
+                    "id": "PRRC_comment_2",
+                    "databaseId": 1002,
+                    "author": {
+                      "login": "alice"
+                    },
+                    "authorAssociation": "MEMBER",
+                    "body": "Please add a test for the retry path.",
+                    "path": "src/bar.ts",
+                    "line": 18,
+                    "createdAt": "2026-01-01T00:02:00Z",
+                    "updatedAt": "2026-01-01T00:03:00Z",
+                    "url": "https://github.com/org/repo/pull/123#discussion_r2",
+                    "isMinimized": false,
+                    "viewerCanUpdate": false,
+                    "viewerCanDelete": false
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

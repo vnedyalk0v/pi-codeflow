@@ -6,9 +6,11 @@ Classify each normalized GitHub pull request review thread before taking action.
 This is read-only triage. Do not change code, post replies, resolve threads,
 commit, push, or merge.
 
-Primary input should be `CodeflowReviewThread` records from GitHub GraphQL.
-Use the review thread `threadId`, not an issue comment ID, as the stable
-identifier.
+Primary input must be normalized `CodeflowReviewThread` records from GitHub
+GraphQL. Use the review thread `threadId`, not an issue comment ID, as the stable
+identifier. Return only the structured triage payload; do not include prose,
+Markdown commentary, GitHub commands, reply-posting instructions, or resolution
+instructions outside the JSON.
 
 Allowed classifications:
 
@@ -45,8 +47,9 @@ Return JSON that matches `schemas/review-comment-triage.schema.json`:
 }
 ```
 
-Replies must be concise and specific drafts only. For `valid` findings during
-read-only triage, `replyBody` must be tentative or explicitly after-fix phrasing;
-it must not claim a fix is already complete. A later mutating command may render
-and post replies from `templates/review-reply.md` after verification and policy
-checks.
+Replies must be concise and specific drafts only. `/flow-comments` validates and
+stores bounded draft data but does not post `replyBody` anywhere. For `valid`
+findings during read-only triage, `replyBody` must be tentative or explicitly
+after-fix phrasing; it must not claim a fix is already complete. A later mutating
+command may render and post replies from `templates/review-reply.md` after
+verification and policy checks.

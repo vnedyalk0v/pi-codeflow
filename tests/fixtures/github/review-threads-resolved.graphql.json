@@ -1,0 +1,54 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "number": 123,
+        "url": "https://github.com/org/repo/pull/123",
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+          },
+          "nodes": [
+            {
+              "id": "PRRT_resolved_1",
+              "isResolved": true,
+              "isOutdated": false,
+              "path": "src/resolved.ts",
+              "line": 7,
+              "startLine": null,
+              "originalStartLine": null,
+              "viewerCanResolve": false,
+              "viewerCanReply": true,
+              "comments": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                },
+                "nodes": [
+                  {
+                    "id": "PRRC_resolved_comment_1",
+                    "databaseId": "1003",
+                    "author": {
+                      "login": "bob"
+                    },
+                    "authorAssociation": "MEMBER",
+                    "body": "Resolved review finding.",
+                    "path": "src/resolved.ts",
+                    "line": 7,
+                    "createdAt": "2026-01-01T00:04:00Z",
+                    "updatedAt": "2026-01-01T00:05:00Z",
+                    "url": "https://github.com/org/repo/pull/123#discussion_r3",
+                    "isMinimized": false,
+                    "viewerCanUpdate": false,
+                    "viewerCanDelete": false
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -269,12 +269,13 @@ push commits, or delete branches.
 
 ## Review comments after PR checks
 
-Future review-comment work should start with read-only `/flow-comments` after a
-PR exists and local or remote verification evidence is available. The primary
-input is inline pull request review threads from GitHub GraphQL, not ordinary PR
-issue comments. The read-only command should list unresolved threads, classify
-them, produce a triage report, and store bounded triage state without replies,
-resolution, code changes, commits, pushes, or merge automation.
+Read-only `/flow-comments` can run after a PR exists and local or remote
+verification evidence is available. The primary input is inline pull request
+review threads from GitHub GraphQL, not ordinary PR issue comments. The command
+lists unresolved threads by default, supports all/outdated/author/path filters,
+validates optional structured triage payloads, produces a triage report, and
+stores bounded triage state without replies, resolution, code changes, commits,
+pushes, or merge automation.
 
 Future `/flow-fix-comments` may use that triage state to fix valid findings,
 rerun `/flow-check`, commit through `/flow-commit`, watch remote checks with

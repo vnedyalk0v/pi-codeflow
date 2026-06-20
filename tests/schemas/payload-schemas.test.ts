@@ -139,15 +139,21 @@ describe('payload schemas', () => {
     );
   });
 
-  it('accepts review triage comments identified only by URL', () => {
+  it('accepts review thread triage payloads', () => {
     const result = validateSchema('schemas/review-comment-triage.schema.json', {
-      comments: [
+      threads: [
         {
-          url: 'https://github.com/vnedyalk0v/pi-codeflow/pull/20#discussion_r1',
+          threadId: 'PRRT_kwDOS83fzc4Example',
           classification: 'valid',
-          rationale: 'The finding matches the documented behavior.',
-          action: 'Fix the schema.',
-          mayResolveAfterVerification: true,
+          confidence: 0.9,
+          reason: 'The finding matches the current code.',
+          recommendedAction: 'Fix the schema and add coverage.',
+          filesToInspect: ['schemas/review-comment-triage.schema.json'],
+          filesToChange: ['schemas/review-comment-triage.schema.json'],
+          checksToRun: ['npm test'],
+          replyBody: 'Draft after fix and checks: update the schema and add coverage.',
+          canResolveAfterChecks: true,
+          requiresHumanDecision: false,
         },
       ],
     });
@@ -155,14 +161,21 @@ describe('payload schemas', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('rejects review triage comments without id or URL', () => {
+  it('rejects review triage requiring humans when resolution is allowed', () => {
     const result = validateSchema('schemas/review-comment-triage.schema.json', {
-      comments: [
+      threads: [
         {
-          classification: 'valid',
-          rationale: 'Missing identifier.',
-          action: 'Add an id or URL.',
-          mayResolveAfterVerification: false,
+          threadId: 'PRRT_kwDOS83fzc4InvalidHuman',
+          classification: 'invalid',
+          confidence: 0.7,
+          reason: 'Default policy requires a human for invalid threads.',
+          recommendedAction: 'Ask a maintainer before resolving.',
+          filesToInspect: ['src/example.ts'],
+          filesToChange: [],
+          checksToRun: [],
+          replyBody: 'Maintainer decision needed before resolution.',
+          canResolveAfterChecks: true,
+          requiresHumanDecision: true,
         },
       ],
     });
@@ -171,8 +184,38 @@ describe('payload schemas', () => {
     expect(result.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          instancePath: '/comments/0',
-          keyword: 'anyOf',
+          instancePath: '/threads/0/canResolveAfterChecks',
+          keyword: 'const',
+        }),
+      ]),
+    );
+  });
+
+  it('rejects needs_human review triage that allows resolution', () => {
+    const result = validateSchema('schemas/review-comment-triage.schema.json', {
+      threads: [
+        {
+          threadId: 'PRRT_kwDOS83fzc4NeedsHuman',
+          classification: 'needs_human',
+          confidence: 0.7,
+          reason: 'A product decision is required.',
+          recommendedAction: 'Ask a maintainer for the expected behavior.',
+          filesToInspect: ['src/example.ts'],
+          filesToChange: [],
+          checksToRun: [],
+          replyBody: 'Maintainer decision needed before changing behavior.',
+          canResolveAfterChecks: true,
+          requiresHumanDecision: true,
+        },
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          instancePath: '/threads/0/canResolveAfterChecks',
+          keyword: 'const',
         }),
       ]),
     );

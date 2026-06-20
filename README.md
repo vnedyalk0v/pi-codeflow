@@ -59,8 +59,8 @@ lifecycle:
 | `/flow-commit` | Render and create a commit from a structured payload. |
 | `/flow-pr` | Render and open a templated pull request. |
 | `/flow-watch` | Watch GitHub checks. |
-| `/flow-comments` | List unresolved reviewer comments. |
-| `/flow-fix-comments` | Fix valid reviewer comments. |
+| `/flow-comments` | Future read-only review-thread listing and triage. |
+| `/flow-fix-comments` | Future verified fixes, replies, and safe resolution for triaged threads. |
 | `/flow-report` | Produce a final delivery report. |
 
 ## Intended package structure
@@ -106,5 +106,6 @@ messages from structured payloads, and `/flow-pr` generated PR title/body
 creation through GitHub CLI, and `/flow-watch` GitHub PR checks watching.
 
 It still does not implement self-review automation, review comment automation,
-merge automation, auto-approval, or persistent lifecycle storage beyond the
-minimal in-command session-state result.
+review-thread replies, review-thread resolution, automatic code fixes from
+review comments, merge automation, auto-approval, or persistent lifecycle storage
+beyond the minimal in-command session-state result.

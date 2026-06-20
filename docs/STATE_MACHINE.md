@@ -26,7 +26,8 @@ transitions through PR check watching:
   for skipped-only, failed, cancelled, timed-out, or unknown selected check
   states.
 - Persistent external state storage and later review-comment transitions are not
-  implemented yet.
+  implemented yet. The #14 design defines the intended review-thread transitions
+  before implementation.
 
 ## Lifecycle phases
 
@@ -60,8 +61,10 @@ and `git commit` all succeed. `/flow-pr` performs the `committed` ->
 `pr_opened` mutation only when PR payload validation, base/head safety,
 check-state policy, branch push policy, and GitHub CLI PR creation all succeed.
 `/flow-watch` performs the `pr_opened` or `ci_waiting` check-status transition
-from read-only GitHub PR checks. Other action text remains proactive guidance,
-not a full mutation engine.
+from read-only GitHub PR checks. Future `/flow-comments` should perform a
+read-only transition into `review_triage`; future `/flow-fix-comments` should
+return to checks and commits before any reply or resolution. Other action text
+remains proactive guidance, not a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -116,11 +119,14 @@ not a full mutation engine.
 | `ci_waiting` | `verified` | `/flow-watch` finds selected checks passed. |
 | `ci_waiting` | `review_triage` | Review comments arrive while CI is pending. |
 | `ci_waiting` | `blocked` | `/flow-watch` finds skipped-only, failed, cancelled, timed-out, or unknown selected checks. |
-| `review_triage` | `fixing_review_findings` | Valid comments require fixes. |
-| `review_triage` | `verified` | Comments are stale, already fixed, or no action needed. |
-| `review_triage` | `blocked` | Comment requires human decision. |
+| `review_triage` | `fixing_review_findings` | Valid review threads require fixes. |
+| `review_triage` | `verified` | No unresolved threads remain or all threads are verified stale/already fixed. |
+| `review_triage` | `final_reported` | No unresolved threads remain and final reporting was the prior expected step. |
+| `review_triage` | `blocked` | A thread requires human decision or review-thread state cannot be read safely. |
 | `fixing_review_findings` | `local_checks` | Review fixes need local verification. |
-| `fixing_review_findings` | `ci_waiting` | Review fixes pushed and CI is pending. |
+| `fixing_review_findings` | `committed` | Verified review fixes are committed through `/flow-commit`. |
+| `fixing_review_findings` | `ci_waiting` | Review fixes are pushed and CI is pending. |
+| `fixing_review_findings` | `review_triage` | Verification passed and threads need reply or resolution decisions. |
 | `verified` | `final_reported` | Final report rendered. |
 | `final_reported` | `idle` | Task complete. |
 | `blocked` | prior safe phase | User resolves blocker. |
@@ -167,6 +173,8 @@ A workflow should enter `blocked` when:
   timed-out checks, unknown GitHub status, missing GitHub CLI/authentication, a
   missing PR, repository access errors, or other unavailable remote status;
 - review comments require human decision;
+- review-thread state cannot be read or normalized safely;
+- a reply or resolution would happen without classification or passing checks;
 - requested work is unsafe or out of scope.
 
 For `/flow-start`, these failures leave the repository unchanged except for any
@@ -243,6 +251,35 @@ non-destructive fetch attempt made before base branch resolution.
   `ci_waiting` -> `blocked` with a warning that Codeflow could not normalize the
   returned state.
 - Dry-run: does not call GitHub and does not transition to `verified`.
+
+## Future `/flow-comments` transition details
+
+- Read-only thread listing: `pr_opened`, `ci_waiting`, or `verified` ->
+  `review_triage` when unresolved review threads exist.
+- No unresolved threads: remain `verified` or move to `final_reported` when all
+  prior verification evidence is complete.
+- Valid threads: `review_triage` -> `fixing_review_findings`.
+- Stale or already fixed threads: remain in `review_triage` until evidence is
+  recorded; then move to `verified` when no fixes are needed.
+- Invalid threads: remain in `review_triage` for a concise explanation, or move
+  to `blocked` when policy requires human review.
+- `needs_human` threads: move to `blocked` or remain in `review_triage` with a
+  human decision request.
+- Dry-run or read-only runs never reply, resolve, edit files, commit, push, or
+  merge.
+
+## Future `/flow-fix-comments` transition details
+
+- Uses stored triage state and acts only on explicit classifications.
+- Valid fixes: `fixing_review_findings` -> `local_checks` after edits.
+- Passing checks: `local_checks` -> `ready_to_commit` or `committed` through
+  `/flow-commit` when the fix is staged and payload validation succeeds.
+- Pushed fix commits: `committed` -> `ci_waiting` through the PR flow and
+  `/flow-watch`.
+- Replies and resolutions: occur only after verification and return to
+  `review_triage` or `verified` based on remaining threads.
+- `needs_human` is never auto-resolved.
+- `invalid` is never auto-resolved unless policy explicitly allows it.
 
 ## Retry transitions
 

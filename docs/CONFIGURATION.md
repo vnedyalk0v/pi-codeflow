@@ -1,11 +1,12 @@
 # Configuration
 
-The project-level configuration file is `.pi/codeflow.json`. The v0.6
+The project-level configuration file is `.pi/codeflow.json`. The v0.7
 foundation loads package defaults, optionally loads project config, merges the
 two layers, validates the resolved config, uses the resolved config to build
 before-agent Codeflow guidance, applies branch policy in `/flow-start`, runs
 configured local checks in `/flow-check`, renders staged commits through
-`/flow-commit`, and renders/opens pull requests through `/flow-pr`.
+`/flow-commit`, renders/opens pull requests through `/flow-pr`, and watches
+GitHub PR checks through `/flow-watch`.
 
 ## Config resolution order
 
@@ -27,8 +28,10 @@ reads the resolved config and may create or switch to a semantic work branch.
 `/flow-commit` reads the resolved config, validates structured commit payloads,
 renders the commit template, and commits staged changes only. `/flow-pr` reads
 structured PR payloads, renders the PR title/body, safely pushes the current
-feature branch when configured, and opens or updates the GitHub PR. These
-commands do not watch GitHub checks, resolve review comments, approve, or merge.
+feature branch when configured, and opens or updates the GitHub PR. `/flow-watch`
+reads resolved watcher defaults and performs read-only GitHub check status
+polling or sampling. These commands do not resolve review comments, approve, or
+merge.
 
 ## Default config
 
@@ -39,6 +42,8 @@ The default config lives in `config/default.codeflow.json`. It is conservative:
 - direct work on reserved branches is disabled;
 - emergency override requires a reason;
 - emergency flow requires a final report;
+- GitHub checks watching defaults to required checks only, a 10 second polling
+  interval, a 900 second timeout, and fail-fast disabled;
 - review comments are auto-resolved only when fixed, stale, or already fixed
   according to policy.
 
@@ -181,7 +186,7 @@ Pull request base outside allowed base branches:
 | `baseBranches` | Default, allowed, and fallback base branch policy. |
 | `branching` | Branch types, branch template, and slug rules. |
 | `commits` | Commit template and structured payload rules. |
-| `pullRequest` | PR title/body templates, base branch, draft, checks, push, and payload policy. |
+| `pullRequest` | PR title/body templates, base branch, draft, checks, GitHub checks watcher defaults, push, and payload policy. |
 | `checks` | Ordered local checks. |
 | `reviewComments` | Review comment classifications and resolution policy. |
 | `emergency` | Emergency override and hotfix policy. |
@@ -260,6 +265,10 @@ rendering, branch safety, GitHub CLI behavior, and bounded PR state.
 | `requirePassedChecksBeforePr` | Requires latest `/flow-check` state to be `passed`. |
 | `pushBeforeCreate` | Safely pushes the current feature branch before `gh pr create`. |
 | `linkKeyword` | Issue link keyword for default PR body rendering; default is `Refs`. |
+| `watchRequiredChecksOnly` | Makes `/flow-watch` default to `gh pr checks --required`; default is `true`. |
+| `checksWatchIntervalSeconds` | Default `/flow-watch` polling interval; default is `10`. |
+| `checksWatchTimeoutSeconds` | Default `/flow-watch` timeout; default is `900`. |
+| `failFast` | Stops `/flow-watch` on the first selected failure when enabled; default is `false`. |
 
 Default behavior is conservative: structured payloads, verification,
 self-review, draft PRs, explicit base/head, safe feature-branch push, and `Refs`
@@ -274,8 +283,31 @@ root. If a configured PR template is missing, the bundled default PR template is
 used with a warning. If a configured template exists but cannot be read as a
 file, rendering fails.
 
-The implemented PR behavior does not watch GitHub checks, request reviews,
-resolve review comments, approve, merge, or delete branches.
+The implemented PR behavior does not request reviews, resolve review comments,
+approve, merge, or delete branches. GitHub checks are handled separately by the
+read-only `/flow-watch` command.
+
+### GitHub checks watcher behavior
+
+`/flow-watch` resolves its defaults from `pullRequest` and reads GitHub check
+status with `gh pr checks`. Required-only mode adds `--required`; all-checks mode
+omits that flag. The command polls with `checksWatchIntervalSeconds` until a
+terminal result or `checksWatchTimeoutSeconds` is reached. `failFast` stops the
+watch as soon as a selected check fails, while the default waits for pending
+checks so the final summary can include more context.
+
+Safety behavior:
+
+- GitHub integration is read-only for check status.
+- Empty check samples in watch mode keep polling until checks appear or timeout.
+- No checks after timeout or single-sample mode produce a `no_checks` status and
+  never claim verified evidence.
+- Pending checks after timeout stay `pending` and keep the lifecycle in
+  `ci_waiting`.
+- Failed, skipped-only, cancelled, or timed-out selected checks block the flow
+  for local fixes or explicit confirmation.
+- `/flow-watch` does not rerun workflows, merge PRs, approve PRs, resolve
+  comments, push branches, or delete branches.
 
 ## Guidance policy
 
@@ -469,7 +501,11 @@ a fix and verification. Invalid comments normally require human review.
     "titleLengthPolicy": "warning",
     "requirePassedChecksBeforePr": false,
     "pushBeforeCreate": true,
-    "linkKeyword": "Refs"
+    "linkKeyword": "Refs",
+    "watchRequiredChecksOnly": true,
+    "checksWatchIntervalSeconds": 10,
+    "checksWatchTimeoutSeconds": 900,
+    "failFast": false
   },
   "checks": [],
   "reviewComments": {

@@ -100,6 +100,7 @@ Codeflow must stop for human input when work requires:
 The extension should not automatically:
 
 - approve or merge PRs;
+- rerun workflows without explicit documented scope;
 - bypass branch protection;
 - resolve invalid review comments without policy support;
 - publish packages;
@@ -132,6 +133,38 @@ Safety expectations for PRs:
 Reviewers should focus on deterministic rendering, branch/base safety, GitHub
 CLI error handling, temporary body-file cleanup, and bounded PR state whenever
 this layer changes.
+
+## GitHub checks watching
+
+`/flow-watch` reads GitHub PR check status after a PR exists. It uses read-only
+GitHub CLI calls to resolve the PR and read check metadata, then stores bounded
+check names, statuses, redacted descriptions and details links, durations, and a
+summary in session state. Stored per-check strings are truncated before
+persistence.
+
+Safety expectations for GitHub checks:
+
+- use `gh pr checks` as the primary source for PR-associated checks;
+- use required-only mode by default and all-checks mode only when requested or
+  configured;
+- do not fetch or store full CI logs in this foundation;
+- redact secret-like values from descriptions and details links before returning,
+  rendering, or storing them;
+- empty check samples in watch mode keep polling until checks appear or timeout;
+- no checks after timeout or single-sample mode produce `no_checks` and never
+  claim remote verification;
+- pending checks after timeout remain `pending` and keep the flow in
+  `ci_waiting`;
+- failed, skipped-only, cancelled, timed-out, or unknown selected checks block
+  the flow until the agent fixes the underlying issue or asks for human
+  guidance;
+- never call `gh run rerun`, `gh workflow run`, mutating `gh api` calls, merge,
+  review, comment, ready, close, edit, reopen, branch deletion, or approval
+  commands from `/flow-watch`.
+
+Reviewers should focus on required-check handling, status normalization,
+timeout/fail-fast behavior, error handling, and bounded state whenever this
+layer changes.
 
 ## Local commit execution
 

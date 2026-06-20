@@ -28,9 +28,16 @@ import {
   runFlowPr,
   type FlowPrResult,
 } from './commands/flow-pr';
+import {
+  formatFlowWatchResult,
+  parseFlowWatchArguments,
+  runFlowWatch,
+  type FlowWatchResult,
+} from './commands/flow-watch';
 import { CodeflowCheckError } from './checks/check-errors';
 import { CodeflowCommitError } from './commits/commit-errors';
 import { CodeflowPrError } from './pull-requests/pr-errors';
+import { CodeflowPrChecksError } from './github/github-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -70,6 +77,7 @@ export interface RegisterCodeflowExtensionOptions {
   runFlowCheck?: typeof runFlowCheck;
   runFlowCommit?: typeof runFlowCommit;
   runFlowPr?: typeof runFlowPr;
+  runFlowWatch?: typeof runFlowWatch;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -94,13 +102,19 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr',
+    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr' | 'flow-watch',
     options: {
       description: string;
       handler: (
         args: string,
         context: CodeflowExtensionCommandContext,
-      ) => Promise<FlowStartResult | FlowCheckResult | FlowCommitResult | FlowPrResult>;
+      ) => Promise<
+        | FlowStartResult
+        | FlowCheckResult
+        | FlowCommitResult
+        | FlowPrResult
+        | FlowWatchResult
+      >;
     },
   ): void;
 }
@@ -160,6 +174,12 @@ export function registerCodeflowExtension(
     description: 'Render and open a Codeflow pull request from a structured payload',
     handler: async (args, context) =>
       handleFlowPrCommand(args, context, options.runFlowPr ?? runFlowPr, sessionStore),
+  });
+
+  pi.registerCommand?.('flow-watch', {
+    description: 'Watch GitHub pull request checks and record results',
+    handler: async (args, context) =>
+      handleFlowWatchCommand(args, context, options.runFlowWatch ?? runFlowWatch, sessionStore),
   });
 }
 
@@ -303,6 +323,34 @@ async function handleFlowPrCommand(
   }
 }
 
+async function handleFlowWatchCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  watchFlow: typeof runFlowWatch,
+  sessionStore: CodeflowExtensionSessionStore,
+): Promise<FlowWatchResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowWatchArguments(args ?? '');
+    const result = await watchFlow({
+      cwd: context.cwd,
+      ...parsed,
+      sessionState: sessionStore.get(context.cwd),
+    });
+
+    sessionStore.set(context.cwd, result.sessionState);
+    context.ui.notify(
+      formatFlowWatchResult(result),
+      result.checks.status === 'failed' || result.checks.status === 'unknown' ? 'warning' : 'info',
+    );
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowWatchErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
 function createInMemorySessionStore(): CodeflowExtensionSessionStore {
   const sessions = new Map<string, CodeflowSessionState>();
 
@@ -362,6 +410,18 @@ function getFlowPrErrorMessage(error: unknown): string {
   }
 
   return '/flow-pr failed.';
+}
+
+function getFlowWatchErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowPrChecksError) {
+    return `/flow-watch failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-watch failed: ${error.message}`;
+  }
+
+  return '/flow-watch failed.';
 }
 
 async function loadGuidance(

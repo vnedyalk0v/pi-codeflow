@@ -1,7 +1,8 @@
 # Pull Requests
 
-The v0.6 `/flow-pr` foundation is implemented. The AI agent still must not
-freeform-write the final PR title or body.
+The v0.6 `/flow-pr` foundation is implemented, and the v0.7 `/flow-watch`
+foundation watches GitHub PR checks after a PR is open. The AI agent still must
+not freeform-write the final PR title or body.
 
 Instead:
 
@@ -12,6 +13,8 @@ Instead:
 4. Codeflow renders the final PR body from `templates/pull-request.md` or the
    configured PR template.
 5. Codeflow opens or updates a GitHub PR with `gh pr create` or `gh pr edit`.
+6. Codeflow watches required or all GitHub PR checks afterward with
+   `/flow-watch`.
 
 ## Command usage
 
@@ -218,11 +221,57 @@ branch with `gh pr edit`. If updates are disabled, it returns a clear error and
 includes the existing PR URL when discoverable. PR URLs returned by `gh` may use
 `github.com` or a GitHub Enterprise hostname and may include a trailing slash.
 
+## GitHub checks after PR creation
+
+After `/flow-pr` opens or updates a PR, use `/flow-watch` to read GitHub PR
+checks. The watcher determines the target PR from `--pr`, latest stored PR state,
+or the PR associated with the current branch.
+
+Usage examples:
+
+```text
+/flow-watch
+/flow-watch --pr 123
+/flow-watch --required
+/flow-watch --all
+/flow-watch --fail-fast
+/flow-watch --interval 10
+/flow-watch --timeout 600
+/flow-watch --dry-run
+```
+
+Behavior:
+
+- required-only mode calls `gh pr checks --required --json ...`;
+- all-checks mode calls `gh pr checks --json ...` without the required filter;
+- all returned v1 check rows are treated as required because GitHub CLI JSON has
+  no per-row requirement metadata;
+- non-zero `gh pr checks --json` exits with JSON rows are parsed before error
+  mapping so failed checks can be summarized;
+- descriptions and details links are redacted before they are returned, rendered,
+  or stored, and stored per-check strings are bounded;
+- `--dry-run` returns dry-run next actions instead of unknown-status guidance;
+- passed selected checks move the lifecycle to `verified`, with skipped checks
+  listed separately from passed checks in summaries;
+- pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
+- unknown selected checks take priority over pending checks and move to
+  `blocked` conservatively;
+- watch mode checks the deadline before each new poll and keeps polling empty
+  check samples only until checks appear or timeout;
+- failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
+  `blocked`;
+- no checks after timeout or single-sample mode, including GitHub CLI `no
+  required checks reported` responses, produce `no_checks` and must not be
+  treated as verified evidence.
+
+`/flow-watch` does not implement review-comment triage. It also does not rerun
+workflows, merge, approve, request review, resolve comments, reply to comments,
+push commits, or delete branches.
+
 ## Out of scope
 
 `/flow-pr` does not implement:
 
-- GitHub checks watcher;
 - review comment automation;
 - merge automation;
 - auto-approval;

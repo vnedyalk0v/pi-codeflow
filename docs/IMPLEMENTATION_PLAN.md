@@ -7,16 +7,15 @@ at a time.
 
 Target issue:
 
-- #12 Implement `/flow-pr` with generated PR title/body.
+- #13 Implement GitHub checks watcher.
 
-This PR implements the v0.6 pull request foundation. It consumes the validated
-config layer from #7, guidance/lifecycle foundation from #8, semantic branch
-command foundation from #9, local check runner foundation from #10, and commit
-renderer foundation from #11. It adds structured PR payload validation,
-deterministic PR title rendering, PR body rendering from templates, GitHub CLI
-PR creation/update behavior, base/head branch safety, check-state and
-commit-state policy, dry-run previews, draft behavior, and bounded latest PR
-metadata.
+This PR implements the v0.7 GitHub checks watcher foundation. It consumes the
+validated config layer from #7, guidance/lifecycle foundation from #8, semantic
+branch command foundation from #9, local check runner foundation from #10,
+commit renderer foundation from #11, and PR renderer foundation from #12. It adds
+`/flow-watch`, GitHub PR checks fetching and bounded polling, required-only and
+all-checks modes, status normalization, failure and pending summaries, timeout
+and fail-fast behavior, bounded latest GitHub checks state, tests, and docs.
 
 ## Implemented #7 scope
 
@@ -96,20 +95,34 @@ metadata.
 - Add tests for validation, rendering, command behavior, GitHub CLI behavior,
   and state updates.
 
-## Non-goals for #12
+## Implemented #13 scope
 
-- GitHub checks watcher.
-- Review comment automation.
+- Add `/flow-watch` command registration.
+- Fetch PR-associated checks with `gh pr checks` as the primary source.
+- Support required-only mode and all-checks mode.
+- Normalize GitHub buckets and states into Codeflow-owned check statuses.
+- Summarize passed, failed, pending, skipped, cancelled, timed-out, no-checks,
+  and unknown outcomes.
+- Support bounded watch polling, timeout handling, and fail-fast behavior.
+- Store bounded latest GitHub checks state in session state.
+- Add tests for parsing, policy, summaries, client args/errors, command behavior,
+  lifecycle transitions, and state updates.
+
+## Non-goals for #13
+
+- Review comment triage loop.
+- Reviewer comment replies.
+- Resolving review comments.
 - Merge automation.
 - Auto-approval.
-- Auto-resolving reviewer comments.
-- Post-PR CI waiting beyond lightweight next-action guidance.
+- Branch deletion.
+- Rerunning workflows.
 
 ## Next intended implementation issue
 
-#13 GitHub checks watcher is next after #12. It should build on the bounded PR
-metadata produced by `/flow-pr` without adding review comment or merge
-automation.
+#14 review comments triage loop is next after #13, but it remains separate and
+should still follow its issue status. If #14 remains `needs-design`, design work
+must happen before production implementation.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.
@@ -131,5 +144,8 @@ work before Codeflow should claim full pre-commit verification automation.
 - Unit tests for PR payload validation, PR title/body rendering, branch and
   check-state policy, command registration, GitHub CLI integration, dry-run and
   draft behavior, and bounded PR state.
-- Manual check that GitHub checks watching, review comment automation,
-  auto-approval, merge automation, and branch deletion remain out of scope.
+- Unit tests for GitHub check parsing, status normalization, required-only and
+  all-checks modes, summaries, timeout and fail-fast behavior, CLI error
+  handling, lifecycle transitions, and bounded GitHub checks state.
+- Manual check that review comment automation, auto-approval, merge automation,
+  branch deletion, and workflow reruns remain out of scope.

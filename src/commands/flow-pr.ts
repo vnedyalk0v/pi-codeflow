@@ -298,7 +298,7 @@ function getFlowPrNextExpectedActions(
 
   if (phase === 'pr_opened') {
     return [
-      'Watch CI and reviewer activity with a future /flow-watch or manual GitHub review.',
+      'Watch CI with /flow-watch, then inspect reviewer activity when review-comment tooling is available.',
       'Do not merge, approve, resolve comments, or delete branches from /flow-pr.',
     ];
   }

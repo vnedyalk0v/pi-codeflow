@@ -18,6 +18,7 @@ export interface ValidateReviewCommentTriageOptions {
   fetchedThreads?: CodeflowReviewThread[];
   threadIds?: string[];
   requireThreadMatch?: boolean;
+  requireAllThreadIds?: boolean;
 }
 
 let cachedValidator: ValidateFunction | null = null;
@@ -72,6 +73,7 @@ function validateSemanticRules(
 ): CodeflowReviewCommentTriageValidationIssue[] {
   const errors: CodeflowReviewCommentTriageValidationIssue[] = [];
   const allowedThreadIds = getAllowedThreadIds(options);
+  const triagedThreadIds = new Set<string>();
 
   for (let index = 0; index < triage.threads.length; index += 1) {
     const thread = triage.threads[index]!;
@@ -109,6 +111,8 @@ function validateSemanticRules(
       });
     }
 
+    triagedThreadIds.add(thread.threadId);
+
     if (allowedThreadIds && !allowedThreadIds.has(thread.threadId)) {
       errors.push({
         path: `/threads/${index}/threadId`,
@@ -116,6 +120,19 @@ function validateSemanticRules(
         message: `threadId ${thread.threadId} does not match a fetched review thread`,
         details: { threadId: thread.threadId },
       });
+    }
+  }
+
+  if (options.requireAllThreadIds === true && allowedThreadIds) {
+    for (const threadId of allowedThreadIds) {
+      if (!triagedThreadIds.has(threadId)) {
+        errors.push({
+          path: '/threads',
+          keyword: 'allSelectedThreadIds',
+          message: `triage payload is missing selected review thread ${threadId}`,
+          details: { threadId },
+        });
+      }
     }
   }
 

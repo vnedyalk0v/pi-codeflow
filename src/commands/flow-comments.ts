@@ -330,6 +330,7 @@ async function loadAndValidateTriagePayload(
   const result = validateReviewCommentTriage(payload, {
     fetchedThreads: threads,
     requireThreadMatch: true,
+    requireAllThreadIds: true,
   });
 
   if (!result.valid) {

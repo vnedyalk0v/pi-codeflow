@@ -94,6 +94,16 @@ describe('validateReviewCommentTriage', () => {
     expect(allowed.valid).toBe(true);
   });
 
+  it('rejects missing selected thread IDs when complete triage is required', () => {
+    const result = validateReviewCommentTriage({ threads: [item({ threadId: 'PRRT_thread_1' })] }, {
+      fetchedThreads: [fetchedThread('PRRT_thread_1'), fetchedThread('PRRT_thread_2')],
+      requireAllThreadIds: true,
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((error) => error.keyword)).toContain('allSelectedThreadIds');
+  });
+
   it('validates replyBody as a draft but does not post it', () => {
     const result = validateReviewCommentTriage({ threads: [item({ replyBody: '' })] });
 

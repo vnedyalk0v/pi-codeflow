@@ -418,14 +418,60 @@
     "reviewComments": {
       "type": "object",
       "required": [
-        "classifications",
-        "autoResolveWhen",
-        "resolveValidOnlyAfterFix",
-        "invalidRequiresHumanReview",
-        "needsHumanBlocks"
+        "enabled",
+        "provider",
+        "includeAuthors",
+        "excludeAuthors",
+        "unresolvedOnly",
+        "includeOutdated",
+        "autoReply",
+        "autoResolve",
+        "autoResolveClassifications",
+        "requireChecksBeforeResolve",
+        "requireHumanForInvalid",
+        "requireHumanForNeedsHuman",
+        "maxThreadsPerRun",
+        "replyTemplate"
       ],
       "properties": {
-        "classifications": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "github-graphql"
+          ]
+        },
+        "includeAuthors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "excludeAuthors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "unresolvedOnly": {
+          "type": "boolean"
+        },
+        "includeOutdated": {
+          "type": "boolean"
+        },
+        "autoReply": {
+          "type": "boolean"
+        },
+        "autoResolve": {
+          "type": "boolean"
+        },
+        "autoResolveClassifications": {
           "type": "array",
           "items": {
             "type": "string",
@@ -433,33 +479,28 @@
               "valid",
               "invalid",
               "stale",
-              "already_fixed",
-              "needs_human"
-            ]
-          },
-          "uniqueItems": true,
-          "minItems": 1
-        },
-        "autoResolveWhen": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "fixed",
-              "stale",
               "already_fixed"
             ]
           },
           "uniqueItems": true
         },
-        "resolveValidOnlyAfterFix": {
+        "requireChecksBeforeResolve": {
           "type": "boolean"
         },
-        "invalidRequiresHumanReview": {
+        "requireHumanForInvalid": {
           "type": "boolean"
         },
-        "needsHumanBlocks": {
+        "requireHumanForNeedsHuman": {
           "type": "boolean"
+        },
+        "maxThreadsPerRun": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        },
+        "replyTemplate": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

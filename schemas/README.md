@@ -15,3 +15,7 @@ Schema changes should stay aligned with:
 `codeflow.schema.json` and `pr-payload.schema.json` both encode the Codeflow git
 branch-name subset used by `/flow-pr` for base/head refs. Keep those schema
 patterns aligned with `src/git/git-ref.ts` whenever branch validation changes.
+
+`review-comment-triage.schema.json` describes read-only triage output for
+normalized GitHub review threads. It requires review thread IDs rather than
+ordinary issue comment IDs.

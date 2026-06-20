@@ -268,6 +268,20 @@ Behavior:
 workflows, merge, approve, request review, resolve comments, reply to comments,
 push commits, or delete branches.
 
+## Review comments after PR checks
+
+Future review-comment work should start with read-only `/flow-comments` after a
+PR exists and local or remote verification evidence is available. The primary
+input is inline pull request review threads from GitHub GraphQL, not ordinary PR
+issue comments. The read-only command should list unresolved threads, classify
+them, produce a triage report, and store bounded triage state without replies,
+resolution, code changes, commits, pushes, or merge automation.
+
+Future `/flow-fix-comments` may use that triage state to fix valid findings,
+rerun `/flow-check`, commit through `/flow-commit`, watch remote checks with
+`/flow-watch`, and only then reply or resolve safe classifications when policy
+allows it. Review thread resolution must use GitHub review thread IDs.
+
 ## Out of scope
 
 `/flow-pr` does not implement:

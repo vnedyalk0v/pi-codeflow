@@ -27,6 +27,7 @@ checks`, supports required-only or all-checks mode, summarizes pass, fail,
 pending, skipped, cancelled, timed-out, no-checks, and unknown states, and stores
 bounded GitHub checks metadata. Self-review automation, persistent external
 state storage, review comment automation, and merge automation are later work.
+The #14 design defines the future review-comment loop but does not implement it.
 
 ## Phase reference
 
@@ -155,6 +156,42 @@ Pass, failure, pending, and empty behavior:
 `/flow-watch` is read-only. It does not rerun workflows, cancel workflows, push,
 merge, approve, resolve comments, reply to comments, request reviews, delete
 branches, or perform review-comment triage.
+
+## Future `/flow-comments`
+
+`/flow-comments` is the planned read-only review-thread triage command. After a
+PR is open and checks are available, it may move the lifecycle to
+`review_triage` by listing unresolved inline review threads, normalizing GitHub
+GraphQL thread data, classifying threads, producing a triage report, and storing
+bounded triage state.
+
+Expected behavior:
+
+- unresolved review threads are listed by default;
+- all threads, author filters, and path filters may be optional flags;
+- no unresolved threads move toward `verified` or `final_reported` when prior
+  verification evidence is complete;
+- valid comments move toward `fixing_review_findings`;
+- `needs_human` comments move to `blocked` or keep `review_triage` with a clear
+  human decision request;
+- no replies, resolution, code changes, commits, pushes, or merges occur.
+
+## Future `/flow-fix-comments`
+
+`/flow-fix-comments` is the planned mutating review-thread follow-up command. It
+must consume stored triage state and act only after explicit classification.
+
+Expected behavior:
+
+- fix `valid` findings with focused changes;
+- return to `/flow-check` after fixes are applied;
+- use `/flow-commit` after checks pass;
+- push through the PR flow and then use `/flow-watch` for remote verification;
+- reply only after verification and policy checks;
+- resolve only addressed `valid`, `stale`, or `already_fixed` threads when
+  policy allows it;
+- never resolve `needs_human` threads;
+- never resolve `invalid` threads automatically unless policy explicitly allows.
 
 ## Phase details
 
@@ -315,25 +352,38 @@ branches, or perform review-comment triage.
 
 ### `review_triage`
 
-- **Purpose:** reviewer comments are classified.
-- **Entry conditions:** PR has unresolved comments.
-- **Expected agent behavior:** classify each comment before acting.
-- **Expected command/tool:** `/flow-comments`.
-- **Allowed transitions:** `fixing_review_findings`, `verified`, `blocked`.
-- **Failure transitions:** `blocked` when a comment needs human decision.
-- **Output artifacts:** review triage payload.
+- **Purpose:** inline PR review threads are listed and classified.
+- **Entry conditions:** a PR exists and review-thread triage is requested after
+  local or remote verification evidence is available.
+- **Expected agent behavior:** classify each thread before acting, distinguish
+  thread IDs from comment IDs, and stop for human decisions.
+- **Expected command/tool:** future `/flow-comments`.
+- **Allowed transitions:** `fixing_review_findings`, `verified`,
+  `final_reported`, `blocked`.
+- **Failure transitions:** `blocked` when a thread needs human decision or the
+  GitHub review-thread state cannot be read safely.
+- **Output artifacts:** bounded review-thread data and review triage payload.
+- **Mutation boundary:** no replies, no resolution, no code changes, no commits,
+  no pushes, and no merge automation.
 
 ### `fixing_review_findings`
 
-- **Purpose:** valid reviewer comments are addressed.
-- **Entry conditions:** at least one valid review finding exists.
-- **Expected agent behavior:** fix valid comments, re-run checks, and reply with
-  evidence.
-- **Expected command/tool:** `/flow-fix-comments`, `/flow-check`.
-- **Allowed transitions:** `local_checks`, `ci_waiting`, `review_triage`,
-  `verified`, `blocked`.
-- **Failure transitions:** `blocked` if requested change is unsafe or ambiguous.
-- **Output artifacts:** fix commits, replies, and check results.
+- **Purpose:** valid review-thread findings are addressed.
+- **Entry conditions:** triage found at least one `valid` thread with files to
+  inspect or change.
+- **Expected agent behavior:** fix only valid findings, run `/flow-check`, commit
+  with `/flow-commit`, push through the PR flow, and use `/flow-watch` before
+  any reply or resolution.
+- **Expected command/tool:** future `/flow-fix-comments`, `/flow-check`,
+  `/flow-commit`, `/flow-watch`.
+- **Allowed transitions:** `local_checks`, `committed`, `ci_waiting`,
+  `review_triage`, `verified`, `blocked`.
+- **Failure transitions:** `blocked` if requested change is unsafe, ambiguous,
+  product-sensitive, security-sensitive, or lacks verification.
+- **Output artifacts:** focused fixes, check results, commits, rendered reply
+  drafts, and safe resolution decisions.
+- **Resolution boundary:** reply or resolve only after explicit classification,
+  committed fixes when needed, and passing verification.
 
 ### `verified`
 
@@ -402,8 +452,8 @@ the blocker.
 | `committed` | `pr_opened`, `local_checks`, `blocked` |
 | `pr_opened` | `ci_waiting`, `review_triage`, `verified`, `blocked` |
 | `ci_waiting` | `ci_waiting`, `verified`, `review_triage`, `blocked` |
-| `review_triage` | `fixing_review_findings`, `verified`, `blocked` |
-| `fixing_review_findings` | `local_checks`, `ci_waiting`, `review_triage`, `verified`, `blocked` |
+| `review_triage` | `fixing_review_findings`, `verified`, `final_reported`, `blocked` |
+| `fixing_review_findings` | `local_checks`, `committed`, `ci_waiting`, `review_triage`, `verified`, `blocked` |
 | `verified` | `final_reported`, `review_triage`, `blocked` |
 | `final_reported` | `idle` |
 | `blocked` | Prior safe phase, `emergency`, `idle` |
@@ -445,14 +495,23 @@ the blocker.
 ### Review comment is invalid
 
 - Do not change code solely to satisfy the invalid comment.
-- Reply with rationale when configured.
+- Prepare a concise rationale when configured.
 - Do not auto-resolve unless policy explicitly allows it.
+- Never resolve solely because the agent believes the reviewer is wrong.
+
+### Review comment is stale or already fixed
+
+- Verify the current code before acting.
+- Resolve only when GitHub marks the thread outdated or evidence shows the issue
+  is already addressed.
+- Require passing verification before resolution when config requires it.
 
 ### Review comment needs human decision
 
-- Move to `blocked`.
-- Report the comment, decision needed, and safe options.
-- Do not implement speculative product, security, or policy choices.
+- Move to `blocked` or remain in `review_triage` with a human decision request.
+- Report the thread, decision needed, and safe options.
+- Do not implement speculative product, security, API, or policy choices.
+- Never reply with a final decision or resolve the thread automatically.
 
 ### Emergency override requested
 

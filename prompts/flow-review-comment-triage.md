@@ -1,24 +1,50 @@
 ---
-description: Classify GitHub review comments for Codeflow
-argument-hint: "<review comments>"
+description: Classify GitHub pull request review threads for Codeflow
+argument-hint: "<normalized review threads>"
 ---
-Classify each review comment before taking action.
+Classify each normalized GitHub pull request review thread before taking action.
+This is read-only triage. Do not change code, post replies, resolve threads,
+commit, push, or merge.
+
+Primary input should be `CodeflowReviewThread` records from GitHub GraphQL.
+Use the review thread `threadId`, not an issue comment ID, as the stable
+identifier.
 
 Allowed classifications:
 
-- valid
-- invalid
-- stale
-- already_fixed
-- needs_human
+- `valid`: the thread identifies a real issue that needs a code, doc, config,
+  or test fix. Do not resolve until the fix is committed and checks pass.
+- `invalid`: the thread is incorrect or based on a wrong assumption. Prepare a
+  concise explanation, but do not auto-resolve unless policy explicitly allows.
+- `stale`: the thread is outdated or no longer applies. Resolve only when
+  GitHub marks it outdated or current code clearly supersedes it.
+- `already_fixed`: current code already addresses the issue. Verify before any
+  reply or resolution.
+- `needs_human`: product, security, API, design, legal, credential, merge, or
+  release judgment is required. Never auto-resolve.
 
-For each comment, return a structured payload with:
+Return JSON that matches `schemas/review-comment-triage.schema.json`:
 
-- id or URL
-- classification
-- rationale
-- proposed action
-- whether it may be resolved after verification
+```json
+{
+  "threads": [
+    {
+      "threadId": "PRRT_kw...",
+      "classification": "valid",
+      "confidence": 0.82,
+      "reason": "The reviewed path still has the reported issue.",
+      "recommendedAction": "Update the failing validation and add coverage.",
+      "filesToInspect": ["src/example.ts"],
+      "filesToChange": ["src/example.ts", "tests/example.test.ts"],
+      "checksToRun": ["npm test"],
+      "replyBody": "Fixed the validation path and added test coverage.",
+      "canResolveAfterChecks": true,
+      "requiresHumanDecision": false
+    }
+  ]
+}
+```
 
-Do not resolve comments that are invalid or need human decision unless policy
-explicitly allows it.
+Replies must be concise and specific drafts only. A later mutating command may
+render and post them from `templates/review-reply.md` after verification and
+policy checks.

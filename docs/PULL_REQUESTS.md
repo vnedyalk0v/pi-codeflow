@@ -256,13 +256,15 @@ Behavior:
 - pending checks, including timeout cases, keep the lifecycle in `ci_waiting`;
 - unknown selected checks take priority over pending checks and move to
   `blocked` conservatively;
-- watch mode checks the deadline before each new poll and keeps polling empty
-  check samples only until checks appear or timeout;
+- watch mode checks the deadline before each new poll and keeps polling
+  transient empty check samples only until checks appear or timeout;
+- terminal no-selected-checks responses from GitHub CLI, including `no required
+  checks reported`, stop without waiting for the full timeout;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks move to
   `blocked`;
-- no checks after timeout or single-sample mode, including GitHub CLI `no
-  required checks reported` responses, produce `no_checks` and must not be
-  treated as verified evidence.
+- no checks after timeout, terminal no-selected-checks responses, or
+  single-sample mode produce `no_checks` and must not be treated as verified
+  evidence.
 
 `/flow-watch` does not implement review-comment triage. It also does not rerun
 workflows, merge, approve, request review, resolve comments, reply to comments,

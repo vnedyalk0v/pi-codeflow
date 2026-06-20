@@ -154,9 +154,12 @@ Safety expectations for GitHub checks:
 - do not fetch or store full CI logs in this foundation;
 - redact secret-like values from descriptions and details links before returning,
   rendering, or storing them;
-- empty check samples in watch mode keep polling until checks appear or timeout;
-- no checks after timeout or single-sample mode produce `no_checks` and never
-  claim remote verification;
+- transient empty check samples in watch mode keep polling until checks appear
+  or timeout;
+- terminal no-selected-checks responses from GitHub CLI stop without waiting for
+  the full timeout;
+- no checks after timeout, terminal no-selected-checks responses, or
+  single-sample mode produce `no_checks` and never claim remote verification;
 - pending checks after timeout remain `pending` and keep the flow in
   `ci_waiting`;
 - failed, skipped-only, cancelled, timed-out, or unknown selected checks block

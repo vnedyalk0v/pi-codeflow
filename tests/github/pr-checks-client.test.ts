@@ -233,6 +233,36 @@ describe('watchGitHubPrChecks', () => {
     expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(2);
   });
 
+  it('stops watching terminal no-required-checks responses', async () => {
+    const calls: string[][] = [];
+    const noRequiredChecksError = new GithubCliError({
+      code: 'gh_command_failed',
+      message: 'no required checks reported on the current branch',
+      args: ['pr', 'checks', '123', '--required'],
+      exitCode: 1,
+      stderr: 'no required checks reported on the current branch',
+    });
+    const result = await watchGitHubPrChecks({
+      pr: 123,
+      requiredOnly: true,
+      intervalSeconds: 1,
+      timeoutSeconds: 30,
+      sleep: async () => undefined,
+      ghClient: ghClient(calls, [
+        viewJson(),
+        noRequiredChecksError,
+        viewJson(),
+        JSON.stringify([{ name: 'test', bucket: 'pass', state: 'SUCCESS' }]),
+      ]),
+    });
+
+    expect(result.status).toBe('no_checks');
+    expect(result.timedOut).toBe(false);
+    expect(result.attempts).toBe(1);
+    expect(result.terminalNoChecks).toBe(true);
+    expect(calls.filter((args) => args[0] === 'pr' && args[1] === 'checks')).toHaveLength(1);
+  });
+
   it('stops watching immediately when an unknown check is mixed with pending checks', async () => {
     const calls: string[][] = [];
     const result = await watchGitHubPrChecks({

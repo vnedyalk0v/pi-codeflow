@@ -75,7 +75,10 @@ export async function getGitHubPrChecks(
         watched: options.watched === true,
         startedAt,
         startedAtMs,
-        warnings: ['No GitHub PR checks were found; Codeflow will not claim remote verification.'],
+        terminalNoChecks: true,
+        warnings: [
+          'GitHub reported no selected PR checks; Codeflow will not claim remote verification.',
+        ],
       });
     }
 
@@ -266,6 +269,7 @@ function emptyChecksResult(options: {
   startedAt: string;
   startedAtMs: number;
   warnings: string[];
+  terminalNoChecks?: boolean;
 }): CodeflowPrChecksResult {
   const finishedAtMs = Date.now();
   return buildCodeflowPrChecksResult([], {
@@ -280,12 +284,13 @@ function emptyChecksResult(options: {
     finishedAt: new Date(finishedAtMs).toISOString(),
     durationMs: Math.max(0, finishedAtMs - options.startedAtMs),
     warnings: options.warnings,
+    terminalNoChecks: options.terminalNoChecks === true,
   });
 }
 
 function shouldStopWatching(result: CodeflowPrChecksResult, failFast: boolean): boolean {
   if (result.status === 'no_checks') {
-    return false;
+    return result.terminalNoChecks === true;
   }
 
   if (result.status === 'unknown') {
@@ -326,6 +331,7 @@ function finalizeWatchResult(
     finishedAt: new Date(options.finishedAtMs).toISOString(),
     durationMs: Math.max(0, options.finishedAtMs - options.startedAtMs),
     warnings,
+    terminalNoChecks: result.terminalNoChecks === true,
   });
 
   return {

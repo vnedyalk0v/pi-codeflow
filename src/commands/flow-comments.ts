@@ -456,11 +456,15 @@ function getFlowCommentsStatus(options: {
   filteredThreadCount: number;
   incomplete: boolean;
 }): 'found' | 'none' | 'failed' {
+  if (options.incomplete) {
+    return 'failed';
+  }
+
   if (options.filteredThreadCount > 0) {
     return 'found';
   }
 
-  return options.incomplete ? 'failed' : 'none';
+  return 'none';
 }
 
 function getLifecyclePhaseForComments(options: {

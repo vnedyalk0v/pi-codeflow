@@ -189,6 +189,30 @@ describe('runFlowComments', () => {
     expect(result.nextExpectedActions.join('\n')).toContain('do not claim there are no selected review threads');
   });
 
+  it('fails safely when the GitHub thread scan is truncated after selected threads are found', async () => {
+    const raw = JSON.parse(fixture('review-threads.graphql.json'));
+    raw.data.repository.pullRequest.reviewThreads.pageInfo = {
+      hasNextPage: true,
+      endCursor: 'next-thread-cursor',
+    };
+    raw.data.repository.pullRequest.reviewThreads.nodes = [
+      raw.data.repository.pullRequest.reviewThreads.nodes[0],
+    ];
+    const result = await runFlowComments({
+      pr: 123,
+      maxThreads: 1,
+      config: getDefaultCodeflowConfig(),
+      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+      sessionState: sessionWithPr(),
+    });
+
+    expect(result.filteredThreads).toHaveLength(1);
+    expect(result.status).toBe('failed');
+    expect(result.incomplete).toBe(true);
+    expect(result.lifecyclePhase).toBe('blocked');
+    expect(result.summary).toContain('Scan incomplete: yes');
+  });
+
   it('validates structured triage payloads and updates counts', async () => {
     const result = await runFlowComments({
       pr: 123,

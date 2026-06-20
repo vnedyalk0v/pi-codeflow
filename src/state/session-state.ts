@@ -22,12 +22,19 @@ import {
   type CodeflowPrState,
   type StorePullRequestMetadataInput,
 } from './pr-state';
+import {
+  createInitialGitHubChecksState,
+  updateGitHubChecksStateWithResult,
+  type CodeflowGitHubChecksState,
+} from './github-checks-state';
+import type { CodeflowPrChecksResult } from '../github/pr-checks-parser';
 
 export interface CodeflowSessionState {
   lifecycle: CodeflowLifecycleState;
   checks: CodeflowCheckState;
   commits: CodeflowCommitState;
   pullRequests: CodeflowPrState;
+  githubChecks?: CodeflowGitHubChecksState;
   updatedAt: string;
 }
 
@@ -46,6 +53,7 @@ export function createCodeflowSessionState(
     checks: createInitialCheckState(),
     commits: createInitialCommitState(),
     pullRequests: createInitialPrState(),
+    githubChecks: createInitialGitHubChecksState(),
     updatedAt: nowIso(),
   };
 }
@@ -92,6 +100,26 @@ export function updateSessionStateWithPullRequest(
       phase: 'pr_opened',
     },
     pullRequests: updatePrStateWithPullRequest(state.pullRequests, input),
+    githubChecks: state.githubChecks ?? createInitialGitHubChecksState(),
+    updatedAt: nowIso(),
+  };
+}
+
+export function updateSessionStateWithGitHubChecks(
+  state: CodeflowSessionState,
+  result: CodeflowPrChecksResult,
+  phase: CodeflowLifecyclePhase,
+): CodeflowSessionState {
+  return {
+    ...state,
+    lifecycle: {
+      ...state.lifecycle,
+      phase,
+    },
+    githubChecks: updateGitHubChecksStateWithResult(
+      state.githubChecks ?? createInitialGitHubChecksState(),
+      result,
+    ),
     updatedAt: nowIso(),
   };
 }

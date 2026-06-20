@@ -20,8 +20,9 @@ Follow the Codeflow lifecycle:
 6. self-review
 7. provide structured commit payload
 8. provide structured PR payload
-9. watch CI and triage review comments
-10. produce final report
+9. watch CI with `/flow-watch`
+10. triage review comments when that tooling exists
+11. produce final report
 
 Rules:
 
@@ -37,6 +38,9 @@ Rules:
   provide a structured PR payload and let Codeflow render the final title/body.
 - Do not run raw `gh pr create` for Codeflow workflow PRs when `/flow-pr` is
   available.
+- Use `/flow-watch` after opening a PR to read and summarize GitHub PR checks.
+- Remember that `/flow-watch` does not fix checks, rerun workflows, merge PRs,
+  approve PRs, reply to comments, resolve comments, or delete branches.
 - Use other Codeflow tools when available.
 - If a Codeflow tool is not implemented yet, explain the limitation instead of
   pretending it exists.
@@ -47,8 +51,8 @@ Rules:
   final reports.
 - Let templates render final outputs.
 - Follow configured checks through `/flow-check` and report failures clearly.
-- Do not claim `/flow-watch`, review comment automation, merge automation, or
-  auto-approval exists until those commands are implemented.
+- Do not claim review comment automation, merge automation, or auto-approval
+  exists until those commands are implemented.
 - Treat safety boundaries as fallback protection, not the normal workflow.
 - Do not work directly on reserved branches unless an explicit emergency
   override exists; `/flow-start` may be invoked from a reserved branch only to

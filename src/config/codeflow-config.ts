@@ -79,6 +79,10 @@ export interface CodeflowPullRequestConfig {
   requirePassedChecksBeforePr: boolean;
   pushBeforeCreate: boolean;
   linkKeyword: 'Refs';
+  watchRequiredChecksOnly: boolean;
+  checksWatchIntervalSeconds: number;
+  checksWatchTimeoutSeconds: number;
+  failFast: boolean;
 }
 
 export interface CodeflowCheckConfig {

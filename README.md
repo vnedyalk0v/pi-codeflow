@@ -7,9 +7,9 @@ Pi package for consistent AI coding workflows.
 > Warning: this repository is not ready for production use yet. It now contains
 > config loading, validation, guidance injection, lifecycle state helpers,
 > `/flow-start` semantic branch preparation, `/flow-check` local check running,
-> `/flow-commit` generated commit messages, and `/flow-pr` generated PR
-> title/body creation, but it does not enforce the full workflow in real
-> projects.
+> `/flow-commit` generated commit messages, `/flow-pr` generated PR
+> title/body creation, and `/flow-watch` GitHub PR checks watching, but it does
+> not enforce the full workflow in real projects.
 
 pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
 lifecycle:
@@ -20,7 +20,7 @@ lifecycle:
 - self-review
 - templated commits
 - templated pull requests
-- CI tracking
+- CI tracking with GitHub PR checks summaries
 - reviewer comment triage
 - fix loops
 - final delivery reports
@@ -103,8 +103,8 @@ loading, validation, guidance generation, before-agent guidance injection,
 in-memory lifecycle state helpers, `/flow-start` semantic branch preparation,
 `/flow-check` configured local check running, `/flow-commit` generated commit
 messages from structured payloads, and `/flow-pr` generated PR title/body
-creation through GitHub CLI.
+creation through GitHub CLI, and `/flow-watch` GitHub PR checks watching.
 
-It still does not implement self-review automation, GitHub checks watching,
-review comment automation, merge automation, auto-approval, or persistent
-lifecycle storage beyond the minimal in-command session-state result.
+It still does not implement self-review automation, review comment automation,
+merge automation, auto-approval, or persistent lifecycle storage beyond the
+minimal in-command session-state result.

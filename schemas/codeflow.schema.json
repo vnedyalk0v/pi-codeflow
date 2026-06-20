@@ -290,7 +290,11 @@
         "titleLengthPolicy",
         "requirePassedChecksBeforePr",
         "pushBeforeCreate",
-        "linkKeyword"
+        "linkKeyword",
+        "watchRequiredChecksOnly",
+        "checksWatchIntervalSeconds",
+        "checksWatchTimeoutSeconds",
+        "failFast"
       ],
       "properties": {
         "template": {
@@ -350,6 +354,24 @@
             "Refs"
           ],
           "description": "Issue link keyword used by the default PR body renderer."
+        },
+        "watchRequiredChecksOnly": {
+          "type": "boolean",
+          "description": "Whether /flow-watch defaults to GitHub required checks only."
+        },
+        "checksWatchIntervalSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Default polling interval in seconds for /flow-watch."
+        },
+        "checksWatchTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Default timeout in seconds for /flow-watch."
+        },
+        "failFast": {
+          "type": "boolean",
+          "description": "Whether /flow-watch stops polling as soon as a selected check fails."
         }
       },
       "additionalProperties": false

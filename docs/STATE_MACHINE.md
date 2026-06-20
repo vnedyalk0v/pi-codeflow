@@ -5,8 +5,8 @@ This document is the compact state-machine reference for Codeflow. See
 
 ## Implementation status
 
-The v0.6 implementation provides a small lifecycle foundation and three
-command-driven transitions:
+The v0.7 implementation provides a small lifecycle foundation and command-driven
+transitions through PR check watching:
 
 - `createInitialLifecycleState()` creates an initial state and defaults to
   `idle`.
@@ -20,8 +20,13 @@ command-driven transitions:
   commits staged changes, and returns `committed` on success.
 - `/flow-pr` validates a structured PR payload, renders the PR title/body, opens
   or updates a GitHub PR, and returns `pr_opened` on success.
-- Persistent external state storage and later command-driven transitions beyond
-  PR creation are not implemented yet.
+- `/flow-watch` reads GitHub PR checks, stores bounded latest GitHub checks
+  state, returns `ci_waiting` for pending, timed-out, or still-empty check
+  samples, returns `verified` for passing selected checks, and returns `blocked`
+  for skipped-only, failed, cancelled, timed-out, or unknown selected check
+  states.
+- Persistent external state storage and later review-comment transitions are not
+  implemented yet.
 
 ## Lifecycle phases
 
@@ -54,7 +59,9 @@ when payload validation, staged-change checks, branch safety, check-state policy
 and `git commit` all succeed. `/flow-pr` performs the `committed` ->
 `pr_opened` mutation only when PR payload validation, base/head safety,
 check-state policy, branch push policy, and GitHub CLI PR creation all succeed.
-Other action text remains proactive guidance, not a full mutation engine.
+`/flow-watch` performs the `pr_opened` or `ci_waiting` check-status transition
+from read-only GitHub PR checks. Other action text remains proactive guidance,
+not a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -69,7 +76,7 @@ Other action text remains proactive guidance, not a full mutation engine.
 | `ready_to_commit` | Provide a structured commit payload and use `/flow-commit`. |
 | `committed` | Prepare a structured PR payload and use `/flow-pr`. |
 | `pr_opened` | Track CI and review state before final reporting. |
-| `ci_waiting` | Summarize remote check status and react to failures. |
+| `ci_waiting` | Use `/flow-watch` to summarize remote check status and react to failures. |
 | `review_triage` | Classify comments before acting and stop for human decisions. |
 | `fixing_review_findings` | Fix valid review findings and re-run verification. |
 | `verified` | Prepare a structured final report payload. |
@@ -101,13 +108,14 @@ Other action text remains proactive guidance, not a full mutation engine.
 | `ready_to_commit` | `committed` | Commit payload validates and commit succeeds. |
 | `ready_to_commit` | `blocked` | Payload invalid or staged diff is wrong. |
 | `committed` | `pr_opened` | PR payload validates and PR opens/updates. |
-| `pr_opened` | `ci_waiting` | GitHub checks are pending. |
+| `pr_opened` | `ci_waiting` | `/flow-watch` finds checks pending, no checks yet, or times out before completion. |
 | `pr_opened` | `review_triage` | Review comments exist. |
-| `pr_opened` | `verified` | No CI or review blockers remain. |
-| `ci_waiting` | `verified` | CI passes. |
-| `ci_waiting` | `fixing_local_findings` | CI fails. |
+| `pr_opened` | `verified` | `/flow-watch` finds selected checks passed. |
+| `pr_opened` | `blocked` | `/flow-watch` finds skipped-only, failed, cancelled, timed-out, or unknown selected checks. |
+| `ci_waiting` | `ci_waiting` | `/flow-watch` finds checks still pending, no checks yet, or times out before completion. |
+| `ci_waiting` | `verified` | `/flow-watch` finds selected checks passed. |
 | `ci_waiting` | `review_triage` | Review comments arrive while CI is pending. |
-| `ci_waiting` | `blocked` | CI status cannot be determined and policy requires it. |
+| `ci_waiting` | `blocked` | `/flow-watch` finds skipped-only, failed, cancelled, timed-out, or unknown selected checks. |
 | `review_triage` | `fixing_review_findings` | Valid comments require fixes. |
 | `review_triage` | `verified` | Comments are stale, already fixed, or no action needed. |
 | `review_triage` | `blocked` | Comment requires human decision. |
@@ -155,6 +163,9 @@ A workflow should enter `blocked` when:
   remote base branch, reserved head branch, base=head, failed required check
   state, missing GitHub CLI/authentication, unpushed branch when pushing is
   disabled, or GitHub PR creation fails;
+- `/flow-watch` finds failed required or selected checks, cancelled checks,
+  timed-out checks, unknown GitHub status, missing GitHub CLI/authentication, a
+  missing PR, repository access errors, or other unavailable remote status;
 - review comments require human decision;
 - requested work is unsafe or out of scope.
 
@@ -211,14 +222,36 @@ non-destructive fetch attempt made before base branch resolution.
   requires passed checks before PR.
 - GitHub CLI/auth failure: `committed` -> `blocked` with a clear error.
 
+## `/flow-watch` transition details
+
+- Passing selected checks: `pr_opened` or `ci_waiting` -> `verified` with
+  bounded GitHub checks state stored in session state.
+- Pending selected checks: `pr_opened` or `ci_waiting` -> `ci_waiting`.
+- Empty check samples in watch mode: keep polling until checks appear or the
+  watch timeout is reached.
+- Timeout while selected checks are pending: remain in `ci_waiting`; the result
+  status stays `pending` and the summary says the watch timed out.
+- Failed selected checks: `pr_opened` or `ci_waiting` -> `blocked` with check
+  names, statuses, durations, and redacted details links when available.
+- Cancelled or timed-out selected check rows: `pr_opened` or `ci_waiting` ->
+  `blocked` because they do not prove remote verification.
+- Skipped-only selected checks: `pr_opened` or `ci_waiting` -> `blocked` until
+  the skipped status is explicitly accepted.
+- No checks found after timeout or single-sample mode: remain in `ci_waiting`
+  with `no_checks`; never claim `verified`.
+- Unknown GitHub status, even when mixed with pending checks: `pr_opened` or
+  `ci_waiting` -> `blocked` with a warning that Codeflow could not normalize the
+  returned state.
+- Dry-run: does not call GitHub and does not transition to `verified`.
+
 ## Retry transitions
 
 - Failed local checks: `local_checks` -> `fixing_local_findings` ->
   `local_checks`.
 - Failed self-review: `self_review` -> `fixing_local_findings` ->
   `self_review`.
-- Failed CI: `ci_waiting` -> `fixing_local_findings` -> `local_checks` ->
-  `ci_waiting`.
+- Failed CI: `ci_waiting` -> `blocked`; after fixing, run local checks, commit
+  and push the fix, then return to `ci_waiting` with `/flow-watch`.
 - Invalid payload: `ready_to_commit` or `committed` -> `blocked` -> prior safe
   phase after correction.
 

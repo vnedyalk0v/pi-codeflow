@@ -122,6 +122,25 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "requiresHumanDecision": {
+                "const": true
+              }
+            },
+            "required": [
+              "requiresHumanDecision"
+            ]
+          },
+          "then": {
+            "properties": {
+              "canResolveAfterChecks": {
+                "const": false
+              }
+            }
+          }
         }
       ],
       "additionalProperties": false

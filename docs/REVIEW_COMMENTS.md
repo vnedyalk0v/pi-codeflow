@@ -125,6 +125,9 @@ triage payload. Each triaged thread must include:
 - `canResolveAfterChecks`;
 - `requiresHumanDecision`.
 
+Any triage item with `requiresHumanDecision: true` must set
+`canResolveAfterChecks: false`, regardless of classification.
+
 | Classification | Rule | Default action |
 | --- | --- | --- |
 | `valid` | The comment identifies a real issue. It requires a code, doc, config, or test fix. | Fix, run checks, commit, verify, then reply. Do not resolve until the fix is committed and checks pass. |

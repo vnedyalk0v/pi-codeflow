@@ -161,6 +161,36 @@ describe('payload schemas', () => {
     expect(result.valid).toBe(true);
   });
 
+  it('rejects review triage requiring humans when resolution is allowed', () => {
+    const result = validateSchema('schemas/review-comment-triage.schema.json', {
+      threads: [
+        {
+          threadId: 'PRRT_kwDOS83fzc4InvalidHuman',
+          classification: 'invalid',
+          confidence: 0.7,
+          reason: 'Default policy requires a human for invalid threads.',
+          recommendedAction: 'Ask a maintainer before resolving.',
+          filesToInspect: ['src/example.ts'],
+          filesToChange: [],
+          checksToRun: [],
+          replyBody: 'Maintainer decision needed before resolution.',
+          canResolveAfterChecks: true,
+          requiresHumanDecision: true,
+        },
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          instancePath: '/threads/0/canResolveAfterChecks',
+          keyword: 'const',
+        }),
+      ]),
+    );
+  });
+
   it('rejects needs_human review triage that allows resolution', () => {
     const result = validateSchema('schemas/review-comment-triage.schema.json', {
       threads: [

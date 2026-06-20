@@ -261,8 +261,12 @@ non-destructive fetch attempt made before base branch resolution.
 
 - Read-only thread listing: `pr_opened`, `ci_waiting`, or `verified` ->
   `review_triage` when unresolved review threads exist.
-- No unresolved threads: remain at the prior safe phase, commonly `verified`
-  after passing checks; `/flow-comments` does not claim `final_reported`.
+- No unresolved threads with a complete scan: remain at the prior safe phase,
+  commonly `verified` after passing checks; `/flow-comments` does not claim
+  `final_reported`.
+- Incomplete scan because the max thread bound was reached before pagination
+  ended: move to `blocked` and require increasing `reviewComments.maxThreadsPerRun`
+  or passing `--max-threads` before claiming no selected threads.
 - Valid threads in a provided triage payload: stay in `review_triage` and make
   fixing findings plus `/flow-check` the next expected action.
 - Stale or already fixed threads: remain in `review_triage` until evidence is

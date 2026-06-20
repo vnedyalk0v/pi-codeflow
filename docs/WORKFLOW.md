@@ -177,6 +177,7 @@ Usage examples:
 /flow-comments --author coderabbitai
 /flow-comments --path src/foo.ts
 /flow-comments --include-outdated
+/flow-comments --max-threads 100
 /flow-comments --triage-payload .pi/codeflow/review-comment-triage.json
 /flow-comments --dry-run
 ```
@@ -188,7 +189,8 @@ Behavior:
 - `--include-outdated` includes outdated threads;
 - `--author` and `--path` narrow the listed threads;
 - no unresolved threads leave the lifecycle at the prior safe phase, commonly
-  `verified` after passing checks, and never claim `final_reported` by itself;
+  `verified` after passing checks, only when the GitHub scan completed; incomplete
+  scans move to `blocked` and never claim no comments or `final_reported`;
 - valid comments make the next expected action fixing findings, then
   `/flow-check`;
 - `needs_human` comments move to `blocked` with a clear human-decision request;

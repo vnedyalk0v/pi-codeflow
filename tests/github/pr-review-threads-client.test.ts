@@ -60,6 +60,27 @@ describe('listGitHubReviewThreads', () => {
     });
 
     expect(result.threads).toEqual([]);
+    expect(result.incomplete).toBe(false);
+  });
+
+  it('warns when maxThreads truncates a paginated review thread scan', async () => {
+    const raw = JSON.parse(fixture('review-threads.graphql.json'));
+    raw.data.repository.pullRequest.reviewThreads.pageInfo = {
+      hasNextPage: true,
+      endCursor: 'cursor-1',
+    };
+    raw.data.repository.pullRequest.reviewThreads.nodes = [
+      raw.data.repository.pullRequest.reviewThreads.nodes[0],
+    ];
+    const result = await listGitHubReviewThreads({
+      pr: 123,
+      maxThreads: 1,
+      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+    });
+
+    expect(result.threads).toHaveLength(1);
+    expect(result.incomplete).toBe(true);
+    expect(result.warnings.join('\n')).toContain('maxThreads=1');
   });
 
   it('paginates review threads up to maxThreads', async () => {

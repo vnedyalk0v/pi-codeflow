@@ -61,7 +61,7 @@ function sessionWithPr(number = 123) {
 
 describe('parseFlowCommentsArguments', () => {
   it('parses PR, modes, filters, triage payload, json, and dry-run flags', () => {
-    expect(parseFlowCommentsArguments('--pr 123 --all --author coderabbitai --path src/foo.ts --include-outdated --triage-payload .pi/codeflow/review-comment-triage.json --json --dry-run')).toEqual({
+    expect(parseFlowCommentsArguments('--pr 123 --all --author coderabbitai --path src/foo.ts --include-outdated --max-threads 75 --triage-payload .pi/codeflow/review-comment-triage.json --json --dry-run')).toEqual({
       dryRun: true,
       json: true,
       pr: 123,
@@ -70,6 +70,7 @@ describe('parseFlowCommentsArguments', () => {
       includeOutdated: true,
       authors: ['coderabbitai'],
       paths: ['src/foo.ts'],
+      maxThreads: 75,
       triagePayloadPath: '.pi/codeflow/review-comment-triage.json',
     });
     expect(parseFlowCommentsArguments('--unresolved')).toEqual({
@@ -167,6 +168,27 @@ describe('runFlowComments', () => {
     expect(outdatedIncluded.status).toBe('found');
   });
 
+  it('fails safely when the GitHub thread scan is truncated before selected threads are found', async () => {
+    const raw = JSON.parse(fixture('review-threads-resolved.graphql.json'));
+    raw.data.repository.pullRequest.reviewThreads.pageInfo = {
+      hasNextPage: true,
+      endCursor: 'next-thread-cursor',
+    };
+    const result = await runFlowComments({
+      pr: 123,
+      maxThreads: 1,
+      config: getDefaultCodeflowConfig(),
+      ghClient: ghClient([], [repoView(), prView(), JSON.stringify(raw)]),
+      sessionState: sessionWithPr(),
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.incomplete).toBe(true);
+    expect(result.lifecyclePhase).toBe('blocked');
+    expect(result.summary).toContain('scan incomplete');
+    expect(result.nextExpectedActions.join('\n')).toContain('do not claim there are no selected review threads');
+  });
+
   it('validates structured triage payloads and updates counts', async () => {
     const result = await runFlowComments({
       pr: 123,
@@ -195,6 +217,33 @@ describe('runFlowComments', () => {
     expect(result.triage?.classificationCounts.valid).toBe(1);
     expect(result.summary).toContain('triage summary');
     expect(result.sessionState.reviewComments?.lastRun?.classificationCounts.valid).toBe(1);
+  });
+
+  it('rejects triage payload IDs outside the selected filtered threads', async () => {
+    await expect(runFlowComments({
+      pr: 123,
+      authors: ['alice'],
+      triagePayload: {
+        threads: [
+          {
+            threadId: 'PRRT_thread_1',
+            classification: 'valid',
+            confidence: 0.9,
+            reason: 'Real issue.',
+            recommendedAction: 'Fix it.',
+            filesToInspect: ['src/foo.ts'],
+            filesToChange: ['src/foo.ts'],
+            checksToRun: ['npm test'],
+            replyBody: 'Draft after fix.',
+            canResolveAfterChecks: true,
+            requiresHumanDecision: false,
+          },
+        ],
+      },
+      config: getDefaultCodeflowConfig(),
+      ghClient: ghClient([], [repoView(), prView(), fixture('review-threads.graphql.json')]),
+      sessionState: sessionWithPr(),
+    })).rejects.toMatchObject({ code: 'invalid_triage_payload' });
   });
 
   it('moves needs_human triage to blocked with a human-decision next action', async () => {
@@ -303,6 +352,7 @@ describe('/flow-comments command registration', () => {
             lifecyclePhase: 'review_triage',
             nextExpectedActions: ['Classify review threads.'],
             sessionState: createCodeflowSessionState({ phase: 'review_triage' }),
+            incomplete: false,
             json: options.json === true,
           } satisfies FlowCommentsResult;
         },

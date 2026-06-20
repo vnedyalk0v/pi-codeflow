@@ -430,7 +430,7 @@ threads.
 | `requireChecksBeforeResolve` | Future resolution gate. `/flow-comments` does not resolve threads. |
 | `requireHumanForInvalid` | Future invalid-comment resolution gate; read-only triage still reports invalid classifications only. |
 | `requireHumanForNeedsHuman` | Ensures `needs_human` remains a human-decision blocker. |
-| `maxThreadsPerRun` | Bounds review-thread GraphQL reads, summaries, and stored state. Defaults to 50. |
+| `maxThreadsPerRun` | Bounds review-thread GraphQL reads, summaries, and stored state. Defaults to 50. If the bound is reached before GitHub pagination ends, `/flow-comments` reports an incomplete blocked scan; use a larger config value or `--max-threads`. |
 | `replyTemplate` | Template path for future review-thread replies. `/flow-comments` may validate `replyBody` drafts but never posts them. |
 
 The read-only classification set is fixed by

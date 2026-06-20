@@ -53,6 +53,7 @@ export interface FlowCommentsResult {
   lifecyclePhase: CodeflowLifecyclePhase;
   nextExpectedActions: string[];
   sessionState: CodeflowSessionState;
+  incomplete: boolean;
   json: boolean;
 }
 
@@ -65,6 +66,7 @@ export interface ParsedFlowCommentsArguments {
   includeOutdated?: boolean;
   authors?: string[];
   paths?: string[];
+  maxThreads?: number;
   triagePayloadPath?: string;
 }
 
@@ -122,8 +124,11 @@ export async function runFlowComments(
     paths: options.paths,
     maxThreads,
   });
-  const triage = await loadAndValidateTriagePayload(options, cwd, listed.threads);
-  const status: FlowCommentsResult['status'] = filteredThreads.length > 0 ? 'found' : 'none';
+  const triage = await loadAndValidateTriagePayload(options, cwd, filteredThreads);
+  const status: FlowCommentsResult['status'] = getFlowCommentsStatus({
+    filteredThreadCount: filteredThreads.length,
+    incomplete: listed.incomplete,
+  });
   const lifecyclePhase = getLifecyclePhaseForComments({
     status,
     triage,
@@ -136,12 +141,14 @@ export async function runFlowComments(
     filteredThreads,
     unresolvedOnly,
     includeOutdated,
+    scanIncomplete: listed.incomplete,
     triage,
   });
   const nextExpectedActions = getFlowCommentsNextExpectedActions({
     status,
     triage,
     filteredThreadCount: filteredThreads.length,
+    incomplete: listed.incomplete,
   });
   const nextSessionState = updateSessionStateWithReviewComments(sessionState, {
     status,
@@ -168,6 +175,7 @@ export async function runFlowComments(
     lifecyclePhase,
     nextExpectedActions,
     sessionState: nextSessionState,
+    incomplete: listed.incomplete,
     json: options.json === true,
   };
 }
@@ -180,6 +188,7 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
   let unresolvedOnly: boolean | undefined;
   let includeResolved: boolean | undefined;
   let includeOutdated: boolean | undefined;
+  let maxThreads: number | undefined;
   let triagePayloadPath: string | undefined;
   const authors: string[] = [];
   const paths: string[] = [];
@@ -249,6 +258,17 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
       continue;
     }
 
+    if (token === '--max-threads') {
+      maxThreads = parsePositiveInteger(readFlagValue(tokens, index, '--max-threads'), '--max-threads');
+      index += 1;
+      continue;
+    }
+
+    if (token.startsWith('--max-threads=')) {
+      maxThreads = parsePositiveInteger(token.slice('--max-threads='.length), '--max-threads');
+      continue;
+    }
+
     if (token === '--triage-payload') {
       triagePayloadPath = readFlagValue(tokens, index, '--triage-payload');
       index += 1;
@@ -284,6 +304,7 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
     ...(includeOutdated === undefined ? {} : { includeOutdated }),
     ...(authors.length === 0 ? {} : { authors }),
     ...(paths.length === 0 ? {} : { paths }),
+    ...(maxThreads === undefined ? {} : { maxThreads }),
     ...(triagePayloadPath === undefined ? {} : { triagePayloadPath }),
   };
 }
@@ -403,6 +424,7 @@ function makeDryRunResult(options: {
       'Do not claim review-thread triage from a dry-run plan.',
     ],
     sessionState: options.sessionState,
+    incomplete: false,
     json: options.options.json === true,
   };
 }
@@ -430,11 +452,26 @@ function resolveUnresolvedOnly(options: FlowCommentsOptions, config: CodeflowCon
   return config.reviewComments.unresolvedOnly;
 }
 
+function getFlowCommentsStatus(options: {
+  filteredThreadCount: number;
+  incomplete: boolean;
+}): 'found' | 'none' | 'failed' {
+  if (options.filteredThreadCount > 0) {
+    return 'found';
+  }
+
+  return options.incomplete ? 'failed' : 'none';
+}
+
 function getLifecyclePhaseForComments(options: {
   status: FlowCommentsResult['status'];
   triage: CodeflowReviewCommentTriageResult | null;
   sessionState: CodeflowSessionState;
 }): CodeflowLifecyclePhase {
+  if (options.status === 'failed') {
+    return 'blocked';
+  }
+
   if (options.triage?.requiresHumanDecisionCount && options.triage.requiresHumanDecisionCount > 0) {
     return 'blocked';
   }
@@ -450,7 +487,15 @@ function getFlowCommentsNextExpectedActions(options: {
   status: FlowCommentsResult['status'];
   triage: CodeflowReviewCommentTriageResult | null;
   filteredThreadCount: number;
+  incomplete: boolean;
 }): string[] {
+  if (options.status === 'failed' || options.incomplete) {
+    return [
+      'Treat the review-thread scan as incomplete; do not claim there are no selected review threads.',
+      'Increase reviewComments.maxThreadsPerRun or pass --max-threads, then rerun /flow-comments.',
+    ];
+  }
+
   if (options.triage?.requiresHumanDecisionCount && options.triage.requiresHumanDecisionCount > 0) {
     return [
       'Ask for the required human decision before changing code, replying, or resolving review threads.',

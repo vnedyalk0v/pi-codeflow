@@ -159,6 +159,7 @@ Usage examples:
 /flow-comments --author codex
 /flow-comments --path src/foo.ts
 /flow-comments --include-outdated
+/flow-comments --max-threads 100
 /flow-comments --json
 /flow-comments --triage-payload .pi/codeflow/review-comment-triage.json
 /flow-comments --dry-run
@@ -174,10 +175,13 @@ Implemented behavior:
 - resolve the target PR from `--pr`, latest `/flow-pr` state, or the current
   branch PR through GitHub CLI;
 - read review threads through `gh api graphql` with variables and pagination;
+- report an incomplete scan as blocked when the configured max thread bound is
+  reached before GitHub pagination is exhausted;
 - normalize thread IDs separately from comment IDs;
 - validate optional structured triage payloads against
   `schemas/review-comment-triage.schema.json`;
-- reject triage payload thread IDs that do not match fetched threads;
+- reject triage payload thread IDs that do not match the selected filtered
+  threads;
 - produce deterministic summaries with bounded comment body previews;
 - store bounded latest review-comments state;
 - move lifecycle to `review_triage` when unresolved threads are found;

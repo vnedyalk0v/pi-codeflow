@@ -29,6 +29,7 @@ export interface GitHubReviewThreadsListResult {
   prNumber: number;
   prUrl: string | null;
   threads: CodeflowReviewThread[];
+  incomplete: boolean;
   warnings: string[];
 }
 
@@ -70,8 +71,10 @@ export async function listGitHubReviewThreads(
   const repository = await getRepositoryMetadata(ghClient);
   const pullRequest = await getPullRequestMetadata(ghClient, options.pr);
   const rawThreads: Record<string, unknown>[] = [];
+  const warnings: string[] = [];
   let cursor: string | null = null;
   let pageNumber = 0;
+  let incomplete = false;
 
   while (rawThreads.length < maxThreads) {
     pageNumber += 1;
@@ -90,7 +93,15 @@ export async function listGitHubReviewThreads(
       rawThreads.push(await hydrateThreadComments(ghClient, node, commentsFirst));
     }
 
-    if (!page.hasNextPage || rawThreads.length >= maxThreads) {
+    if (!page.hasNextPage) {
+      break;
+    }
+
+    if (rawThreads.length >= maxThreads) {
+      incomplete = true;
+      warnings.push(
+        `Review thread scan stopped at maxThreads=${maxThreads} while GitHub still had more threads. Treat this result as incomplete; increase reviewComments.maxThreadsPerRun or pass --max-threads before claiming there are no selected review threads.`,
+      );
       break;
     }
 
@@ -112,7 +123,8 @@ export async function listGitHubReviewThreads(
     prNumber: pullRequest.number,
     prUrl: pullRequest.url,
     threads: normalizeReviewThreads(rawThreads, { prNumber: pullRequest.number }),
-    warnings: [],
+    incomplete,
+    warnings,
   };
 }
 

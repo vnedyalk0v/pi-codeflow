@@ -13,6 +13,7 @@ export interface SummarizeReviewThreadsInput {
   filteredThreads?: CodeflowReviewThread[];
   unresolvedOnly?: boolean;
   includeOutdated?: boolean;
+  scanIncomplete?: boolean;
   triage?: CodeflowReviewCommentTriageResult | null;
 }
 
@@ -24,6 +25,22 @@ export function summarizeReviewThreads(input: SummarizeReviewThreadsInput): stri
     return summarizeTriage({ ...input, filteredThreads, mode, triage: input.triage });
   }
 
+  if (filteredThreads.length === 0 && input.scanIncomplete === true) {
+    return [
+      'Codeflow review comments scan incomplete.',
+      '',
+      `PR: ${formatPr(input.prNumber)}`,
+      `Mode: ${mode}`,
+      `Threads fetched: ${input.threads.length}`,
+      'Threads checked: 0',
+      `Include outdated: ${input.includeOutdated === true ? 'yes' : 'no'}`,
+      'Scan incomplete: yes',
+      '',
+      'Next expected action:',
+      'Increase reviewComments.maxThreadsPerRun or pass --max-threads, then rerun /flow-comments before claiming there are no selected review threads.',
+    ].join('\n');
+  }
+
   if (filteredThreads.length === 0) {
     return [
       'Codeflow review comments: no unresolved review threads found.',
@@ -33,6 +50,7 @@ export function summarizeReviewThreads(input: SummarizeReviewThreadsInput): stri
       `Threads fetched: ${input.threads.length}`,
       'Threads checked: 0',
       `Include outdated: ${input.includeOutdated === true ? 'yes' : 'no'}`,
+      'Scan incomplete: no',
       '',
       'Next expected action:',
       'Continue to final reporting when verification evidence is complete.',
@@ -47,6 +65,7 @@ export function summarizeReviewThreads(input: SummarizeReviewThreadsInput): stri
     `Threads fetched: ${input.threads.length}`,
     `Threads: ${filteredThreads.length}`,
     `Include outdated: ${input.includeOutdated === true ? 'yes' : 'no'}`,
+    `Scan incomplete: ${input.scanIncomplete === true ? 'yes' : 'no'}`,
     '',
     'Threads:',
     ...filteredThreads.slice(0, MAX_THREAD_LINES).flatMap(formatThreadSummaryLines),
@@ -56,11 +75,17 @@ export function summarizeReviewThreads(input: SummarizeReviewThreadsInput): stri
     lines.push(`- ${filteredThreads.length - MAX_THREAD_LINES} additional thread(s) omitted from summary.`);
   }
 
-  lines.push(
-    '',
-    'Next expected action:',
-    'Classify each thread as valid, invalid, stale, already_fixed, or needs_human. Do not reply or resolve in this read-only command.',
-  );
+  lines.push('', 'Next expected action:');
+
+  if (input.scanIncomplete === true) {
+    lines.push(
+      'Classify the listed threads, but rerun /flow-comments with a higher max thread limit before claiming the selected thread set is complete. Do not reply or resolve in this read-only command.',
+    );
+  } else {
+    lines.push(
+      'Classify each thread as valid, invalid, stale, already_fixed, or needs_human. Do not reply or resolve in this read-only command.',
+    );
+  }
 
   return lines.join('\n');
 }
@@ -97,6 +122,7 @@ function summarizeTriage(input: Omit<SummarizeReviewThreadsInput, 'triage'> & {
     `Threads fetched: ${input.threads.length}`,
     `Threads checked: ${input.filteredThreads.length}`,
     `Threads triaged: ${triage.threadCount}`,
+    `Scan incomplete: ${input.scanIncomplete === true ? 'yes' : 'no'}`,
     '',
     'Classifications:',
     ...CODEFLOW_REVIEW_COMMENT_CLASSIFICATIONS.map(
@@ -112,13 +138,21 @@ function summarizeTriage(input: Omit<SummarizeReviewThreadsInput, 'triage'> & {
     );
   }
 
-  lines.push(
-    '',
-    'Next expected action:',
-    triage.requiresHumanDecisionCount > 0
-      ? 'Ask for the required human decision before changing code, replying, or resolving review threads.'
-      : 'For valid findings, fix the code, run `/flow-check`, commit through `/flow-commit`, and re-run `/flow-watch`. Reply/resolve behavior will be implemented in `/flow-fix-comments`.',
-  );
+  lines.push('', 'Next expected action:');
+
+  if (input.scanIncomplete === true) {
+    lines.push(
+      'Treat this triage as incomplete until /flow-comments is rerun with a higher max thread limit; do not reply or resolve in this read-only command.',
+    );
+  } else if (triage.requiresHumanDecisionCount > 0) {
+    lines.push(
+      'Ask for the required human decision before changing code, replying, or resolving review threads.',
+    );
+  } else {
+    lines.push(
+      'For valid findings, fix the code, run `/flow-check`, commit through `/flow-commit`, and re-run `/flow-watch`. Reply/resolve behavior will be implemented in `/flow-fix-comments`.',
+    );
+  }
 
   return lines.join('\n');
 }

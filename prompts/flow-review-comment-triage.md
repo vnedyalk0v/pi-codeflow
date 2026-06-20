@@ -37,7 +37,7 @@ Return JSON that matches `schemas/review-comment-triage.schema.json`:
       "filesToInspect": ["src/example.ts"],
       "filesToChange": ["src/example.ts", "tests/example.test.ts"],
       "checksToRun": ["npm test"],
-      "replyBody": "Fixed the validation path and added test coverage.",
+      "replyBody": "Draft after fix and checks: update the validation path and add test coverage.",
       "canResolveAfterChecks": true,
       "requiresHumanDecision": false
     }
@@ -45,6 +45,8 @@ Return JSON that matches `schemas/review-comment-triage.schema.json`:
 }
 ```
 
-Replies must be concise and specific drafts only. A later mutating command may
-render and post them from `templates/review-reply.md` after verification and
-policy checks.
+Replies must be concise and specific drafts only. For `valid` findings during
+read-only triage, `replyBody` must be tentative or explicitly after-fix phrasing;
+it must not claim a fix is already complete. A later mutating command may render
+and post replies from `templates/review-reply.md` after verification and policy
+checks.

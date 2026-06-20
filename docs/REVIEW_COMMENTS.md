@@ -187,6 +187,8 @@ Review-thread automation must follow these rules:
 - Always verify against the current code.
 - Always preserve human reviewer authority.
 - Replies must be concise and specific.
+- Read-only triage drafts for `valid` findings must not claim a fix is already
+  complete.
 - Resolution requires explicit classification and passing verification.
 - Auto-resolution can be disabled by config and defaults to disabled.
 

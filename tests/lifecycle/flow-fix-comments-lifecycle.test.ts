@@ -77,16 +77,26 @@ function session(classification = 'valid') {
 }
 
 describe('/flow-fix-comments lifecycle behavior', () => {
-  it('keeps dry-runs in review triage and does not claim verified', async () => {
+  it('keeps dry-runs in the current safe phase and does not claim verified from preview', async () => {
     const result = await runFlowFixComments({
       payload: payload(),
       dryRun: true,
       config: getDefaultCodeflowConfig(),
       sessionState: session(),
     });
+    const verifiedSession = session();
+    verifiedSession.lifecycle.phase = 'verified';
+    const verifiedPreview = await runFlowFixComments({
+      payload: payload(),
+      dryRun: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: verifiedSession,
+    });
 
     expect(result.lifecyclePhase).toBe('review_triage');
     expect(result.status).toBe('dry_run');
+    expect(verifiedPreview.lifecyclePhase).toBe('verified');
+    expect(verifiedPreview.sessionState.lifecycle.phase).toBe('verified');
   });
 
   it('moves successful allowed resolutions toward verified', async () => {

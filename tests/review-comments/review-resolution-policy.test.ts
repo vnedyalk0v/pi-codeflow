@@ -159,12 +159,40 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(result.blockedReasons.join('\n')).toContain('stale');
   });
 
+  it('blocks GitHub checks from a different PR before resolution', () => {
+    const result = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed'),
+      latestCommit: commit(),
+      prNumber: 123,
+      latestGitHubChecksRun: {
+        status: 'passed',
+        prNumber: 456,
+        prUrl: null,
+        requiredOnly: true,
+        watched: true,
+        startedAt: '2026-01-01T00:00:00.000Z',
+        finishedAt: '2026-01-01T00:01:00.000Z',
+        durationMs: 60_000,
+        checks: [],
+        summary: 'passed',
+      },
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.blockedReasons.join('\n')).toContain('not PR #123');
+  });
+
   it.each(['failed', 'pending', 'no_checks', 'unknown'] as const)('blocks %s GitHub checks before resolution', (status) => {
     const result = evaluateReviewResolutionPolicy({
       item: item(),
       config: config.reviewComments,
       knownThread: thread(),
       latestCheckRun: checks('passed'),
+      latestCommit: commit(),
+      prNumber: 123,
       latestGitHubChecksRun: {
         status,
         prNumber: 123,

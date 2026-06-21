@@ -182,6 +182,7 @@ export async function runFlowFixComments(
       explicitApplyResolutions,
       allowInvalidResolution: options.allowInvalidResolution,
       sessionState,
+      prNumber,
       warnings,
       blocked,
       requiresHumanDecision,
@@ -543,6 +544,7 @@ async function buildReviewFixExecutionPlans(options: {
   explicitApplyResolutions: boolean;
   allowInvalidResolution?: boolean;
   sessionState: CodeflowSessionState;
+  prNumber: number | null;
   warnings: string[];
   blocked: CodeflowReviewFixBlockedItem[];
   requiresHumanDecision: string[];
@@ -559,6 +561,7 @@ async function buildReviewFixExecutionPlans(options: {
       latestCommit: options.sessionState.commits.lastCommit,
       latestGitHubChecksRun: options.sessionState.githubChecks?.lastRun ?? null,
       allowInvalidResolution: options.allowInvalidResolution,
+      prNumber: options.prNumber,
     } satisfies EvaluateReviewFixPolicyOptions);
     options.warnings.push(...policy.warnings);
 
@@ -671,9 +674,7 @@ function getLifecyclePhaseForReviewFix(options: {
   sessionState: CodeflowSessionState;
 }): CodeflowLifecyclePhase {
   if (options.status === 'dry_run') {
-    return options.sessionState.lifecycle.phase === 'fixing_review_findings'
-      ? 'fixing_review_findings'
-      : 'review_triage';
+    return options.sessionState.lifecycle.phase;
   }
 
   if (options.status === 'failed' || options.requiresHumanDecision.length > 0) {

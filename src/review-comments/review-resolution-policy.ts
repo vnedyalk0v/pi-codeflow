@@ -13,6 +13,7 @@ export interface EvaluateReviewResolutionPolicyOptions {
   latestCommit?: CodeflowStoredCommit | null;
   latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
   allowInvalidResolution?: boolean;
+  prNumber?: number | null;
 }
 
 export interface CodeflowReviewResolutionPolicyDecision {
@@ -89,7 +90,10 @@ export function evaluateReviewResolutionPolicy(
     warnings.push(...checkDecision.warnings);
   }
 
-  const githubDecision = evaluateGitHubChecksForResolution(options.latestGitHubChecksRun);
+  const githubDecision = evaluateGitHubChecksForResolution(
+    options.latestGitHubChecksRun,
+    options.prNumber ?? null,
+  );
   blockedReasons.push(...githubDecision.blockedReasons);
   warnings.push(...githubDecision.warnings);
 
@@ -167,10 +171,21 @@ function validateCheckRunAfterCommit(
 }
 
 function evaluateGitHubChecksForResolution(
-  latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null,
+  latestGitHubChecksRun: CodeflowStoredGitHubChecksRun | null | undefined,
+  prNumber: number | null,
 ): CodeflowReviewResolutionPolicyDecision {
   if (!latestGitHubChecksRun) {
     return { allowed: true, blockedReasons: [], warnings: [] };
+  }
+
+  if (prNumber !== null && latestGitHubChecksRun.prNumber !== prNumber) {
+    return {
+      allowed: false,
+      blockedReasons: [
+        `latest GitHub checks state belongs to PR ${formatNullablePr(latestGitHubChecksRun.prNumber)}, not PR #${prNumber}`,
+      ],
+      warnings: [],
+    };
   }
 
   if (latestGitHubChecksRun.status === 'passed') {
@@ -182,6 +197,10 @@ function evaluateGitHubChecksForResolution(
     blockedReasons: [`latest GitHub checks state is ${latestGitHubChecksRun.status}, not passed`],
     warnings: [],
   };
+}
+
+function formatNullablePr(prNumber: number | null): string {
+  return prNumber === null ? 'unknown' : `#${prNumber}`;
 }
 
 function hasText(value: string | undefined): boolean {

@@ -14,6 +14,7 @@ export interface EvaluateReviewFixPolicyOptions {
   latestCommit?: CodeflowStoredCommit | null;
   latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
   allowInvalidResolution?: boolean;
+  prNumber?: number | null;
 }
 
 export function evaluateReviewFixPolicy(

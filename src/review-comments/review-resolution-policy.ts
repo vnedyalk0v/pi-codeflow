@@ -140,8 +140,16 @@ function validateCheckRunAfterCommit(
   latestCheckRun: CodeflowStoredCheckRun,
   latestCommit: CodeflowStoredCommit | null,
 ): string | null {
-  if (!item.commitSha || !latestCommit || latestCommit.sha !== item.commitSha) {
+  if (item.classification !== 'valid' || !item.commitSha) {
     return null;
+  }
+
+  if (!latestCommit) {
+    return 'Latest /flow-commit state is missing; cannot prove /flow-check verified the fix commit.';
+  }
+
+  if (latestCommit.sha !== item.commitSha) {
+    return `Latest /flow-commit state ${latestCommit.sha} does not match requested fix commit ${item.commitSha}.`;
   }
 
   const checkFinishedAt = Date.parse(latestCheckRun.finishedAt);

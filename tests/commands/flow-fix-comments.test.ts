@@ -91,6 +91,16 @@ function session(options: {
     durationMs: 60_000,
     results: [],
   };
+  state.commits.lastCommit = {
+    sha: 'abc1234',
+    branch: 'feat/comments',
+    title: 'fix: review comments',
+    type: 'fix',
+    scope: null,
+    summary: 'Fix review comments.',
+    refs: ['#14'],
+    committedAt: '2026-01-01T00:00:30.000Z',
+  };
   return state;
 }
 
@@ -169,6 +179,30 @@ describe('runFlowFixComments', () => {
     expect(postedBody).toContain('leaving this thread unresolved');
   });
 
+  it('honors explicit reply-only apply when auto-resolve is enabled', async () => {
+    const calls: string[] = [];
+    const config = getDefaultCodeflowConfig();
+    config.reviewComments.autoResolve = true;
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyReplies: true,
+      config,
+      sessionState: session(),
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: 'https://example.test', body: options.body };
+      },
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('resolve should not be called');
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('applied');
+    expect(result.resolutions).toEqual([]);
+  });
+
   it('records reply render failures before mutation state is lost', async () => {
     const calls: string[] = [];
     const state = session();
@@ -215,6 +249,7 @@ describe('runFlowFixComments', () => {
     const calls: string[] = [];
     const badTemplateDir = await mkdtemp(path.join(os.tmpdir(), 'flow-fix-comments-template-dir-'));
     const config = getDefaultCodeflowConfig();
+    config.reviewComments.autoReply = true;
     config.reviewComments.replyTemplate = badTemplateDir;
     const result = await runFlowFixComments({
       payload: payload(),

@@ -104,6 +104,36 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(failedState.allowed).toBe(false);
   });
 
+  it('blocks resolution when the latest checks cannot be tied to the fix commit', () => {
+    const missingCommit = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:03:00.000Z'),
+      latestCommit: null,
+    });
+    const mismatchedCommit = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:03:00.000Z'),
+      latestCommit: commit({ sha: 'def5678' }),
+    });
+    const staleWithoutCommit = evaluateReviewResolutionPolicy({
+      item: item({ classification: 'stale', commitSha: undefined }),
+      config: config.reviewComments,
+      knownThread: thread({ classification: 'stale', isOutdated: true }),
+      latestCheckRun: checks('passed', '2026-01-01T00:03:00.000Z'),
+      latestCommit: null,
+    });
+
+    expect(missingCommit.allowed).toBe(false);
+    expect(missingCommit.blockedReasons.join('\n')).toContain('/flow-commit state is missing');
+    expect(mismatchedCommit.allowed).toBe(false);
+    expect(mismatchedCommit.blockedReasons.join('\n')).toContain('does not match requested fix commit');
+    expect(staleWithoutCommit.allowed).toBe(true);
+  });
+
   it('blocks resolution when the latest checks predate the fix commit', () => {
     const result = evaluateReviewResolutionPolicy({
       item: item(),

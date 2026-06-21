@@ -63,6 +63,16 @@ function session(classification = 'valid') {
     durationMs: 60_000,
     results: [],
   };
+  state.commits.lastCommit = {
+    sha: 'abc1234',
+    branch: 'feat/comments',
+    title: 'fix: comments',
+    type: 'fix',
+    scope: null,
+    summary: 'Fix comments.',
+    refs: ['#14'],
+    committedAt: '2026-01-01T00:00:30.000Z',
+  };
   return state;
 }
 

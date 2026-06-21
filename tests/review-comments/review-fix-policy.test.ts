@@ -7,6 +7,7 @@ import {
   type CodeflowReviewFixItem,
 } from '../../src/index';
 import type { CodeflowStoredCheckRun } from '../../src/state/check-state';
+import type { CodeflowStoredCommit } from '../../src/state/commit-state';
 import type { CodeflowStoredReviewCommentThread } from '../../src/state/review-comments-state';
 
 function item(overrides: Partial<CodeflowReviewFixItem> = {}): CodeflowReviewFixItem {
@@ -48,6 +49,19 @@ function checks(status: CodeflowStoredCheckRun['status']): CodeflowStoredCheckRu
   };
 }
 
+function commit(): CodeflowStoredCommit {
+  return {
+    sha: 'abc1234',
+    branch: 'feat/comments',
+    title: 'fix: comments',
+    type: 'fix',
+    scope: null,
+    summary: 'Fix comments.',
+    refs: ['#14'],
+    committedAt: '2026-01-01T00:00:30.000Z',
+  };
+}
+
 const config = getDefaultCodeflowConfig();
 
 describe('evaluateReviewFixPolicy', () => {
@@ -57,6 +71,7 @@ describe('evaluateReviewFixPolicy', () => {
       config: config.reviewComments,
       knownThread: thread(),
       latestCheckRun: checks('passed'),
+      latestCommit: commit(),
     });
 
     expect(result.canReply).toBe(true);

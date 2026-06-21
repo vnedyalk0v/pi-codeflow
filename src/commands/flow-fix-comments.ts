@@ -101,10 +101,17 @@ export async function runFlowFixComments(
     warnings.push('No project Codeflow config was found; package defaults are in use.');
   }
 
-  const explicitApplyReplies = options.apply === true || options.applyReplies === true;
-  const explicitApplyResolutions = options.apply === true || options.applyResolutions === true;
-  const applyReplies = explicitApplyReplies || (!options.dryRun && config.reviewComments.autoReply);
-  const applyResolutions = explicitApplyResolutions || (!options.dryRun && config.reviewComments.autoResolve);
+  const explicitApply = options.apply === true;
+  const explicitApplyReplies = explicitApply || options.applyReplies === true;
+  const explicitApplyResolutions = explicitApply || options.applyResolutions === true;
+  const explicitReplyOnly = options.applyReplies === true && !explicitApply && options.applyResolutions !== true;
+  const explicitResolutionOnly = options.applyResolutions === true && !explicitApply && options.applyReplies !== true;
+  const applyReplies = explicitApplyReplies || (
+    !options.dryRun && config.reviewComments.autoReply && !explicitResolutionOnly
+  );
+  const applyResolutions = explicitApplyResolutions || (
+    !options.dryRun && config.reviewComments.autoResolve && !explicitReplyOnly
+  );
   const dryRun = options.dryRun === true || (!applyReplies && !applyResolutions);
   const prNumber = resolvePrNumber(options, sessionState);
 

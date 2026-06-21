@@ -18,3 +18,6 @@ Implemented command prompts:
 - `flow-start.md`
 - `flow-check.md`
 - `flow-commit-payload.md`
+- `flow-pr-payload.md`
+- `flow-review-comment-triage.md`
+- `flow-fix-comments.md`

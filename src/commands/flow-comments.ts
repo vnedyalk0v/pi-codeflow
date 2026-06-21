@@ -516,7 +516,7 @@ function getFlowCommentsNextExpectedActions(options: {
     return [
       'Fix valid review findings with focused changes only.',
       'Run /flow-check, commit through /flow-commit, push through the PR flow, then re-run /flow-watch.',
-      'Do not reply or resolve review threads until /flow-fix-comments is implemented.',
+      'Use /flow-fix-comments with a structured review-fix payload after verification is ready.'
     ];
   }
 

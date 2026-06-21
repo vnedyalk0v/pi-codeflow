@@ -277,16 +277,17 @@ validates optional structured triage payloads, produces a triage report, and
 stores bounded triage state without replies, resolution, code changes, commits,
 pushes, or merge automation.
 
-Future `/flow-fix-comments` may use that triage state to fix valid findings,
-rerun `/flow-check`, commit through `/flow-commit`, watch remote checks with
-`/flow-watch`, and only then reply or resolve safe classifications when policy
-allows it. Review thread resolution must use GitHub review thread IDs.
+`/flow-fix-comments` uses that triage state after valid findings are fixed,
+`/flow-check` passes, commits are created through `/flow-commit` when needed,
+and remote checks are watched with `/flow-watch`. It then replies or resolves
+only safe classifications when policy allows it and explicit apply flags are
+used. Review thread resolution must use GitHub review thread IDs.
 
 ## Out of scope
 
 `/flow-pr` does not implement:
 
-- review comment automation;
+- automatic review-fix editing;
 - merge automation;
 - auto-approval;
 - auto-resolving reviewer comments;

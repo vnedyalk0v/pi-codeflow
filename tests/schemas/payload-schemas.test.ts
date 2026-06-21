@@ -220,4 +220,55 @@ describe('payload schemas', () => {
       ]),
     );
   });
+
+  it('accepts review comment fix payloads', () => {
+    const result = validateSchema('schemas/review-comment-fix.schema.json', {
+      prNumber: 123,
+      items: [
+        {
+          threadId: 'PRRT_kwDOS83fzc4Example',
+          classification: 'valid',
+          fixSummary: 'Fixed validation and added coverage.',
+          verification: ['npm test passed'],
+          checksRun: ['npm test'],
+          commitSha: 'abc1234',
+          resolveRequested: true,
+        },
+      ],
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects malformed review comment fix payloads', () => {
+    const result = validateSchema('schemas/review-comment-fix.schema.json', {
+      items: [
+        {
+          classification: 'invalid-kind',
+          verification: ['npm test'],
+          checksRun: ['npm test'],
+          resolveRequested: true,
+          extra: 'not allowed',
+        },
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          instancePath: '/items/0',
+          keyword: 'required',
+        }),
+        expect.objectContaining({
+          instancePath: '/items/0/classification',
+          keyword: 'enum',
+        }),
+        expect.objectContaining({
+          instancePath: '/items/0',
+          keyword: 'additionalProperties',
+        }),
+      ]),
+    );
+  });
 });

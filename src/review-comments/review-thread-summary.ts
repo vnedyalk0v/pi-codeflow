@@ -150,7 +150,7 @@ function summarizeTriage(input: Omit<SummarizeReviewThreadsInput, 'triage'> & {
     );
   } else {
     lines.push(
-      'For valid findings, fix the code, run `/flow-check`, commit through `/flow-commit`, and re-run `/flow-watch`. Reply/resolve behavior will be implemented in `/flow-fix-comments`.',
+      'For valid findings, fix the code, run `/flow-check`, commit through `/flow-commit`, re-run `/flow-watch`, then use `/flow-fix-comments` with a structured review-fix payload.'
     );
   }
 

@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vnedyalk0v/pi-codeflow/schemas/review-comment-fix.schema.json",
+  "title": "Codeflow review thread fix payload",
+  "description": "Structured evidence for replying to or resolving GitHub pull request review threads after triage and verification.",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "properties": {
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/fixItem"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "classification": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "invalid",
+        "stale",
+        "already_fixed",
+        "needs_human"
+      ]
+    },
+    "evidenceList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000
+      }
+    },
+    "fixItem": {
+      "type": "object",
+      "required": [
+        "threadId",
+        "classification",
+        "verification",
+        "checksRun",
+        "resolveRequested"
+      ],
+      "properties": {
+        "threadId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "GitHub pull request review thread node ID, not an issue comment ID."
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "fixSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "verification": {
+          "$ref": "#/$defs/evidenceList"
+        },
+        "checksRun": {
+          "$ref": "#/$defs/evidenceList"
+        },
+        "commitSha": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 40,
+          "pattern": "^[0-9a-fA-F]{7,40}$"
+        },
+        "replyBody": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "resolveRequested": {
+          "type": "boolean"
+        },
+        "humanDecision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

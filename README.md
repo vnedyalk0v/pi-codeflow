@@ -8,8 +8,9 @@ Pi package for consistent AI coding workflows.
 > config loading, validation, guidance injection, lifecycle state helpers,
 > `/flow-start` semantic branch preparation, `/flow-check` local check running,
 > `/flow-commit` generated commit messages, `/flow-pr` generated PR
-> title/body creation, `/flow-watch` GitHub PR checks watching, and read-only
-> `/flow-comments` review-thread triage, but it does not enforce the full
+> title/body creation, `/flow-watch` GitHub PR checks watching, read-only
+> `/flow-comments` review-thread triage, and safe `/flow-fix-comments`
+> review-thread reply/resolution gates, but it does not enforce the full
 > workflow in real projects.
 
 pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
@@ -35,8 +36,9 @@ lifecycle:
   final reports.
 - Load project-specific workflow configuration from `.pi/codeflow.json`.
 - Run configured local checks and summarize results.
-- Help agents triage GitHub review comments read-only; future mutating commands
-  should only resolve comments that were addressed or proven stale/already fixed.
+- Help agents triage GitHub review comments read-only and apply safe
+  `/flow-fix-comments` replies/resolution only after classification,
+  verification, and policy gates pass.
 - Keep safety rules visible, auditable, and conservative by default.
 
 ## What this package will not do
@@ -61,7 +63,7 @@ lifecycle:
 | `/flow-pr` | Render and open a templated pull request. |
 | `/flow-watch` | Watch GitHub checks. |
 | `/flow-comments` | Read-only review-thread listing, filtering, and triage validation. |
-| `/flow-fix-comments` | Future verified fixes, replies, and safe resolution for triaged threads. |
+| `/flow-fix-comments` | Verified reply and policy-gated resolution for triaged review threads. |
 | `/flow-report` | Produce a final delivery report. |
 
 ## Intended package structure
@@ -106,9 +108,11 @@ in-memory lifecycle state helpers, `/flow-start` semantic branch preparation,
 messages from structured payloads, `/flow-pr` generated PR title/body creation
 through GitHub CLI, `/flow-watch` GitHub PR checks watching, and read-only
 `/flow-comments` review-thread listing, filtering, triage validation, summaries,
-and bounded session state.
+bounded session state, and `/flow-fix-comments` structured review-fix payload
+validation, deterministic reply rendering, GitHub GraphQL reply/resolution
+mutations behind explicit apply flags, safety policy, and bounded outcome state.
 
-It still does not implement self-review automation, `/flow-fix-comments`,
-review-thread replies, review-thread resolution, automatic code fixes from
-review comments, merge automation, auto-approval, or persistent lifecycle storage
-beyond the minimal in-command session-state result.
+It still does not implement self-review automation, automatic code fixes from
+review comments, merge automation, auto-approval, branch deletion, workflow
+reruns, or persistent lifecycle storage beyond the minimal in-command
+session-state result.

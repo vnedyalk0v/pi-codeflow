@@ -6,8 +6,9 @@ two layers, validates the resolved config, uses the resolved config to build
 before-agent Codeflow guidance, applies branch policy in `/flow-start`, runs
 configured local checks in `/flow-check`, renders staged commits through
 `/flow-commit`, renders/opens pull requests through `/flow-pr`, watches GitHub
-PR checks through `/flow-watch`, and reads review threads through read-only
-`/flow-comments`.
+PR checks through `/flow-watch`, reads review threads through read-only
+`/flow-comments`, and safely replies/resolves review threads through
+`/flow-fix-comments` after explicit review-fix evidence and policy gates.
 
 ## Config resolution order
 
@@ -33,8 +34,10 @@ feature branch when configured, and opens or updates the GitHub PR. `/flow-watch
 reads resolved watcher defaults and performs read-only GitHub check status
 polling or sampling. `/flow-comments` reads `reviewComments` defaults for
 unresolved-only mode, outdated-thread inclusion, author filters, max threads,
-and triage classifications. These commands do not resolve review comments,
-approve, or merge.
+and triage classifications. `/flow-fix-comments` reads mutation-related
+`reviewComments` defaults for reply templates, explicit apply behavior,
+classification allow-lists, human-decision blockers, and checks-before-resolve.
+These commands do not approve or merge.
 
 ## Default config
 
@@ -47,10 +50,11 @@ The default config lives in `config/default.codeflow.json`. It is conservative:
 - emergency flow requires a final report;
 - GitHub checks watching defaults to required checks only, a 10 second polling
   interval, a 900 second timeout, and fail-fast disabled;
-- review comments use GitHub GraphQL as the read-only `/flow-comments`
-  provider;
-- review-comment auto-reply and auto-resolution both default to disabled and are
-  not implemented by `/flow-comments`;
+- review comments use GitHub GraphQL as the `/flow-comments` and
+  `/flow-fix-comments` provider;
+- review-comment auto-reply and auto-resolution both default to disabled;
+- `/flow-fix-comments` mutates only with explicit apply flags unless a project
+  deliberately enables auto-reply or auto-resolution;
 - review-thread resolution requires checks before resolve by default.
 
 ## Project config path
@@ -194,7 +198,7 @@ Pull request base outside allowed base branches:
 | `commits` | Commit template and structured payload rules. |
 | `pullRequest` | PR title/body templates, base branch, draft, checks, GitHub checks watcher defaults, push, and payload policy. |
 | `checks` | Ordered local checks. |
-| `reviewComments` | Read-only review-thread provider/filter policy plus future reply/resolution policy. |
+| `reviewComments` | Review-thread provider/filter policy plus safe reply/resolution policy. |
 | `emergency` | Emergency override and hotfix policy. |
 | `templates` | Named template paths. |
 | `guidance` | Proactive guidance and structured-output behavior. |
@@ -412,26 +416,28 @@ Emergency config controls:
 
 ## Review comment triage configuration
 
-`reviewComments` config now drives the read-only `/flow-comments` triage
-foundation. It still does not make the package reply to or resolve GitHub
-threads.
+`reviewComments` config drives read-only `/flow-comments` triage and safe
+`/flow-fix-comments` reply/resolution behavior. Defaults are conservative:
+auto-reply and auto-resolution are disabled, checks are required before
+resolution, invalid threads require human review by default, and `needs_human`
+threads are never resolved.
 
 | Field | Purpose |
 | --- | --- |
-| `enabled` | Enables read-only `/flow-comments`. When false, review-thread triage is blocked. |
-| `provider` | Read-only provider. The only supported value is `github-graphql`. |
-| `includeAuthors` | Optional allow-list of GitHub logins to include by default. Empty means no allow-list. |
+| `enabled` | Enables `/flow-comments` and `/flow-fix-comments`. When false, review-thread triage and mutation are blocked. |
+| `provider` | Review-thread provider. The only supported value is `github-graphql`. |
+| `includeAuthors` | Optional allow-list of GitHub logins to include by default in `/flow-comments`. Empty means no allow-list. |
 | `excludeAuthors` | Optional deny-list of GitHub logins to exclude by default. |
 | `unresolvedOnly` | Lists unresolved review threads by default. |
 | `includeOutdated` | Includes outdated threads when true. Defaults to false. |
-| `autoReply` | Reserved for future mutating commands. `/flow-comments` ignores it and never replies. |
-| `autoResolve` | Reserved for future mutating commands. `/flow-comments` ignores it and never resolves. |
-| `autoResolveClassifications` | Future auto-resolution allow-list when `autoResolve` exists; not used by read-only `/flow-comments`. |
-| `requireChecksBeforeResolve` | Future resolution gate. `/flow-comments` does not resolve threads. |
-| `requireHumanForInvalid` | Future invalid-comment resolution gate; read-only triage still reports invalid classifications only. |
-| `requireHumanForNeedsHuman` | Ensures `needs_human` remains a human-decision blocker. |
+| `autoReply` | Allows `/flow-fix-comments` to post policy-allowed replies without `--apply-replies`/`--apply`. Defaults to false. |
+| `autoResolve` | Allows `/flow-fix-comments` to resolve policy-allowed threads without `--apply-resolutions`/`--apply`. Defaults to false. |
+| `autoResolveClassifications` | Classification allow-list for non-valid automatic resolution. Defaults to `stale` and `already_fixed`; `valid` still requires explicit evidence, commit SHA, and checks. |
+| `requireChecksBeforeResolve` | Requires passed latest `/flow-check` evidence or acceptable explicit verification evidence before resolution. Defaults to true. |
+| `requireHumanForInvalid` | Blocks `invalid` thread resolution by default unless explicit policy/user override allows it. |
+| `requireHumanForNeedsHuman` | Ensures `needs_human` remains a human-decision blocker and is never resolved. |
 | `maxThreadsPerRun` | Bounds review-thread GraphQL reads, summaries, and stored state. Defaults to 50. If the bound is reached before GitHub pagination ends, `/flow-comments` reports an incomplete blocked scan; use a larger config value or `--max-threads`. |
-| `replyTemplate` | Template path for future review-thread replies. `/flow-comments` may validate `replyBody` drafts but never posts them. |
+| `replyTemplate` | Template path used by `/flow-fix-comments` to render deterministic review-thread replies. |
 
 The read-only classification set is fixed by
 `schemas/review-comment-triage.schema.json`: `valid`, `invalid`, `stale`,
@@ -447,7 +453,9 @@ Review comments use these classifications in triage payloads:
 
 Resolution policy must be conservative. Valid comments are resolved only after a
 fix is committed and checks pass. Invalid comments normally require human review.
-`needs_human` comments are never auto-resolved.
+`needs_human` comments are never auto-resolved. Mass resolution is not supported;
+every reply or resolution requires an explicit `threadId` in the review-fix
+payload.
 
 ## Complete example `.pi/codeflow.json`
 

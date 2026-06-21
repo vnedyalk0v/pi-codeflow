@@ -2,9 +2,11 @@
 
 Codeflow review-comment automation must be conservative because GitHub review
 threads can represent reviewer authority, security concerns, and merge blockers.
-Issue #14 is a design-hardening step only. It defines the model and policy for
-future commands; it does not implement `/flow-comments`, `/flow-fix-comments`,
-thread replies, thread resolution, automatic fixes, or merge automation.
+The first #14 implementation slice now provides the read-only `/flow-comments`
+foundation. It lists, normalizes, filters, summarizes, validates structured
+triage payloads, and stores bounded session state. It does not implement
+`/flow-fix-comments`, thread replies, thread resolution, automatic fixes,
+GitHub mutations, or merge automation.
 
 ## GitHub comment concepts
 
@@ -32,9 +34,9 @@ GraphQL represents thread-level state such as `isResolved` and `isOutdated`.
 The initial implementation should call `gh api graphql` instead of adding
 Octokit or another runtime dependency.
 
-### Intended read operation
+### Implemented read operation
 
-Future read-only triage should query pull request review threads and include:
+Read-only `/flow-comments` queries pull request review threads and includes:
 
 - thread `id` as `threadId`;
 - `isResolved`;
@@ -47,16 +49,16 @@ Future read-only triage should query pull request review threads and include:
 - `createdAt` and `updatedAt`;
 - URL or permalink when available.
 
-### Intended reply operation
+### Future reply operation
 
 A future mutating command may reply to an addressed thread with the GraphQL
-mutation `addPullRequestReviewThreadReply`. This design PR does not implement
+mutation `addPullRequestReviewThreadReply`. `/flow-comments` does not implement
 that mutation.
 
-### Intended resolve operation
+### Future resolve operation
 
 A future mutating command may resolve a safe thread with the GraphQL mutation
-`resolveReviewThread`. This design PR does not implement that mutation.
+`resolveReviewThread`. `/flow-comments` does not implement that mutation.
 
 ## Normalized data model
 
@@ -96,6 +98,7 @@ interface CodeflowReviewComment {
   id: string;
   databaseId: number | null;
   author: string | null;
+  authorAssociation: string | null;
   body: string;
   path: string | null;
   line: number | null;
@@ -139,28 +142,59 @@ Any triage item with `requiresHumanDecision: true` must set
 Bot authors such as CodeRabbit or Codex still use the same classifications.
 The author type changes review priority and confidence, not truth value.
 
-## Future command split
+## Command split
 
 ### `/flow-comments`
 
-`/flow-comments` should be read-only.
+`/flow-comments` is implemented as the read-only triage foundation.
 
-Planned behavior:
+Usage examples:
 
-- list unresolved inline review threads;
-- optionally include all threads;
-- optionally filter by author;
-- optionally filter by path;
-- classify threads when the payload and model support it;
-- produce a triage report;
-- store bounded triage state for later commands;
+```text
+/flow-comments
+/flow-comments --pr 123
+/flow-comments --all
+/flow-comments --unresolved
+/flow-comments --author coderabbitai
+/flow-comments --author codex
+/flow-comments --path src/foo.ts
+/flow-comments --include-outdated
+/flow-comments --max-threads 100
+/flow-comments --json
+/flow-comments --triage-payload .pi/codeflow/review-comment-triage.json
+/flow-comments --dry-run
+```
+
+Implemented behavior:
+
+- list unresolved inline review threads by default;
+- optionally include resolved threads with `--all`;
+- optionally include outdated threads with `--include-outdated`;
+- filter by one or more authors with `--author`;
+- filter by one or more paths with `--path`;
+- resolve the target PR from `--pr`, latest `/flow-pr` state, or the current
+  branch PR through GitHub CLI;
+- read review threads through `gh api graphql` with variables and pagination;
+- report an incomplete scan as blocked when the configured max thread bound is
+  reached before GitHub pagination is exhausted;
+- normalize thread IDs separately from comment IDs;
+- validate optional structured triage payloads against
+  `schemas/review-comment-triage.schema.json`;
+- reject duplicate triage thread IDs, IDs that do not match the selected
+  filtered threads, and payloads that omit selected threads;
+- produce deterministic summaries with bounded comment body previews;
+- store bounded latest review-comments state;
+- move lifecycle to `review_triage` when unresolved threads are found;
+- move to `blocked` when provided triage requires a human decision;
 - make no replies;
 - resolve no threads;
-- make no code changes.
+- make no code changes;
+- call no GitHub mutations.
 
 ### `/flow-fix-comments`
 
-`/flow-fix-comments` should be mutating and should require prior triage state.
+`/flow-fix-comments` remains future work and should be mutating only after prior
+triage state exists.
 
 Planned behavior:
 
@@ -194,10 +228,11 @@ Review-thread automation must follow these rules:
 
 ## Lifecycle expectations
 
-After a PR exists and GitHub checks are available, `/flow-comments` may move the
-lifecycle to `review_triage`. If no unresolved threads exist, the flow may stay
-`verified` or proceed toward `final_reported` when prior verification evidence is
-complete.
+After a PR exists and GitHub checks are available, `/flow-comments` can move the
+lifecycle to `review_triage` when unresolved threads exist. If no unresolved
+threads exist, the flow may stay `verified` when prior verification evidence is
+complete; the command does not falsely claim `final_reported`. Dry-run mode does
+not update state or transition lifecycle.
 
 When valid comments exist, the next phase is `fixing_review_findings`. After
 fixes are applied, the agent returns to `/flow-check`, then `/flow-commit`, then

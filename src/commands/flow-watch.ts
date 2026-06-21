@@ -296,7 +296,7 @@ function getFlowWatchDryRunNextExpectedActions(): string[] {
 function getFlowWatchNextExpectedActions(result: CodeflowPrChecksResult): string[] {
   if (result.status === 'passed') {
     return [
-      'Review PR comments, then continue with the review-comment loop when available.',
+      'Run read-only /flow-comments to inspect review threads before final reporting.',
       'Do not merge, approve, resolve comments, or delete branches from /flow-watch.',
     ];
   }

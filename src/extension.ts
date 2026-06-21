@@ -34,10 +34,17 @@ import {
   runFlowWatch,
   type FlowWatchResult,
 } from './commands/flow-watch';
+import {
+  formatFlowCommentsResult,
+  parseFlowCommentsArguments,
+  runFlowComments,
+  type FlowCommentsResult,
+} from './commands/flow-comments';
 import { CodeflowCheckError } from './checks/check-errors';
 import { CodeflowCommitError } from './commits/commit-errors';
 import { CodeflowPrError } from './pull-requests/pr-errors';
 import { CodeflowPrChecksError } from './github/github-errors';
+import { CodeflowReviewCommentsError } from './review-comments/review-comments-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -78,6 +85,7 @@ export interface RegisterCodeflowExtensionOptions {
   runFlowCommit?: typeof runFlowCommit;
   runFlowPr?: typeof runFlowPr;
   runFlowWatch?: typeof runFlowWatch;
+  runFlowComments?: typeof runFlowComments;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -102,7 +110,7 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr' | 'flow-watch',
+    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr' | 'flow-watch' | 'flow-comments',
     options: {
       description: string;
       handler: (
@@ -114,6 +122,7 @@ interface CodeflowExtensionApi {
         | FlowCommitResult
         | FlowPrResult
         | FlowWatchResult
+        | FlowCommentsResult
       >;
     },
   ): void;
@@ -180,6 +189,12 @@ export function registerCodeflowExtension(
     description: 'Watch GitHub pull request checks and record results',
     handler: async (args, context) =>
       handleFlowWatchCommand(args, context, options.runFlowWatch ?? runFlowWatch, sessionStore),
+  });
+
+  pi.registerCommand?.('flow-comments', {
+    description: 'List and triage GitHub pull request review threads read-only',
+    handler: async (args, context) =>
+      handleFlowCommentsCommand(args, context, options.runFlowComments ?? runFlowComments, sessionStore),
   });
 }
 
@@ -351,6 +366,34 @@ async function handleFlowWatchCommand(
   }
 }
 
+async function handleFlowCommentsCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  commentsFlow: typeof runFlowComments,
+  sessionStore: CodeflowExtensionSessionStore,
+): Promise<FlowCommentsResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowCommentsArguments(args ?? '');
+    const result = await commentsFlow({
+      cwd: context.cwd,
+      ...parsed,
+      sessionState: sessionStore.get(context.cwd),
+    });
+
+    sessionStore.set(context.cwd, result.sessionState);
+    context.ui.notify(
+      formatFlowCommentsResult(result),
+      result.lifecyclePhase === 'blocked' ? 'warning' : 'info',
+    );
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowCommentsErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
 function createInMemorySessionStore(): CodeflowExtensionSessionStore {
   const sessions = new Map<string, CodeflowSessionState>();
 
@@ -422,6 +465,18 @@ function getFlowWatchErrorMessage(error: unknown): string {
   }
 
   return '/flow-watch failed.';
+}
+
+function getFlowCommentsErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowReviewCommentsError) {
+    return `/flow-comments failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-comments failed: ${error.message}`;
+  }
+
+  return '/flow-comments failed.';
 }
 
 async function loadGuidance(

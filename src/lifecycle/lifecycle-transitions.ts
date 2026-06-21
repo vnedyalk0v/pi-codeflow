@@ -65,7 +65,7 @@ export function getNextExpectedActions(
     case 'pr_opened':
       return [
         'Track CI and reviewer state before final reporting.',
-        'Use /flow-watch and /flow-comments when available; if missing, explain that automation is not implemented yet.',
+        'Use /flow-watch and read-only /flow-comments before final reporting when a PR has CI or review activity.',
       ];
     case 'ci_waiting':
       return [

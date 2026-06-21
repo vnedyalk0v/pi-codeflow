@@ -155,6 +155,30 @@ describe('runFlowFixComments', () => {
     expect(result.sessionState.reviewFix?.lastRun?.status).toBe('dry_run');
   });
 
+  it('blocks when /flow-comments state belongs to a different PR', async () => {
+    const calls: string[] = [];
+    const state = session();
+    state.reviewComments!.lastRun!.prNumber = 456;
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      replyToThread: async () => {
+        calls.push('reply');
+        throw new Error('reply should not be called');
+      },
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('resolve should not be called');
+      },
+    });
+
+    expect(calls).toEqual([]);
+    expect(result.status).toBe('blocked');
+    expect(result.blocked[0]?.reason).toContain('belongs to PR #456, not PR #123');
+  });
+
   it('apply replies posts only allowed replies and stays in review triage', async () => {
     const calls: string[] = [];
     let postedBody = '';

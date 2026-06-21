@@ -154,7 +154,7 @@ function validateCheckRunAfterCommit(
     return 'Latest /flow-commit state is missing; cannot prove /flow-check verified the fix commit.';
   }
 
-  if (latestCommit.sha !== item.commitSha) {
+  if (!shasMatch(latestCommit.sha, item.commitSha)) {
     return `Latest /flow-commit state ${latestCommit.sha} does not match requested fix commit ${item.commitSha}.`;
   }
 
@@ -226,11 +226,21 @@ function evaluateGitHubChecksFreshness(options: {
     return { allowed: true, blockedReasons: [], warnings: [] };
   }
 
-  if (latestGitHubChecksRun.headSha && shasMatch(latestGitHubChecksRun.headSha, item.commitSha)) {
-    return { allowed: true, blockedReasons: [], warnings: [] };
+  if (latestGitHubChecksRun.headSha) {
+    if (shasMatch(latestGitHubChecksRun.headSha, item.commitSha)) {
+      return { allowed: true, blockedReasons: [], warnings: [] };
+    }
+
+    return {
+      allowed: false,
+      blockedReasons: [
+        `latest GitHub checks head ${latestGitHubChecksRun.headSha} does not match requested fix commit ${item.commitSha}`,
+      ],
+      warnings: [],
+    };
   }
 
-  if (!latestCommit || latestCommit.sha !== item.commitSha) {
+  if (!latestCommit || !shasMatch(latestCommit.sha, item.commitSha)) {
     return { allowed: true, blockedReasons: [], warnings: [] };
   }
 

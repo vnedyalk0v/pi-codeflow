@@ -161,14 +161,21 @@ export async function runFlowFixComments(
   );
   let mutationFailed = false;
 
+  const reviewCommentsPrMismatch = !options.detached && prNumber !== null && latestReviewComments !== null &&
+    latestReviewComments.prNumber !== null && latestReviewComments.prNumber !== prNumber;
+
   if (!options.detached && latestReviewComments?.status === 'failed') {
-    for (const item of validation.payload.items) {
-      blocked.push({
-        threadId: item.threadId,
-        classification: item.classification,
-        reason: 'latest /flow-comments state is incomplete or failed; rerun /flow-comments before mutating review threads',
-      });
-    }
+    blockAllReviewFixItems(
+      validation.payload.items,
+      blocked,
+      'latest /flow-comments state is incomplete or failed; rerun /flow-comments before mutating review threads',
+    );
+  } else if (reviewCommentsPrMismatch) {
+    blockAllReviewFixItems(
+      validation.payload.items,
+      blocked,
+      `latest /flow-comments state belongs to PR #${latestReviewComments?.prNumber}, not PR #${prNumber}; rerun /flow-comments for the target PR before mutating review threads`,
+    );
   } else {
     const plans = await buildReviewFixExecutionPlans({
       items: validation.payload.items,
@@ -513,6 +520,20 @@ function blockedResult(options: {
     nextExpectedActions: ['Enable reviewComments.enabled before using /flow-fix-comments, or handle review threads manually.'],
     sessionState,
   };
+}
+
+function blockAllReviewFixItems(
+  items: CodeflowReviewFixItem[],
+  blocked: CodeflowReviewFixBlockedItem[],
+  reason: string,
+): void {
+  for (const item of items) {
+    blocked.push({
+      threadId: item.threadId,
+      classification: item.classification,
+      reason,
+    });
+  }
 }
 
 function resolvePrNumber(

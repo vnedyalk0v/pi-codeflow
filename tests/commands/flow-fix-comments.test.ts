@@ -145,7 +145,7 @@ describe('runFlowFixComments', () => {
     expect(result.sessionState.reviewFix?.lastRun?.status).toBe('dry_run');
   });
 
-  it('apply replies posts only allowed replies', async () => {
+  it('apply replies posts only allowed replies and stays in review triage', async () => {
     const calls: string[] = [];
     const result = await runFlowFixComments({
       payload: payload({ resolveRequested: false }),
@@ -160,16 +160,20 @@ describe('runFlowFixComments', () => {
 
     expect(calls).toEqual(['reply:PRRT_thread_1']);
     expect(result.status).toBe('applied');
+    expect(result.lifecyclePhase).toBe('review_triage');
     expect(result.replies[0]?.status).toBe('posted');
     expect(result.resolutions).toEqual([]);
   });
 
-  it('apply resolutions resolves only allowed threads', async () => {
+  it('apply resolutions resolves only allowed threads without rendering replies', async () => {
     const calls: string[] = [];
+    const badTemplateDir = await mkdtemp(path.join(os.tmpdir(), 'flow-fix-comments-template-dir-'));
+    const config = getDefaultCodeflowConfig();
+    config.reviewComments.replyTemplate = badTemplateDir;
     const result = await runFlowFixComments({
       payload: payload(),
       applyResolutions: true,
-      config: getDefaultCodeflowConfig(),
+      config,
       sessionState: session(),
       resolveThread: async (options) => {
         calls.push(`resolve:${options.threadId}`);
@@ -180,6 +184,7 @@ describe('runFlowFixComments', () => {
     expect(calls).toEqual(['resolve:PRRT_thread_1']);
     expect(result.status).toBe('applied');
     expect(result.resolutions[0]?.status).toBe('resolved');
+    expect(result.replies).toEqual([]);
   });
 
   it('apply calls reply before resolve when both are allowed', async () => {
@@ -201,6 +206,27 @@ describe('runFlowFixComments', () => {
 
     expect(calls).toEqual(['reply:PRRT_thread_1', 'resolve:PRRT_thread_1']);
     expect(result.status).toBe('applied');
+  });
+
+  it('preserves blockers and human decisions even in dry-run', async () => {
+    const needsHuman = await runFlowFixComments({
+      payload: payload({ classification: 'needs_human', commitSha: undefined, fixSummary: undefined, humanDecision: 'Decision needed.', resolveRequested: false }),
+      dryRun: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ classification: 'needs_human', requiresHumanDecision: true }),
+    });
+    const incomplete = await runFlowFixComments({
+      payload: payload(),
+      dryRun: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ reviewStatus: 'failed' }),
+    });
+
+    expect(needsHuman.status).toBe('blocked');
+    expect(needsHuman.lifecyclePhase).toBe('blocked');
+    expect(needsHuman.nextExpectedActions.join('\n')).toContain('human review decision');
+    expect(incomplete.status).toBe('blocked');
+    expect(incomplete.nextExpectedActions.join('\n')).toContain('blocked verification or policy');
   });
 
   it('blocks needs_human, incomplete scans, and failed checks', async () => {

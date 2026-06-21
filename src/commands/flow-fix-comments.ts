@@ -186,7 +186,13 @@ export async function runFlowFixComments(
         continue;
       }
 
-      const renderedReply = policy.canReply
+      const shouldIncludeReply = policy.canReply && shouldRenderOrApplyReply({
+        dryRun,
+        applyReplies,
+        explicitApplyReplies,
+        explicitApplyResolutions,
+      });
+      const renderedReply = shouldIncludeReply
         ? await renderReviewReply(item, {
             cwd: resolveCommandBaseCwd(cwd, loadedConfig.configPath),
             config,
@@ -194,7 +200,7 @@ export async function runFlowFixComments(
         : null;
       warnings.push(...(renderedReply?.warnings ?? []));
 
-      if (policy.canReply) {
+      if (shouldIncludeReply) {
         if (dryRun || !applyReplies) {
           replies.push(plannedReply(item, renderedReply?.body ?? null));
         } else if (alreadyPostedReply(sessionState, item.threadId)) {
@@ -267,6 +273,7 @@ export async function runFlowFixComments(
   const lifecyclePhase = getLifecyclePhaseForReviewFix({
     status,
     blocked,
+    resolutions,
     requiresHumanDecision,
     sessionState,
   });
@@ -526,12 +533,16 @@ function getReviewFixStatus(options: {
   blocked: CodeflowReviewFixBlockedItem[];
   requiresHumanDecision: string[];
 }): CodeflowReviewFixResultStatus {
-  if (options.dryRun) {
-    return 'dry_run';
-  }
-
   if (options.mutationFailed) {
     return 'failed';
+  }
+
+  if (options.blocked.length > 0 || options.requiresHumanDecision.length > 0) {
+    return 'blocked';
+  }
+
+  if (options.dryRun) {
+    return 'dry_run';
   }
 
   if (
@@ -541,16 +552,13 @@ function getReviewFixStatus(options: {
     return 'applied';
   }
 
-  if (options.blocked.length > 0 || options.requiresHumanDecision.length > 0) {
-    return 'blocked';
-  }
-
   return 'dry_run';
 }
 
 function getLifecyclePhaseForReviewFix(options: {
   status: CodeflowReviewFixResultStatus;
   blocked: CodeflowReviewFixBlockedItem[];
+  resolutions: CodeflowReviewResolutionResult[];
   requiresHumanDecision: string[];
   sessionState: CodeflowSessionState;
 }): CodeflowLifecyclePhase {
@@ -570,7 +578,11 @@ function getLifecyclePhaseForReviewFix(options: {
       : 'blocked';
   }
 
-  if (options.status === 'applied' && options.sessionState.checks.lastRun?.status === 'passed') {
+  if (
+    options.status === 'applied' &&
+    options.resolutions.some((resolution) => resolution.status === 'resolved') &&
+    options.sessionState.checks.lastRun?.status === 'passed'
+  ) {
     return 'verified';
   }
 
@@ -583,13 +595,6 @@ function getFlowFixCommentsNextExpectedActions(options: {
   requiresHumanDecision: string[];
   dryRun: boolean;
 }): string[] {
-  if (options.dryRun || options.status === 'dry_run') {
-    return [
-      'Review the planned replies and resolutions.',
-      'Run /flow-fix-comments with --apply-replies, --apply-resolutions, or --apply only when the plan is safe.',
-    ];
-  }
-
   if (options.requiresHumanDecision.length > 0) {
     return [
       'Ask for the required human review decision before continuing.',
@@ -604,6 +609,13 @@ function getFlowFixCommentsNextExpectedActions(options: {
     ];
   }
 
+  if (options.dryRun || options.status === 'dry_run') {
+    return [
+      'Review the planned replies and resolutions.',
+      'Run /flow-fix-comments with --apply-replies, --apply-resolutions, or --apply only when the plan is safe.',
+    ];
+  }
+
   if (options.status === 'applied') {
     return [
       'Rerun /flow-comments to confirm remaining unresolved review threads.',
@@ -612,6 +624,19 @@ function getFlowFixCommentsNextExpectedActions(options: {
   }
 
   return ['Inspect the result and rerun /flow-fix-comments after correcting the payload.'];
+}
+
+function shouldRenderOrApplyReply(options: {
+  dryRun: boolean;
+  applyReplies: boolean;
+  explicitApplyReplies: boolean;
+  explicitApplyResolutions: boolean;
+}): boolean {
+  if (options.applyReplies) {
+    return true;
+  }
+
+  return options.dryRun && !options.explicitApplyReplies && !options.explicitApplyResolutions;
 }
 
 function plannedReply(item: CodeflowReviewFixItem, body: string | null): CodeflowReviewReplyResult {

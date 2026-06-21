@@ -185,6 +185,54 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(result.blockedReasons.join('\n')).toContain('not PR #123');
   });
 
+  it('blocks GitHub checks that predate the fix commit', () => {
+    const staleByTime = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:03:00.000Z'),
+      latestCommit: commit({ committedAt: '2026-01-01T00:02:00.000Z' }),
+      prNumber: 123,
+      latestGitHubChecksRun: {
+        status: 'passed',
+        prNumber: 123,
+        prUrl: null,
+        requiredOnly: true,
+        watched: true,
+        startedAt: '2026-01-01T00:00:00.000Z',
+        finishedAt: '2026-01-01T00:01:00.000Z',
+        durationMs: 60_000,
+        checks: [],
+        summary: 'passed',
+      },
+    });
+    const currentByHeadSha = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:03:00.000Z'),
+      latestCommit: commit({ committedAt: '2026-01-01T00:02:00.000Z' }),
+      prNumber: 123,
+      latestGitHubChecksRun: {
+        status: 'passed',
+        prNumber: 123,
+        prUrl: null,
+        headSha: 'abc1234',
+        requiredOnly: true,
+        watched: true,
+        startedAt: '2026-01-01T00:00:00.000Z',
+        finishedAt: '2026-01-01T00:01:00.000Z',
+        durationMs: 60_000,
+        checks: [],
+        summary: 'passed',
+      },
+    });
+
+    expect(staleByTime.allowed).toBe(false);
+    expect(staleByTime.blockedReasons.join('\n')).toContain('finished before the fix commit');
+    expect(currentByHeadSha.allowed).toBe(true);
+  });
+
   it.each(['failed', 'pending', 'no_checks', 'unknown'] as const)('blocks %s GitHub checks before resolution', (status) => {
     const result = evaluateReviewResolutionPolicy({
       item: item(),

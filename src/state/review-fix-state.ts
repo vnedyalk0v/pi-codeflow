@@ -64,9 +64,11 @@ export function updateReviewFixStateWithResult(
   state: CodeflowReviewFixState,
   input: StoreReviewFixStateInput,
 ): CodeflowReviewFixState {
+  const nextRun = toStoredReviewFixRun(input);
+
   return {
     ...state,
-    lastRun: toStoredReviewFixRun(input),
+    lastRun: state.lastRun ? mergeStoredReviewFixRuns(state.lastRun, nextRun) : nextRun,
   };
 }
 
@@ -101,4 +103,31 @@ export function toStoredReviewFixRun(
     requiresHumanDecision: input.requiresHumanDecision.slice(0, MAX_STORED_OUTCOMES),
     summary: truncateText(input.summary, MAX_STORED_SUMMARY_CHARS),
   };
+}
+
+function mergeStoredReviewFixRuns(
+  previous: CodeflowStoredReviewFixRun,
+  next: CodeflowStoredReviewFixRun,
+): CodeflowStoredReviewFixRun {
+  return {
+    ...next,
+    repliesPosted: mergeUniqueByThreadId(previous.repliesPosted, next.repliesPosted)
+      .slice(0, MAX_STORED_OUTCOMES),
+    threadsResolved: mergeUniqueByThreadId(previous.threadsResolved, next.threadsResolved)
+      .slice(0, MAX_STORED_OUTCOMES),
+  };
+}
+
+function mergeUniqueByThreadId<T extends { threadId: string }>(previous: T[], next: T[]): T[] {
+  const merged = new Map<string, T>();
+
+  for (const item of previous) {
+    merged.set(item.threadId, item);
+  }
+
+  for (const item of next) {
+    merged.set(item.threadId, item);
+  }
+
+  return [...merged.values()];
 }

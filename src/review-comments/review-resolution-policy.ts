@@ -90,10 +90,12 @@ export function evaluateReviewResolutionPolicy(
     warnings.push(...checkDecision.warnings);
   }
 
-  const githubDecision = evaluateGitHubChecksForResolution(
-    options.latestGitHubChecksRun,
-    options.prNumber ?? null,
-  );
+  const githubDecision = evaluateGitHubChecksForResolution({
+    item,
+    latestCommit: options.latestCommit ?? null,
+    latestGitHubChecksRun: options.latestGitHubChecksRun,
+    prNumber: options.prNumber ?? null,
+  });
   blockedReasons.push(...githubDecision.blockedReasons);
   warnings.push(...githubDecision.warnings);
 
@@ -170,10 +172,14 @@ function validateCheckRunAfterCommit(
   return null;
 }
 
-function evaluateGitHubChecksForResolution(
-  latestGitHubChecksRun: CodeflowStoredGitHubChecksRun | null | undefined,
-  prNumber: number | null,
-): CodeflowReviewResolutionPolicyDecision {
+function evaluateGitHubChecksForResolution(options: {
+  item: CodeflowReviewFixItem;
+  latestCommit: CodeflowStoredCommit | null;
+  latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
+  prNumber: number | null;
+}): CodeflowReviewResolutionPolicyDecision {
+  const { item, latestCommit, latestGitHubChecksRun, prNumber } = options;
+
   if (!latestGitHubChecksRun) {
     return { allowed: true, blockedReasons: [], warnings: [] };
   }
@@ -188,15 +194,75 @@ function evaluateGitHubChecksForResolution(
     };
   }
 
-  if (latestGitHubChecksRun.status === 'passed') {
+  if (latestGitHubChecksRun.status !== 'passed') {
+    return {
+      allowed: false,
+      blockedReasons: [`latest GitHub checks state is ${latestGitHubChecksRun.status}, not passed`],
+      warnings: [],
+    };
+  }
+
+  const staleDecision = evaluateGitHubChecksFreshness({
+    item,
+    latestCommit,
+    latestGitHubChecksRun,
+  });
+
+  if (!staleDecision.allowed) {
+    return staleDecision;
+  }
+
+  return { allowed: true, blockedReasons: [], warnings: [] };
+}
+
+function evaluateGitHubChecksFreshness(options: {
+  item: CodeflowReviewFixItem;
+  latestCommit: CodeflowStoredCommit | null;
+  latestGitHubChecksRun: CodeflowStoredGitHubChecksRun;
+}): CodeflowReviewResolutionPolicyDecision {
+  const { item, latestCommit, latestGitHubChecksRun } = options;
+
+  if (item.classification !== 'valid' || !item.commitSha) {
     return { allowed: true, blockedReasons: [], warnings: [] };
   }
 
-  return {
-    allowed: false,
-    blockedReasons: [`latest GitHub checks state is ${latestGitHubChecksRun.status}, not passed`],
-    warnings: [],
-  };
+  if (latestGitHubChecksRun.headSha && shasMatch(latestGitHubChecksRun.headSha, item.commitSha)) {
+    return { allowed: true, blockedReasons: [], warnings: [] };
+  }
+
+  if (!latestCommit || latestCommit.sha !== item.commitSha) {
+    return { allowed: true, blockedReasons: [], warnings: [] };
+  }
+
+  const checksFinishedAt = Date.parse(latestGitHubChecksRun.finishedAt);
+  const committedAt = Date.parse(latestCommit.committedAt);
+
+  if (!Number.isFinite(checksFinishedAt) || !Number.isFinite(committedAt)) {
+    return {
+      allowed: false,
+      blockedReasons: ['Could not compare latest GitHub checks time with the fix commit time.'],
+      warnings: [],
+    };
+  }
+
+  if (checksFinishedAt < committedAt) {
+    return {
+      allowed: false,
+      blockedReasons: ['Latest GitHub checks finished before the fix commit; rerun /flow-watch after CI completes before resolving.'],
+      warnings: [],
+    };
+  }
+
+  return { allowed: true, blockedReasons: [], warnings: [] };
+}
+
+function shasMatch(left: string, right: string): boolean {
+  const normalizedLeft = left.toLowerCase();
+  const normalizedRight = right.toLowerCase();
+
+  return normalizedLeft === normalizedRight ||
+    normalizedLeft.startsWith(normalizedRight) ||
+    normalizedRight.startsWith(normalizedLeft);
 }
 
 function formatNullablePr(prNumber: number | null): string {

@@ -46,6 +46,32 @@ describe('Codeflow review-fix state', () => {
     expect(state.lastRun?.summary.length ?? 0).toBeLessThanOrEqual(2000);
   });
 
+  it('preserves posted reply metadata when a later dry-run preview is stored', () => {
+    const applied = updateReviewFixStateWithResult(createInitialReviewFixState(), {
+      status: 'applied',
+      prNumber: 123,
+      replies: [{ threadId: 'PRRT_1', classification: 'valid', status: 'posted', commentId: 'PRRC_1', url: null, body: null }],
+      resolutions: [],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'applied',
+    });
+    const preview = updateReviewFixStateWithResult(applied, {
+      status: 'dry_run',
+      prNumber: 123,
+      replies: [{ threadId: 'PRRT_1', classification: 'valid', status: 'planned', commentId: null, url: null, body: 'planned' }],
+      resolutions: [],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'preview',
+    });
+
+    expect(preview.lastRun?.status).toBe('dry_run');
+    expect(preview.lastRun?.repliesPosted).toEqual([
+      { threadId: 'PRRT_1', classification: 'valid', commentId: 'PRRC_1', url: null },
+    ]);
+  });
+
   it('bounds stored outcomes', () => {
     const replies = Array.from({ length: 60 }, (_, index) => ({
       threadId: `PRRT_${index}`,

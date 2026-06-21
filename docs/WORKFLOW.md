@@ -28,9 +28,11 @@ pending, skipped, cancelled, timed-out, no-checks, and unknown states, and store
 bounded GitHub checks metadata. `/flow-comments` reads GitHub review threads
 through GraphQL, lists unresolved threads by default, filters them, validates
 optional triage payloads, summarizes findings, and stores bounded review-comment
-state. Self-review automation, persistent external state storage beyond in-memory
-session results, mutating review-comment fixes/replies/resolution, and merge
-automation are later work.
+state. `/flow-fix-comments` validates structured review-fix evidence, renders
+replies, applies explicit GitHub review-thread reply/resolution mutations after
+policy gates, and stores bounded outcome state. Self-review automation,
+persistent external state storage beyond in-memory session results, automatic
+review-fix editing, and merge automation are later work.
 
 ## Phase reference
 
@@ -192,27 +194,49 @@ Behavior:
   `verified` after passing checks, only when the GitHub scan completed; incomplete
   scans move to `blocked` and never claim no comments or `final_reported`;
 - valid comments move the lifecycle to `fixing_review_findings` with next
-  expected actions to fix findings, then run `/flow-check`;
+  expected actions to fix findings, run `/flow-check`, commit through
+  `/flow-commit`, and then use `/flow-fix-comments` after verification;
 - `needs_human` comments move to `blocked` with a clear human-decision request;
 - dry-run does not read GitHub, update state, or transition lifecycle;
-- no replies, resolution, code changes, commits, pushes, or merges occur.
+- no replies, resolution, code changes, commits, pushes, or merges occur from
+  `/flow-comments`; use `/flow-fix-comments` for later policy-gated mutations.
 
-## Future `/flow-fix-comments`
+## After `/flow-fix-comments`
 
-`/flow-fix-comments` is the planned mutating review-thread follow-up command. It
-must consume stored triage state and act only after explicit classification.
+`/flow-fix-comments` is the implemented mutating review-thread follow-up command.
+It consumes stored `/flow-comments` triage state plus a structured review-fix
+payload. It does not edit files, run broad automatic fixes, commit, push,
+approve, merge, rerun workflows, delete branches, or mass-resolve comments.
 
-Expected behavior:
+Usage examples:
 
-- fix `valid` findings with focused changes;
-- return to `/flow-check` after fixes are applied;
-- use `/flow-commit` after checks pass;
-- push through the PR flow and then use `/flow-watch` for remote verification;
-- reply only after verification and policy checks;
-- resolve only addressed `valid`, `stale`, or `already_fixed` threads when
-  policy allows it;
-- never resolve `needs_human` threads;
-- never resolve `invalid` threads automatically unless policy explicitly allows.
+```text
+/flow-fix-comments --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --dry-run --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply-replies --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply-resolutions --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --pr 123 --payload .pi/codeflow/review-comment-fix.json
+```
+
+Behavior:
+
+- default preview/dry-run mode plans allowed replies/resolutions but calls no
+  GitHub mutations;
+- `--apply-replies` posts only policy-allowed replies;
+- `--apply-resolutions` resolves only policy-allowed threads;
+- `--apply` performs allowed replies before allowed resolutions;
+- `valid` findings require fix evidence, verification, and commit SHA before
+  resolution;
+- `already_fixed` and `stale` need evidence and checks-before-resolve when
+  configured;
+- failed local checks block resolution when checks are required;
+- latest failed/unknown GitHub check state blocks resolution conservatively;
+- `invalid` resolution is blocked by default;
+- `needs_human` and latest triage `requiresHumanDecision` always block;
+- incomplete `/flow-comments` scans block mutation until triage is rerun safely;
+- successful allowed resolution may move toward `verified` when checks passed;
+- mutation failures move to `blocked` or another safe non-final phase.
 
 ## Phase details
 
@@ -395,7 +419,7 @@ Expected behavior:
 - **Expected agent behavior:** fix only valid findings, run `/flow-check`, commit
   with `/flow-commit`, push through the PR flow, and use `/flow-watch` before
   any reply or resolution.
-- **Expected command/tool:** future `/flow-fix-comments`, `/flow-check`,
+- **Expected command/tool:** `/flow-fix-comments`, `/flow-check`,
   `/flow-commit`, `/flow-watch`.
 - **Allowed transitions:** `local_checks`, `committed`, `ci_waiting`,
   `review_triage`, `verified`, `blocked`.
@@ -403,8 +427,9 @@ Expected behavior:
   product-sensitive, security-sensitive, or lacks verification.
 - **Output artifacts:** focused fixes, check results, commits, rendered reply
   drafts, and safe resolution decisions.
-- **Resolution boundary:** reply or resolve only after explicit classification,
-  committed fixes when needed, and passing verification.
+- **Resolution boundary:** reply or resolve only through `/flow-fix-comments`
+  after explicit classification, committed fixes when needed, and passing
+  verification.
 
 ### `verified`
 

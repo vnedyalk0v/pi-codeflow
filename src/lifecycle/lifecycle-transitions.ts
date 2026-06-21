@@ -75,12 +75,13 @@ export function getNextExpectedActions(
     case 'review_triage':
       return [
         'Classify review comments before acting on them.',
+        'Use /flow-fix-comments with a structured review-fix payload only after fixes and verification evidence are ready.',
         'Stop for human decisions when comments are ambiguous, product-sensitive, or security-sensitive.',
       ];
     case 'fixing_review_findings':
       return [
         'Fix valid review findings with focused changes only.',
-        'Re-run local checks and prepare evidence before replying or moving forward.',
+        'Re-run local checks, commit through /flow-commit when needed, then use /flow-fix-comments for safe replies and resolution.',
       ];
     case 'verified':
       return [

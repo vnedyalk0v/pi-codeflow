@@ -175,8 +175,12 @@ layer changes.
 
 Review-thread commands must preserve reviewer authority. The implemented
 read-only `/flow-comments` phase lists, filters, summarizes, and validates
-triage for GitHub pull request review threads without posting replies, resolving
-threads, fixing code, committing, pushing, approving, or merging.
+triage for GitHub pull request review threads without posting replies or
+resolving threads. The implemented `/flow-fix-comments` phase may post replies
+or resolve threads only after structured review-fix payload validation,
+classification policy, verification gates, and explicit apply flags. It does not
+fix code, commit, push, approve, merge, rerun workflows, delete branches, or
+mass-resolve comments.
 
 Safety expectations for review threads:
 
@@ -194,7 +198,11 @@ Safety expectations for review threads:
 - require passing verification before resolution when configured;
 - keep auto-reply and auto-resolution disabled by default;
 - ensure `/flow-comments` calls no GraphQL mutations and performs no GitHub
-  comment mutation.
+  comment mutation;
+- ensure `/flow-fix-comments` calls no mutations in dry-run or preview-only
+  mode;
+- ensure `/flow-fix-comments` never resolves `needs_human`, never resolves
+  unknown thread IDs, and never performs mass-resolution.
 
 Reviewers should focus on GraphQL data modeling, classification semantics,
 checks-before-resolve behavior, and human-decision boundaries whenever this

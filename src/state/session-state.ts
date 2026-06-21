@@ -33,6 +33,12 @@ import {
   type CodeflowReviewCommentsState,
   type StoreReviewCommentsStateInput,
 } from './review-comments-state';
+import {
+  createInitialReviewFixState,
+  updateReviewFixStateWithResult,
+  type CodeflowReviewFixState,
+  type StoreReviewFixStateInput,
+} from './review-fix-state';
 import type { CodeflowPrChecksResult } from '../github/pr-checks-parser';
 
 export interface CodeflowSessionState {
@@ -42,6 +48,7 @@ export interface CodeflowSessionState {
   pullRequests: CodeflowPrState;
   githubChecks?: CodeflowGitHubChecksState;
   reviewComments?: CodeflowReviewCommentsState;
+  reviewFix?: CodeflowReviewFixState;
   updatedAt: string;
 }
 
@@ -62,6 +69,7 @@ export function createCodeflowSessionState(
     pullRequests: createInitialPrState(),
     githubChecks: createInitialGitHubChecksState(),
     reviewComments: createInitialReviewCommentsState(),
+    reviewFix: createInitialReviewFixState(),
     updatedAt: nowIso(),
   };
 }
@@ -110,6 +118,7 @@ export function updateSessionStateWithPullRequest(
     pullRequests: updatePrStateWithPullRequest(state.pullRequests, input),
     githubChecks: state.githubChecks ?? createInitialGitHubChecksState(),
     reviewComments: state.reviewComments ?? createInitialReviewCommentsState(),
+    reviewFix: state.reviewFix ?? createInitialReviewFixState(),
     updatedAt: nowIso(),
   };
 }
@@ -146,6 +155,25 @@ export function updateSessionStateWithReviewComments(
     },
     reviewComments: updateReviewCommentsStateWithResult(
       state.reviewComments ?? createInitialReviewCommentsState(),
+      input,
+    ),
+    updatedAt: nowIso(),
+  };
+}
+
+export function updateSessionStateWithReviewFix(
+  state: CodeflowSessionState,
+  input: StoreReviewFixStateInput,
+  phase: CodeflowLifecyclePhase,
+): CodeflowSessionState {
+  return {
+    ...state,
+    lifecycle: {
+      ...state.lifecycle,
+      phase,
+    },
+    reviewFix: updateReviewFixStateWithResult(
+      state.reviewFix ?? createInitialReviewFixState(),
       input,
     ),
     updatedAt: nowIso(),

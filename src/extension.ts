@@ -40,11 +40,19 @@ import {
   runFlowComments,
   type FlowCommentsResult,
 } from './commands/flow-comments';
+import {
+  formatFlowFixCommentsResult,
+  parseFlowFixCommentsArguments,
+  readReviewFixPayloadFile,
+  runFlowFixComments,
+  type FlowFixCommentsResult,
+} from './commands/flow-fix-comments';
 import { CodeflowCheckError } from './checks/check-errors';
 import { CodeflowCommitError } from './commits/commit-errors';
 import { CodeflowPrError } from './pull-requests/pr-errors';
 import { CodeflowPrChecksError } from './github/github-errors';
 import { CodeflowReviewCommentsError } from './review-comments/review-comments-errors';
+import { CodeflowReviewFixError } from './review-comments/review-fix-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
 import { buildCodeflowConfigLoadFailureGuidance } from './guidance/guidance-errors';
@@ -86,6 +94,7 @@ export interface RegisterCodeflowExtensionOptions {
   runFlowPr?: typeof runFlowPr;
   runFlowWatch?: typeof runFlowWatch;
   runFlowComments?: typeof runFlowComments;
+  runFlowFixComments?: typeof runFlowFixComments;
 }
 
 export interface CodeflowExtensionCommandContext extends CodeflowExtensionContext {
@@ -110,7 +119,14 @@ interface CodeflowExtensionApi {
     ) => Promise<CodeflowBeforeAgentStartResult>,
   ): void;
   registerCommand?(
-    name: 'flow-start' | 'flow-check' | 'flow-commit' | 'flow-pr' | 'flow-watch' | 'flow-comments',
+    name:
+      | 'flow-start'
+      | 'flow-check'
+      | 'flow-commit'
+      | 'flow-pr'
+      | 'flow-watch'
+      | 'flow-comments'
+      | 'flow-fix-comments',
     options: {
       description: string;
       handler: (
@@ -123,6 +139,7 @@ interface CodeflowExtensionApi {
         | FlowPrResult
         | FlowWatchResult
         | FlowCommentsResult
+        | FlowFixCommentsResult
       >;
     },
   ): void;
@@ -195,6 +212,12 @@ export function registerCodeflowExtension(
     description: 'List and triage GitHub pull request review threads read-only',
     handler: async (args, context) =>
       handleFlowCommentsCommand(args, context, options.runFlowComments ?? runFlowComments, sessionStore),
+  });
+
+  pi.registerCommand?.('flow-fix-comments', {
+    description: 'Safely reply to and resolve policy-allowed review threads',
+    handler: async (args, context) =>
+      handleFlowFixCommentsCommand(args, context, options.runFlowFixComments ?? runFlowFixComments, sessionStore),
   });
 }
 
@@ -394,6 +417,50 @@ async function handleFlowCommentsCommand(
   }
 }
 
+async function handleFlowFixCommentsCommand(
+  args: string,
+  context: CodeflowExtensionCommandContext,
+  fixCommentsFlow: typeof runFlowFixComments,
+  sessionStore: CodeflowExtensionSessionStore,
+): Promise<FlowFixCommentsResult> {
+  await context.waitForIdle?.();
+
+  try {
+    const parsed = parseFlowFixCommentsArguments(args ?? '');
+
+    if (!parsed.payloadPath) {
+      throw new CodeflowReviewFixError({
+        code: 'invalid_arguments',
+        message: '/flow-fix-comments requires --payload <path>.',
+      });
+    }
+
+    const payload = await readReviewFixPayloadFile(parsed.payloadPath, context.cwd);
+    const result = await fixCommentsFlow({
+      cwd: context.cwd,
+      payload,
+      dryRun: parsed.dryRun,
+      applyReplies: parsed.applyReplies,
+      applyResolutions: parsed.applyResolutions,
+      apply: parsed.apply,
+      allowInvalidResolution: parsed.allowInvalidResolution,
+      detached: parsed.detached,
+      pr: parsed.pr,
+      sessionState: sessionStore.get(context.cwd),
+    });
+
+    sessionStore.set(context.cwd, result.sessionState);
+    context.ui.notify(
+      formatFlowFixCommentsResult(result),
+      result.lifecyclePhase === 'blocked' ? 'warning' : 'info',
+    );
+    return result;
+  } catch (error) {
+    context.ui.notify(getFlowFixCommentsErrorMessage(error), 'error');
+    throw error;
+  }
+}
+
 function createInMemorySessionStore(): CodeflowExtensionSessionStore {
   const sessions = new Map<string, CodeflowSessionState>();
 
@@ -477,6 +544,18 @@ function getFlowCommentsErrorMessage(error: unknown): string {
   }
 
   return '/flow-comments failed.';
+}
+
+function getFlowFixCommentsErrorMessage(error: unknown): string {
+  if (error instanceof CodeflowReviewFixError) {
+    return `/flow-fix-comments failed: ${error.message}`;
+  }
+
+  if (error instanceof Error) {
+    return `/flow-fix-comments failed: ${error.message}`;
+  }
+
+  return '/flow-fix-comments failed.';
 }
 
 async function loadGuidance(

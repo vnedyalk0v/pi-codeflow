@@ -4,7 +4,6 @@ import { summarizeReviewCommentBody } from '../review-comments/review-thread-sum
 import { truncateText } from '../utils/text';
 import { nowIso } from '../utils/time';
 
-const MAX_STORED_THREADS = 50;
 const MAX_STORED_COMMENT_SUMMARY_CHARS = 240;
 const MAX_STORED_SUMMARY_CHARS = 2000;
 
@@ -32,6 +31,7 @@ export interface CodeflowStoredReviewCommentsRun {
   classificationCounts: Record<string, number>;
   requiresHumanDecisionCount: number;
   threads: CodeflowStoredReviewCommentThread[];
+  threadIds?: string[];
   summary: string;
   checkedAt: string;
 }
@@ -83,9 +83,10 @@ export function toStoredReviewCommentsRun(
     filteredThreadCount: input.filteredThreadCount,
     classificationCounts: { ...(input.triage?.classificationCounts ?? {}) },
     requiresHumanDecisionCount: input.triage?.requiresHumanDecisionCount ?? 0,
-    threads: input.threads.slice(0, MAX_STORED_THREADS).map((thread) =>
+    threads: input.threads.map((thread) =>
       toStoredReviewCommentThread(thread, input.triage ?? null),
     ),
+    threadIds: input.threads.map((thread) => thread.threadId),
     summary: truncateText(input.summary, MAX_STORED_SUMMARY_CHARS),
     checkedAt: input.checkedAt ?? nowIso(),
   };

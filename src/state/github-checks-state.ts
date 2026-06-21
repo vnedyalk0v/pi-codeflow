@@ -22,6 +22,7 @@ export interface CodeflowStoredGitHubChecksRun {
   status: CodeflowPrChecksAggregateStatus;
   prNumber: number | null;
   prUrl: string | null;
+  headSha?: string | null;
   requiredOnly: boolean;
   watched: boolean;
   startedAt: string;
@@ -58,6 +59,7 @@ export function toStoredGitHubChecksRun(
     status: result.status,
     prNumber: result.prNumber,
     prUrl: result.prUrl,
+    headSha: result.headSha,
     requiredOnly: result.requiredOnly,
     watched: result.watched,
     startedAt: result.startedAt,

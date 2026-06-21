@@ -66,6 +66,14 @@ export {
   type FlowCommentsOptions,
   type FlowCommentsResult,
 } from './commands/flow-comments';
+export {
+  runFlowFixComments,
+  parseFlowFixCommentsArguments,
+  formatFlowFixCommentsResult,
+  readReviewFixPayloadFile,
+  type FlowFixCommentsOptions,
+  type FlowFixCommentsResult,
+} from './commands/flow-fix-comments';
 export { validateCommitPayload } from './commits/commit-payload-validation';
 export { renderCommitMessage } from './commits/commit-message-renderer';
 export { createGitCommitFromPayload } from './commits/commit-policy';
@@ -87,12 +95,17 @@ export {
   watchGitHubPrChecks,
 } from './github/pr-checks-client';
 export { listGitHubReviewThreads } from './github/pr-review-threads-client';
+export { replyToReviewThread } from './github/pr-review-thread-replies-client';
+export { resolveReviewThread } from './github/pr-review-thread-resolution-client';
 export { normalizeGitHubPrCheck } from './github/pr-checks-parser';
 export { summarizeGitHubPrChecks } from './github/pr-checks-summary';
 export { normalizeReviewThreads } from './review-comments/review-thread-normalizer';
 export { filterReviewThreads } from './review-comments/review-thread-filters';
 export { summarizeReviewThreads } from './review-comments/review-thread-summary';
 export { validateReviewCommentTriage } from './review-comments/review-thread-triage-validation';
+export { validateReviewFixPayload } from './review-comments/review-fix-validation';
+export { evaluateReviewFixPolicy } from './review-comments/review-fix-policy';
+export { renderReviewReply } from './review-comments/review-reply-renderer';
 export type {
   CodeflowPrPayload,
   CodeflowPrValidationResult,
@@ -115,7 +128,17 @@ export type {
   CodeflowReviewCommentTriage,
   CodeflowReviewCommentTriageResult,
 } from './review-comments/review-thread-triage';
+export type {
+  CodeflowReviewFixPayload,
+  CodeflowReviewFixItem,
+  CodeflowReviewFixValidationResult,
+  CodeflowReviewFixPolicyResult,
+  CodeflowReviewReplyResult,
+  CodeflowReviewResolutionResult,
+  CodeflowReviewFixResult,
+} from './review-comments/review-fix-payload';
 export type { CodeflowReviewCommentsState } from './state/review-comments-state';
+export type { CodeflowReviewFixState } from './state/review-fix-state';
 export { CodeflowPrError, type CodeflowPrErrorCode } from './pull-requests/pr-errors';
 export {
   CodeflowPrChecksError,
@@ -125,6 +148,10 @@ export {
   CodeflowReviewCommentsError,
   type CodeflowReviewCommentsErrorCode,
 } from './review-comments/review-comments-errors';
+export {
+  CodeflowReviewFixError,
+  type CodeflowReviewFixErrorCode,
+} from './review-comments/review-fix-errors';
 export {
   runCodeflowChecks,
   type RunCodeflowChecksOptions,

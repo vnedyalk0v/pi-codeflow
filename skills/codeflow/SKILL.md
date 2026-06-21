@@ -22,7 +22,8 @@ Follow the Codeflow lifecycle:
 8. provide structured PR payload
 9. watch CI with `/flow-watch`
 10. triage review comments read-only with `/flow-comments`
-11. produce final report
+11. fix valid review findings, verify, commit, then use `/flow-fix-comments`
+12. produce final report
 
 Rules:
 
@@ -43,9 +44,14 @@ Rules:
   approve PRs, reply to comments, resolve comments, or delete branches.
 - Use `/flow-comments` after `/flow-watch` to list and triage review threads
   read-only.
-- Remember that `/flow-comments` does not implement `/flow-fix-comments`, code
-  fixes, replies, thread resolution, GitHub mutations, merge automation, or
-  auto-approval.
+- For valid review comments, fix only the triaged scope, run `/flow-check`,
+  commit through `/flow-commit`, push through the PR flow, then use
+  `/flow-fix-comments` with a structured review-fix payload for safe replies and
+  resolution.
+- Use `/flow-fix-comments` instead of direct GitHub review-thread mutations when
+  Codeflow tools are available.
+- Remember that `/flow-fix-comments` does not edit source files, approve, merge,
+  rerun workflows, delete branches, or mass-resolve comments.
 - Use other Codeflow tools when available.
 - If a Codeflow tool is not implemented yet, explain the limitation instead of
   pretending it exists.
@@ -56,8 +62,9 @@ Rules:
   final reports.
 - Let templates render final outputs.
 - Follow configured checks through `/flow-check` and report failures clearly.
-- Do not claim mutating review comment automation, merge automation, or
-  auto-approval exists until those commands are implemented.
+- Do not resolve review threads directly when Codeflow reply/resolution tools
+  are available.
+- Do not claim merge automation or auto-approval exists.
 - Treat safety boundaries as fallback protection, not the normal workflow.
 - Do not work directly on reserved branches unless an explicit emergency
   override exists; `/flow-start` may be invoked from a reserved branch only to

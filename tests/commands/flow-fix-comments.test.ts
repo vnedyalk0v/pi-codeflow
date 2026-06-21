@@ -175,6 +175,27 @@ describe('runFlowFixComments', () => {
     expect(result.status).toBe('applied');
   });
 
+  it('blocks resolving thread IDs without stored triage metadata', async () => {
+    const calls: string[] = [];
+    const state = session();
+    state.reviewComments!.lastRun!.filteredThreadCount = 60;
+    state.reviewComments!.lastRun!.threadIds = ['PRRT_thread_1', 'PRRT_thread_2'];
+    const result = await runFlowFixComments({
+      payload: payload({ threadId: 'PRRT_thread_2', resolveRequested: true }),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('resolve should not be called');
+      },
+    });
+
+    expect(calls).toEqual([]);
+    expect(result.status).toBe('blocked');
+    expect(result.blocked[0]?.reason).toContain('bounded /flow-comments ID metadata');
+  });
+
   it('blocks when /flow-comments state belongs to a different PR', async () => {
     const calls: string[] = [];
     const state = session();

@@ -191,6 +191,7 @@ export async function runFlowFixComments(
       allowInvalidResolution: options.allowInvalidResolution,
       sessionState,
       prNumber,
+      detached: options.detached === true,
       warnings,
       blocked,
       requiresHumanDecision,
@@ -567,6 +568,7 @@ async function buildReviewFixExecutionPlans(options: {
   allowInvalidResolution?: boolean;
   sessionState: CodeflowSessionState;
   prNumber: number | null;
+  detached: boolean;
   warnings: string[];
   blocked: CodeflowReviewFixBlockedItem[];
   requiresHumanDecision: string[];
@@ -575,6 +577,16 @@ async function buildReviewFixExecutionPlans(options: {
 
   for (const item of options.items) {
     const knownThread = options.knownThreadsById.get(item.threadId) ?? null;
+
+    if (!options.detached && item.resolveRequested && !knownThread) {
+      options.blocked.push({
+        threadId: item.threadId,
+        classification: item.classification,
+        reason: 'thread is present only in bounded /flow-comments ID metadata; rerun /flow-comments with full stored triage metadata before resolving this thread',
+      });
+      continue;
+    }
+
     const policy = evaluateReviewFixPolicy({
       item,
       config: options.config.reviewComments,

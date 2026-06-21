@@ -85,6 +85,11 @@ export function evaluateReviewResolutionPolicy(
       item,
       latestCheckRun: options.latestCheckRun,
       latestCommit: options.latestCommit,
+      remoteChecksCoverFixCommit: githubChecksCoverFixCommit({
+        item,
+        latestGitHubChecksRun: options.latestGitHubChecksRun,
+        prNumber: options.prNumber ?? null,
+      }),
     });
     blockedReasons.push(...checkDecision.blockedReasons);
     warnings.push(...checkDecision.warnings);
@@ -114,13 +119,19 @@ function evaluateChecksBeforeResolve(options: {
   item: CodeflowReviewFixItem;
   latestCheckRun?: CodeflowStoredCheckRun | null;
   latestCommit?: CodeflowStoredCommit | null;
+  remoteChecksCoverFixCommit: boolean;
 }): CodeflowReviewResolutionPolicyDecision {
   const warnings: string[] = [];
   const blockedReasons: string[] = [];
   const latestCheckRun = options.latestCheckRun ?? null;
 
   if (latestCheckRun?.status === 'passed') {
-    const commitBlocker = validateCheckRunAfterCommit(options.item, latestCheckRun, options.latestCommit ?? null);
+    const commitBlocker = validateCheckRunAfterCommit(
+      options.item,
+      latestCheckRun,
+      options.latestCommit ?? null,
+      options.remoteChecksCoverFixCommit,
+    );
     if (commitBlocker) {
       blockedReasons.push(commitBlocker);
     }
@@ -145,6 +156,7 @@ function validateCheckRunAfterCommit(
   item: CodeflowReviewFixItem,
   latestCheckRun: CodeflowStoredCheckRun,
   latestCommit: CodeflowStoredCommit | null,
+  remoteChecksCoverFixCommit: boolean,
 ): string | null {
   if (item.classification !== 'valid' || !item.commitSha) {
     return null;
@@ -165,11 +177,33 @@ function validateCheckRunAfterCommit(
     return 'Could not compare latest /flow-check time with the fix commit time.';
   }
 
-  if (checkFinishedAt < committedAt) {
+  if (checkFinishedAt < committedAt && !remoteChecksCoverFixCommit) {
     return 'Latest /flow-check finished before the fix commit; rerun /flow-check before resolving.';
   }
 
   return null;
+}
+
+function githubChecksCoverFixCommit(options: {
+  item: CodeflowReviewFixItem;
+  latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
+  prNumber: number | null;
+}): boolean {
+  const { item, latestGitHubChecksRun, prNumber } = options;
+
+  if (item.classification !== 'valid' || !item.commitSha || !latestGitHubChecksRun) {
+    return false;
+  }
+
+  if (latestGitHubChecksRun.status !== 'passed' || !latestGitHubChecksRun.headSha) {
+    return false;
+  }
+
+  if (prNumber !== null && latestGitHubChecksRun.prNumber !== prNumber) {
+    return false;
+  }
+
+  return shasMatch(latestGitHubChecksRun.headSha, item.commitSha);
 }
 
 function evaluateGitHubChecksForResolution(options: {

@@ -142,7 +142,7 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(staleWithoutCommit.allowed).toBe(true);
   });
 
-  it('blocks resolution when the latest checks predate the fix commit', () => {
+  it('blocks local checks before the fix commit unless remote checks cover that head', () => {
     const result = evaluateReviewResolutionPolicy({
       item: item(),
       config: config.reviewComments,
@@ -150,9 +150,31 @@ describe('evaluateReviewResolutionPolicy', () => {
       latestCheckRun: checks('passed', '2026-01-01T00:01:00.000Z'),
       latestCommit: commit({ committedAt: '2026-01-01T00:02:00.000Z' }),
     });
+    const remoteCovered = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:01:00.000Z'),
+      latestCommit: commit({ committedAt: '2026-01-01T00:02:00.000Z' }),
+      prNumber: 123,
+      latestGitHubChecksRun: {
+        status: 'passed',
+        prNumber: 123,
+        prUrl: null,
+        headSha: 'abc1234',
+        requiredOnly: true,
+        watched: true,
+        startedAt: '2026-01-01T00:02:00.000Z',
+        finishedAt: '2026-01-01T00:03:00.000Z',
+        durationMs: 60_000,
+        checks: [],
+        summary: 'passed',
+      },
+    });
 
     expect(result.allowed).toBe(false);
     expect(result.blockedReasons.join('\n')).toContain('finished before the fix commit');
+    expect(remoteCovered.allowed).toBe(true);
   });
 
   it('blocks stale resolution without outdated state or evidence', () => {

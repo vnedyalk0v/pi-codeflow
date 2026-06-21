@@ -119,6 +119,15 @@ function validateSemanticRules(
 
     const knownThread = knownThreadsById.get(item.threadId);
 
+    if (options.detached !== true && knownThread && !hasStoredTriageMetadata(knownThread)) {
+      errors.push({
+        path: `${path}/threadId`,
+        keyword: 'triageMetadataRequired',
+        message: `threadId ${item.threadId} is missing stored triage metadata from the latest /flow-comments state`,
+        details: { threadId: item.threadId },
+      });
+    }
+
     if (knownThread?.classification && knownThread.classification !== item.classification) {
       errors.push({
         path: `${path}/classification`,
@@ -249,6 +258,10 @@ function validateItemReplyEvidenceRules(options: {
       details: { maxLength: MAX_REPLY_BODY_CHARS },
     });
   }
+}
+
+function hasStoredTriageMetadata(thread: CodeflowStoredReviewCommentThread): boolean {
+  return hasText(thread.classification) && typeof thread.requiresHumanDecision === 'boolean';
 }
 
 function getKnownThreadIds(

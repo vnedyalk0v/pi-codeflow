@@ -114,6 +114,22 @@ describe('validateReviewFixPayload', () => {
     expect(human.errors.map((error) => error.keyword)).toContain('triageRequiresHumanDecision');
   });
 
+  it('requires stored triage metadata for non-detached review state', () => {
+    const missingTriage = validateReviewFixPayload(validPayload(), {
+      knownThreads: [knownThread({ classification: undefined, requiresHumanDecision: undefined })],
+      config: config.reviewComments,
+    });
+    const detached = validateReviewFixPayload(validPayload(), {
+      knownThreads: [knownThread({ classification: undefined, requiresHumanDecision: undefined })],
+      detached: true,
+      config: config.reviewComments,
+    });
+
+    expect(missingTriage.valid).toBe(false);
+    expect(missingTriage.errors.map((error) => error.keyword)).toContain('triageMetadataRequired');
+    expect(detached.valid).toBe(true);
+  });
+
   it('allows detached validation without matching latest state', () => {
     const result = validateReviewFixPayload(validPayload({ threadId: 'PRRT_detached' }), {
       detached: true,

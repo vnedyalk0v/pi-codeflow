@@ -15,6 +15,7 @@ export interface EvaluateReviewFixPolicyOptions {
   latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
   allowInvalidResolution?: boolean;
   prNumber?: number | null;
+  includeResolutionPolicy?: boolean;
 }
 
 export function evaluateReviewFixPolicy(
@@ -50,10 +51,13 @@ export function evaluateReviewFixPolicy(
     canReply = false;
   }
 
-  const resolution = evaluateReviewResolutionPolicy(options);
+  const includeResolutionPolicy = options.includeResolutionPolicy !== false;
+  const resolution = includeResolutionPolicy
+    ? evaluateReviewResolutionPolicy(options)
+    : { allowed: false, blockedReasons: [], warnings: [] };
   warnings.push(...resolution.warnings);
 
-  if (item.resolveRequested && !resolution.allowed) {
+  if (includeResolutionPolicy && item.resolveRequested && !resolution.allowed) {
     blockedReasons.push(...resolution.blockedReasons);
   }
 
@@ -61,7 +65,7 @@ export function evaluateReviewFixPolicy(
     threadId: item.threadId,
     classification: item.classification,
     canReply: canReply && blockedReasons.length === 0,
-    canResolve: item.resolveRequested && resolution.allowed && blockedReasons.length === 0,
+    canResolve: includeResolutionPolicy && item.resolveRequested && resolution.allowed && blockedReasons.length === 0,
     requiresHumanDecision,
     shouldSkip,
     blockedReasons: uniqueStrings(blockedReasons),

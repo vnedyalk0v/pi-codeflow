@@ -577,12 +577,24 @@ async function buildReviewFixExecutionPlans(options: {
 
   for (const item of options.items) {
     const knownThread = options.knownThreadsById.get(item.threadId) ?? null;
+    const resolutionModeRequested = shouldRenderOrApplyResolution({
+      dryRun: options.dryRun,
+      applyResolutions: options.applyResolutions,
+      explicitApplyReplies: options.explicitApplyReplies,
+      explicitApplyResolutions: options.explicitApplyResolutions,
+    });
+    const replyModeRequested = shouldRenderOrApplyReply({
+      dryRun: options.dryRun,
+      applyReplies: options.applyReplies,
+      explicitApplyReplies: options.explicitApplyReplies,
+      explicitApplyResolutions: options.explicitApplyResolutions,
+    });
 
-    if (!options.detached && item.resolveRequested && !knownThread) {
+    if (!options.detached && !knownThread) {
       options.blocked.push({
         threadId: item.threadId,
         classification: item.classification,
-        reason: 'thread is present only in bounded /flow-comments ID metadata; rerun /flow-comments with full stored triage metadata before resolving this thread',
+        reason: 'thread is present only in /flow-comments ID metadata; rerun /flow-comments with full stored triage metadata before mutating this thread',
       });
       continue;
     }
@@ -596,6 +608,7 @@ async function buildReviewFixExecutionPlans(options: {
       latestGitHubChecksRun: options.sessionState.githubChecks?.lastRun ?? null,
       allowInvalidResolution: options.allowInvalidResolution,
       prNumber: options.prNumber,
+      includeResolutionPolicy: resolutionModeRequested,
     } satisfies EvaluateReviewFixPolicyOptions);
     options.warnings.push(...policy.warnings);
 
@@ -623,18 +636,8 @@ async function buildReviewFixExecutionPlans(options: {
       continue;
     }
 
-    const shouldIncludeResolution = policy.canResolve && shouldRenderOrApplyResolution({
-      dryRun: options.dryRun,
-      applyResolutions: options.applyResolutions,
-      explicitApplyReplies: options.explicitApplyReplies,
-      explicitApplyResolutions: options.explicitApplyResolutions,
-    });
-    const shouldIncludeReply = policy.canReply && shouldRenderOrApplyReply({
-      dryRun: options.dryRun,
-      applyReplies: options.applyReplies,
-      explicitApplyReplies: options.explicitApplyReplies,
-      explicitApplyResolutions: options.explicitApplyResolutions,
-    });
+    const shouldIncludeResolution = policy.canResolve && resolutionModeRequested;
+    const shouldIncludeReply = policy.canReply && replyModeRequested;
     let renderedReply: CodeflowRenderedReviewReply | null = null;
 
     if (shouldIncludeReply) {

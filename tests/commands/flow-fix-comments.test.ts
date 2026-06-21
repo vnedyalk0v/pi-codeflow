@@ -155,11 +155,23 @@ describe('runFlowFixComments', () => {
     expect(result.sessionState.reviewFix?.lastRun?.status).toBe('dry_run');
   });
 
-  it('accepts thread IDs from a bounded /flow-comments scan', async () => {
+  it('accepts thread IDs from a complete /flow-comments scan with stored triage metadata', async () => {
     const calls: string[] = [];
     const state = session();
     state.reviewComments!.lastRun!.filteredThreadCount = 60;
     state.reviewComments!.lastRun!.threadIds = ['PRRT_thread_1', 'PRRT_thread_2'];
+    state.reviewComments!.lastRun!.threads.push({
+      threadId: 'PRRT_thread_2',
+      path: 'src/other.ts',
+      line: 2,
+      isResolved: false,
+      isOutdated: false,
+      author: 'alice',
+      latestCommentSummary: 'Please fix this too.',
+      classification: 'valid',
+      requiresHumanDecision: false,
+      canResolveAfterChecks: true,
+    });
     const result = await runFlowFixComments({
       payload: payload({ threadId: 'PRRT_thread_2', resolveRequested: false }),
       applyReplies: true,
@@ -175,25 +187,25 @@ describe('runFlowFixComments', () => {
     expect(result.status).toBe('applied');
   });
 
-  it('blocks resolving thread IDs without stored triage metadata', async () => {
+  it('blocks mutating thread IDs without stored triage metadata', async () => {
     const calls: string[] = [];
     const state = session();
     state.reviewComments!.lastRun!.filteredThreadCount = 60;
     state.reviewComments!.lastRun!.threadIds = ['PRRT_thread_1', 'PRRT_thread_2'];
     const result = await runFlowFixComments({
-      payload: payload({ threadId: 'PRRT_thread_2', resolveRequested: true }),
-      applyResolutions: true,
+      payload: payload({ threadId: 'PRRT_thread_2', resolveRequested: false }),
+      applyReplies: true,
       config: getDefaultCodeflowConfig(),
       sessionState: state,
-      resolveThread: async () => {
-        calls.push('resolve');
-        throw new Error('resolve should not be called');
+      replyToThread: async () => {
+        calls.push('reply');
+        throw new Error('reply should not be called');
       },
     });
 
     expect(calls).toEqual([]);
     expect(result.status).toBe('blocked');
-    expect(result.blocked[0]?.reason).toContain('bounded /flow-comments ID metadata');
+    expect(result.blocked[0]?.reason).toContain('/flow-comments ID metadata');
   });
 
   it('blocks when /flow-comments state belongs to a different PR', async () => {
@@ -242,6 +254,24 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions).toEqual([]);
     expect(postedBody).not.toContain('I am resolving this thread');
     expect(postedBody).toContain('leaving this thread unresolved');
+  });
+
+  it('posts reply-only applies even when resolution gates would fail', async () => {
+    const calls: string[] = [];
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ checkStatus: 'failed' }),
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('applied');
+    expect(result.blocked).toEqual([]);
   });
 
   it('honors explicit reply-only apply when auto-resolve is enabled', async () => {

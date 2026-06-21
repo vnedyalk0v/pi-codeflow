@@ -599,6 +599,19 @@ async function buildReviewFixExecutionPlans(options: {
       continue;
     }
 
+    if (alreadyResolvedThread(options.sessionState, item.threadId)) {
+      const skipReason = 'thread was already resolved in this Codeflow session';
+      options.warnings.push(`Skipping duplicate resolution for ${item.threadId}; ${skipReason}.`);
+      plans.push({
+        item,
+        renderedReply: null,
+        shouldIncludeReply: false,
+        shouldIncludeResolution: false,
+        skipReason,
+      });
+      continue;
+    }
+
     const policy = evaluateReviewFixPolicy({
       item,
       config: options.config.reviewComments,
@@ -894,6 +907,10 @@ function failedResolution(item: CodeflowReviewFixItem, reason: string): Codeflow
 
 function alreadyPostedReply(sessionState: CodeflowSessionState, threadId: string): boolean {
   return sessionState.reviewFix?.lastRun?.repliesPosted.some((reply) => reply.threadId === threadId) === true;
+}
+
+function alreadyResolvedThread(sessionState: CodeflowSessionState, threadId: string): boolean {
+  return sessionState.reviewFix?.lastRun?.threadsResolved.some((resolution) => resolution.threadId === threadId) === true;
 }
 
 function resolveCommandBaseCwd(cwd: string, configPath: string | null): string {

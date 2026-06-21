@@ -227,7 +227,8 @@ Implemented behavior:
 - calls `resolveReviewThread` only in apply-resolution mode;
 - never calls GitHub mutations during dry-run or preview-only mode;
 - stores bounded review-fix outcome state without full reply bodies;
-- skips already resolved threads;
+- skips threads already resolved by latest triage or prior `/flow-fix-comments`
+  outcome state so retries stay idempotent;
 - never edits code, commits, pushes, approves, merges, reruns workflows, deletes
   branches, or mass-resolves comments.
 

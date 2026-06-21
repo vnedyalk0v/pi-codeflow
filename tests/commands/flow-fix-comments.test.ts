@@ -476,6 +476,38 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions[0]?.status).toBe('skipped');
   });
 
+  it('skips session-recorded resolved threads on retries', async () => {
+    const calls: string[] = [];
+    const state = session({ isResolved: false });
+    state.reviewFix!.lastRun = {
+      status: 'applied',
+      prNumber: 123,
+      checkedAt: '2026-01-01T00:02:00.000Z',
+      repliesPosted: [],
+      threadsResolved: [{ threadId: 'PRRT_thread_1', classification: 'valid' }],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'Resolved PRRT_thread_1.',
+    };
+
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('not called');
+      },
+    });
+
+    expect(calls).toEqual([]);
+    expect(result.status).toBe('dry_run');
+    expect(result.resolutions[0]?.status).toBe('skipped');
+    expect(result.resolutions[0]?.reason).toContain('already resolved in this Codeflow session');
+    expect(result.warnings.join('\n')).toContain('Skipping duplicate resolution');
+  });
+
   it('does not commit, push, merge, approve, delete branches, or rerun workflows', async () => {
     const calls: string[] = [];
     await runFlowFixComments({

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getDefaultCodeflowConfig, type CodeflowReviewFixItem } from '../../src/index';
 import { evaluateReviewResolutionPolicy } from '../../src/review-comments/review-resolution-policy';
 import type { CodeflowStoredCheckRun } from '../../src/state/check-state';
+import type { CodeflowStoredCommit } from '../../src/state/commit-state';
 import type { CodeflowStoredReviewCommentThread } from '../../src/state/review-comments-state';
 
 function item(overrides: Partial<CodeflowReviewFixItem> = {}): CodeflowReviewFixItem {
@@ -34,13 +35,30 @@ function thread(overrides: Partial<CodeflowStoredReviewCommentThread> = {}): Cod
   };
 }
 
-function checks(status: CodeflowStoredCheckRun['status']): CodeflowStoredCheckRun {
+function checks(
+  status: CodeflowStoredCheckRun['status'],
+  finishedAt = '2026-01-01T00:01:00.000Z',
+): CodeflowStoredCheckRun {
   return {
     status,
     startedAt: '2026-01-01T00:00:00.000Z',
-    finishedAt: '2026-01-01T00:01:00.000Z',
+    finishedAt,
     durationMs: 60_000,
     results: [],
+  };
+}
+
+function commit(overrides: Partial<CodeflowStoredCommit> = {}): CodeflowStoredCommit {
+  return {
+    sha: 'abc1234',
+    branch: 'feat/comments',
+    title: 'fix: review comment',
+    type: 'fix',
+    scope: null,
+    summary: 'Fix review comment.',
+    refs: ['#14'],
+    committedAt: '2026-01-01T00:02:00.000Z',
+    ...overrides,
   };
 }
 
@@ -84,6 +102,19 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(missingState.allowed).toBe(true);
     expect(missingState.warnings.join('\n')).toContain('payload checksRun');
     expect(failedState.allowed).toBe(false);
+  });
+
+  it('blocks resolution when the latest checks predate the fix commit', () => {
+    const result = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('passed', '2026-01-01T00:01:00.000Z'),
+      latestCommit: commit({ committedAt: '2026-01-01T00:02:00.000Z' }),
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.blockedReasons.join('\n')).toContain('finished before the fix commit');
   });
 
   it('blocks stale resolution without outdated state or evidence', () => {

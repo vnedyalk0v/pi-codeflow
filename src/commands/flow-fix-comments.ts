@@ -243,10 +243,20 @@ export async function runFlowFixComments(
               threadId: item.threadId,
               ghClient: options.ghClient,
             });
-            resolutions.push({
+            const normalizedResolution = {
               ...resolution,
               classification: item.classification,
-            });
+            };
+            resolutions.push(normalizedResolution);
+
+            if (normalizedResolution.status !== 'resolved' || !normalizedResolution.resolved) {
+              mutationFailed = true;
+              blocked.push({
+                threadId: item.threadId,
+                classification: item.classification,
+                reason: normalizedResolution.reason ?? 'GitHub did not report the thread as resolved.',
+              });
+            }
           } catch (error) {
             mutationFailed = true;
             const message = error instanceof Error ? error.message : 'review-thread resolve mutation failed';

@@ -114,11 +114,11 @@ function evaluateChecksBeforeResolve(options: {
   const latestCheckRun = options.latestCheckRun ?? null;
 
   if (latestCheckRun?.status === 'passed') {
-    const commitWarning = validateCheckRunAfterCommit(options.item, latestCheckRun, options.latestCommit ?? null);
-    if (commitWarning) {
-      warnings.push(commitWarning);
+    const commitBlocker = validateCheckRunAfterCommit(options.item, latestCheckRun, options.latestCommit ?? null);
+    if (commitBlocker) {
+      blockedReasons.push(commitBlocker);
     }
-    return { allowed: true, blockedReasons, warnings };
+    return { allowed: blockedReasons.length === 0, blockedReasons, warnings };
   }
 
   if (!latestCheckRun && options.item.checksRun.length > 0 && options.item.verification.length > 0) {

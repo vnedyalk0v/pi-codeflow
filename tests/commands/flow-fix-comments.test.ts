@@ -187,6 +187,27 @@ describe('runFlowFixComments', () => {
     expect(result.replies).toEqual([]);
   });
 
+  it('treats unresolved mutation results as failed and blocked', async () => {
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session(),
+      resolveThread: async (options) => ({
+        threadId: options.threadId,
+        classification: 'valid',
+        status: 'failed',
+        resolved: false,
+        reason: 'GitHub did not report the thread as resolved.',
+      }),
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.lifecyclePhase).toBe('blocked');
+    expect(result.blocked[0]?.reason).toContain('did not report');
+    expect(result.sessionState.reviewFix?.lastRun?.status).toBe('failed');
+  });
+
   it('apply calls reply before resolve when both are allowed', async () => {
     const calls: string[] = [];
     const result = await runFlowFixComments({

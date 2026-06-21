@@ -169,18 +169,10 @@ function evaluateGitHubChecksForResolution(
     return { allowed: true, blockedReasons: [], warnings: [] };
   }
 
-  if (latestGitHubChecksRun.status === 'failed' || latestGitHubChecksRun.status === 'skipped' || latestGitHubChecksRun.status === 'unknown') {
-    return {
-      allowed: false,
-      blockedReasons: [`latest GitHub checks state is ${latestGitHubChecksRun.status}, not passed`],
-      warnings: [],
-    };
-  }
-
   return {
-    allowed: true,
-    blockedReasons: [],
-    warnings: [`latest GitHub checks state is ${latestGitHubChecksRun.status}; remote verification was not proven by /flow-watch.`],
+    allowed: false,
+    blockedReasons: [`latest GitHub checks state is ${latestGitHubChecksRun.status}, not passed`],
+    warnings: [],
   };
 }
 

@@ -129,14 +129,14 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(result.blockedReasons.join('\n')).toContain('stale');
   });
 
-  it('blocks failed GitHub checks before resolution', () => {
+  it.each(['failed', 'pending', 'no_checks', 'unknown'] as const)('blocks %s GitHub checks before resolution', (status) => {
     const result = evaluateReviewResolutionPolicy({
       item: item(),
       config: config.reviewComments,
       knownThread: thread(),
       latestCheckRun: checks('passed'),
       latestGitHubChecksRun: {
-        status: 'failed',
+        status,
         prNumber: 123,
         prUrl: null,
         requiredOnly: true,
@@ -145,7 +145,7 @@ describe('evaluateReviewResolutionPolicy', () => {
         finishedAt: '2026-01-01T00:01:00.000Z',
         durationMs: 60_000,
         checks: [],
-        summary: 'failed',
+        summary: status,
       },
     });
 

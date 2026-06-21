@@ -147,6 +147,7 @@ describe('runFlowFixComments', () => {
 
   it('apply replies posts only allowed replies and stays in review triage', async () => {
     const calls: string[] = [];
+    let postedBody = '';
     const result = await runFlowFixComments({
       payload: payload({ resolveRequested: false }),
       applyReplies: true,
@@ -154,6 +155,7 @@ describe('runFlowFixComments', () => {
       sessionState: session(),
       replyToThread: async (options) => {
         calls.push(`reply:${options.threadId}`);
+        postedBody = options.body;
         return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: 'https://example.test', body: options.body };
       },
     });
@@ -163,6 +165,50 @@ describe('runFlowFixComments', () => {
     expect(result.lifecyclePhase).toBe('review_triage');
     expect(result.replies[0]?.status).toBe('posted');
     expect(result.resolutions).toEqual([]);
+    expect(postedBody).not.toContain('I am resolving this thread');
+    expect(postedBody).toContain('leaving this thread unresolved');
+  });
+
+  it('records reply render failures before mutation state is lost', async () => {
+    const calls: string[] = [];
+    const state = session();
+    state.reviewComments!.lastRun!.threads.push({
+      threadId: 'PRRT_thread_2',
+      path: 'src/example.ts',
+      line: 2,
+      isResolved: false,
+      isOutdated: false,
+      author: 'alice',
+      latestCommentSummary: 'Please fix this too.',
+      classification: 'valid',
+      requiresHumanDecision: false,
+      canResolveAfterChecks: true,
+    });
+    const result = await runFlowFixComments({
+      payload: {
+        prNumber: 123,
+        items: [
+          payload({ resolveRequested: false }).items[0]!,
+          {
+            ...payload({ threadId: 'PRRT_thread_2', resolveRequested: false }).items[0]!,
+            verification: Array.from({ length: 12 }, (_, index) => `check ${index} ${'x'.repeat(500)}`),
+          },
+        ],
+      },
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('blocked');
+    expect(result.blocked[0]?.threadId).toBe('PRRT_thread_2');
+    expect(result.blocked[0]?.reason).toContain('exceeds');
+    expect(result.sessionState.reviewFix?.lastRun?.blocked[0]?.threadId).toBe('PRRT_thread_2');
   });
 
   it('apply resolutions resolves only allowed threads without rendering replies', async () => {

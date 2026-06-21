@@ -24,6 +24,7 @@ import type {
   CodeflowReviewFixPayload,
   CodeflowReviewFixResult,
   CodeflowReviewFixResultStatus,
+  CodeflowRenderedReviewReply,
   CodeflowReviewReplyResult,
   CodeflowReviewResolutionResult,
 } from '../review-comments/review-fix-payload';
@@ -69,6 +70,14 @@ export interface ParsedFlowFixCommentsArguments {
   detached: boolean;
   pr?: number;
   payloadPath?: string;
+}
+
+interface ReviewFixExecutionPlan {
+  item: CodeflowReviewFixItem;
+  renderedReply: CodeflowRenderedReviewReply | null;
+  shouldIncludeReply: boolean;
+  shouldIncludeResolution: boolean;
+  skipReason: string | null;
 }
 
 export async function runFlowFixComments(
@@ -154,51 +163,31 @@ export async function runFlowFixComments(
       });
     }
   } else {
-    for (const item of validation.payload.items) {
-      const knownThread = knownThreadsById.get(item.threadId) ?? null;
-      const policy = evaluateReviewFixPolicy({
-        item,
-        config: config.reviewComments,
-        knownThread,
-        latestCheckRun: sessionState.checks.lastRun,
-        latestCommit: sessionState.commits.lastCommit,
-        latestGitHubChecksRun: sessionState.githubChecks?.lastRun ?? null,
-        allowInvalidResolution: options.allowInvalidResolution,
-      } satisfies EvaluateReviewFixPolicyOptions);
-      warnings.push(...policy.warnings);
+    const plans = await buildReviewFixExecutionPlans({
+      items: validation.payload.items,
+      knownThreadsById,
+      config,
+      cwd: resolveCommandBaseCwd(cwd, loadedConfig.configPath),
+      dryRun,
+      applyReplies,
+      applyResolutions,
+      explicitApplyReplies,
+      explicitApplyResolutions,
+      allowInvalidResolution: options.allowInvalidResolution,
+      sessionState,
+      warnings,
+      blocked,
+      requiresHumanDecision,
+    });
 
-      if (policy.requiresHumanDecision) {
-        requiresHumanDecision.push(item.threadId);
-      }
+    for (const plan of plans) {
+      const { item, renderedReply, shouldIncludeReply, shouldIncludeResolution } = plan;
 
-      if (policy.shouldSkip) {
-        replies.push(skippedReply(item, 'thread is already resolved'));
-        resolutions.push(skippedResolution(item, 'thread is already resolved'));
+      if (plan.skipReason) {
+        replies.push(skippedReply(item, plan.skipReason));
+        resolutions.push(skippedResolution(item, plan.skipReason));
         continue;
       }
-
-      if (policy.blockedReasons.length > 0) {
-        blocked.push({
-          threadId: item.threadId,
-          classification: item.classification,
-          reason: policy.blockedReasons.join('; '),
-        });
-        continue;
-      }
-
-      const shouldIncludeReply = policy.canReply && shouldRenderOrApplyReply({
-        dryRun,
-        applyReplies,
-        explicitApplyReplies,
-        explicitApplyResolutions,
-      });
-      const renderedReply = shouldIncludeReply
-        ? await renderReviewReply(item, {
-            cwd: resolveCommandBaseCwd(cwd, loadedConfig.configPath),
-            config,
-          })
-        : null;
-      warnings.push(...(renderedReply?.warnings ?? []));
 
       if (shouldIncludeReply) {
         if (dryRun || !applyReplies) {
@@ -233,7 +222,7 @@ export async function runFlowFixComments(
         }
       }
 
-      if (policy.canResolve) {
+      if (shouldIncludeResolution) {
         if (dryRun || !applyResolutions) {
           resolutions.push(plannedResolution(item));
         } else {
@@ -535,6 +524,108 @@ function resolvePrNumber(
     ?? null;
 }
 
+async function buildReviewFixExecutionPlans(options: {
+  items: CodeflowReviewFixItem[];
+  knownThreadsById: Map<string, CodeflowStoredReviewCommentThread>;
+  config: CodeflowConfig;
+  cwd: string;
+  dryRun: boolean;
+  applyReplies: boolean;
+  applyResolutions: boolean;
+  explicitApplyReplies: boolean;
+  explicitApplyResolutions: boolean;
+  allowInvalidResolution?: boolean;
+  sessionState: CodeflowSessionState;
+  warnings: string[];
+  blocked: CodeflowReviewFixBlockedItem[];
+  requiresHumanDecision: string[];
+}): Promise<ReviewFixExecutionPlan[]> {
+  const plans: ReviewFixExecutionPlan[] = [];
+
+  for (const item of options.items) {
+    const knownThread = options.knownThreadsById.get(item.threadId) ?? null;
+    const policy = evaluateReviewFixPolicy({
+      item,
+      config: options.config.reviewComments,
+      knownThread,
+      latestCheckRun: options.sessionState.checks.lastRun,
+      latestCommit: options.sessionState.commits.lastCommit,
+      latestGitHubChecksRun: options.sessionState.githubChecks?.lastRun ?? null,
+      allowInvalidResolution: options.allowInvalidResolution,
+    } satisfies EvaluateReviewFixPolicyOptions);
+    options.warnings.push(...policy.warnings);
+
+    if (policy.requiresHumanDecision) {
+      options.requiresHumanDecision.push(item.threadId);
+    }
+
+    if (policy.shouldSkip) {
+      plans.push({
+        item,
+        renderedReply: null,
+        shouldIncludeReply: false,
+        shouldIncludeResolution: false,
+        skipReason: 'thread is already resolved',
+      });
+      continue;
+    }
+
+    if (policy.blockedReasons.length > 0) {
+      options.blocked.push({
+        threadId: item.threadId,
+        classification: item.classification,
+        reason: policy.blockedReasons.join('; '),
+      });
+      continue;
+    }
+
+    const shouldIncludeResolution = policy.canResolve && shouldRenderOrApplyResolution({
+      dryRun: options.dryRun,
+      applyResolutions: options.applyResolutions,
+      explicitApplyReplies: options.explicitApplyReplies,
+      explicitApplyResolutions: options.explicitApplyResolutions,
+    });
+    const shouldIncludeReply = policy.canReply && shouldRenderOrApplyReply({
+      dryRun: options.dryRun,
+      applyReplies: options.applyReplies,
+      explicitApplyReplies: options.explicitApplyReplies,
+      explicitApplyResolutions: options.explicitApplyResolutions,
+    });
+    let renderedReply: CodeflowRenderedReviewReply | null = null;
+
+    if (shouldIncludeReply) {
+      try {
+        renderedReply = await renderReviewReply({
+          ...item,
+          resolveRequested: shouldIncludeResolution,
+        }, {
+          cwd: options.cwd,
+          config: options.config,
+        });
+        options.warnings.push(...renderedReply.warnings);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'review reply rendering failed';
+        options.blocked.push({
+          threadId: item.threadId,
+          classification: item.classification,
+          reason: message,
+        });
+        continue;
+      }
+    }
+
+    plans.push({
+      item,
+      renderedReply,
+      shouldIncludeReply,
+      shouldIncludeResolution,
+      skipReason: null,
+    });
+  }
+
+  return plans;
+}
+
 function getReviewFixStatus(options: {
   dryRun: boolean;
   mutationFailed: boolean;
@@ -643,6 +734,19 @@ function shouldRenderOrApplyReply(options: {
   explicitApplyResolutions: boolean;
 }): boolean {
   if (options.applyReplies) {
+    return true;
+  }
+
+  return options.dryRun && !options.explicitApplyReplies && !options.explicitApplyResolutions;
+}
+
+function shouldRenderOrApplyResolution(options: {
+  dryRun: boolean;
+  applyResolutions: boolean;
+  explicitApplyReplies: boolean;
+  explicitApplyResolutions: boolean;
+}): boolean {
+  if (options.applyResolutions) {
     return true;
   }
 

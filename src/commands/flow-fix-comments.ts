@@ -139,6 +139,7 @@ export async function runFlowFixComments(
 
   const validation = validateReviewFixPayload(options.payload, {
     knownThreads: latestReviewComments?.threads,
+    knownThreadIds: latestReviewComments?.threadIds,
     detached: options.detached,
     config: config.reviewComments,
     allowInvalidResolution: options.allowInvalidResolution,
@@ -710,13 +711,43 @@ function getLifecyclePhaseForReviewFix(options: {
 
   if (
     options.status === 'applied' &&
-    options.resolutions.some((resolution) => resolution.status === 'resolved') &&
-    options.sessionState.checks.lastRun?.status === 'passed'
+    options.sessionState.checks.lastRun?.status === 'passed' &&
+    allKnownReviewThreadsResolved(options.sessionState, options.resolutions)
   ) {
     return 'verified';
   }
 
   return 'review_triage';
+}
+
+function allKnownReviewThreadsResolved(
+  sessionState: CodeflowSessionState,
+  resolutions: CodeflowReviewResolutionResult[],
+): boolean {
+  const reviewState = sessionState.reviewComments?.lastRun;
+
+  if (!reviewState || reviewState.status !== 'found') {
+    return false;
+  }
+
+  const storedThreadsById = new Map(reviewState.threads.map((thread) => [thread.threadId, thread]));
+  const knownThreadIds = reviewState.threadIds ?? reviewState.threads.map((thread) => thread.threadId);
+  const resolvedThreadIds = new Set(
+    resolutions
+      .filter((resolution) => resolution.status === 'resolved' && resolution.resolved)
+      .map((resolution) => resolution.threadId),
+  );
+  const unresolvedThreadIds = knownThreadIds.filter((threadId) => {
+    const storedThread = storedThreadsById.get(threadId);
+
+    if (!storedThread) {
+      return true;
+    }
+
+    return !storedThread.isResolved && storedThread.requiresHumanDecision !== true;
+  });
+
+  return unresolvedThreadIds.length > 0 && unresolvedThreadIds.every((threadId) => resolvedThreadIds.has(threadId));
 }
 
 function getFlowFixCommentsNextExpectedActions(options: {

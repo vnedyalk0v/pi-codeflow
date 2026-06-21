@@ -99,7 +99,7 @@ describe('/flow-fix-comments lifecycle behavior', () => {
     expect(verifiedPreview.sessionState.lifecycle.phase).toBe('verified');
   });
 
-  it('moves successful allowed resolutions toward verified', async () => {
+  it('moves successful allowed resolutions toward verified only after all known threads are resolved', async () => {
     const result = await runFlowFixComments({
       payload: payload(),
       applyResolutions: true,
@@ -112,9 +112,36 @@ describe('/flow-fix-comments lifecycle behavior', () => {
         resolved: true,
       }),
     });
+    const partialSession = session();
+    partialSession.reviewComments!.lastRun!.threads.push({
+      threadId: 'PRRT_thread_2',
+      path: 'src/other.ts',
+      line: 2,
+      isResolved: false,
+      isOutdated: false,
+      author: 'alice',
+      latestCommentSummary: 'Please fix this too.',
+      classification: 'valid',
+      requiresHumanDecision: false,
+      canResolveAfterChecks: true,
+    });
+    const partial = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: partialSession,
+      resolveThread: async (options) => ({
+        threadId: options.threadId,
+        classification: 'valid',
+        status: 'resolved',
+        resolved: true,
+      }),
+    });
 
     expect(result.status).toBe('applied');
     expect(result.lifecyclePhase).toBe('verified');
+    expect(partial.status).toBe('applied');
+    expect(partial.lifecyclePhase).toBe('review_triage');
   });
 
   it('moves needs_human and mutation failures to blocked', async () => {

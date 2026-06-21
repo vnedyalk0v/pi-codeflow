@@ -155,6 +155,26 @@ describe('runFlowFixComments', () => {
     expect(result.sessionState.reviewFix?.lastRun?.status).toBe('dry_run');
   });
 
+  it('accepts thread IDs from a bounded /flow-comments scan', async () => {
+    const calls: string[] = [];
+    const state = session();
+    state.reviewComments!.lastRun!.filteredThreadCount = 60;
+    state.reviewComments!.lastRun!.threadIds = ['PRRT_thread_1', 'PRRT_thread_2'];
+    const result = await runFlowFixComments({
+      payload: payload({ threadId: 'PRRT_thread_2', resolveRequested: false }),
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_2', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_2']);
+    expect(result.status).toBe('applied');
+  });
+
   it('blocks when /flow-comments state belongs to a different PR', async () => {
     const calls: string[] = [];
     const state = session();

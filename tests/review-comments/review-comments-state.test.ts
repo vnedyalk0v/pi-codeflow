@@ -130,6 +130,8 @@ describe('Codeflow review comments state', () => {
     });
 
     expect(state.lastRun?.threads).toHaveLength(50);
+    expect(state.lastRun?.threadIds).toHaveLength(60);
+    expect(state.lastRun?.threadIds?.at(-1)).toBe('PRRT_thread_60');
     expect(state.lastRun?.summary.length ?? 0).toBeLessThanOrEqual(2000);
     expect(JSON.stringify(state)).not.toContain(hugeBody);
   });

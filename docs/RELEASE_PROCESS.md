@@ -24,3 +24,15 @@ Before publishing is automated, maintainers should confirm:
 - package contents are reviewed for secrets and generated artifacts;
 - release notes describe compatibility and migration expectations;
 - rollback instructions are documented for failed releases.
+
+## Pre-release documentation checklist
+
+Before a pre-release is tagged or promoted, confirm:
+
+- installation docs are updated;
+- usage docs are updated;
+- troubleshooting docs are updated;
+- CI is passing;
+- no secrets are needed for package validation;
+- no npm publishing is claimed unless explicitly planned and implemented;
+- limitations and project status still match the current implementation.

@@ -77,6 +77,15 @@ Codeflow should not require secrets for normal operation. It should avoid readin
 secret files and should redact likely tokens in check output, reports, PR bodies,
 and issue comments.
 
+## Installation trust boundary
+
+Users should review package source before installing pi-codeflow. Pi packages and
+extensions can execute code with the user's local permissions, and project-level
+package settings may load after a trusted project is opened.
+
+Installation guidance lives in [Installation](INSTALLATION.md). User-facing
+command and limitation guidance lives in [Usage](USAGE.md).
+
 ## CI validation permissions
 
 The initial Validate workflow runs package checks with `contents: read`
@@ -259,6 +268,15 @@ Safety expectations for local checks:
 Configured checks still run with the user's local permissions. Reviewers should
 focus on command execution safety, timeout behavior, output handling, and state
 storage whenever this layer changes.
+
+## GitHub mutation boundary
+
+GitHub mutations are limited to explicit Codeflow commands and policy gates:
+
+- `/flow-pr` may create or update PRs from structured payloads;
+- `/flow-fix-comments` may post review-thread replies or resolve threads only
+  with apply flags and allowed classifications;
+- `/flow-watch` and `/flow-comments` remain read-only.
 
 ## Extension risks
 

@@ -30,6 +30,12 @@ These rules apply to AI agents working in this repository.
 - Do not add dependencies without a documented rationale.
 - Keep docs, prompts, templates, schemas, and issues consistent when behavior
   changes.
+- Keep installation and usage docs updated when command behavior changes.
+- Treat `docs/INSTALLATION.md` and `docs/USAGE.md` as user-facing source of
+  truth for setup, commands, limitations, and examples.
+- Do not claim npm publishing, package publishing, production readiness, release
+  automation, deployment, or secrets unless the release process and repository
+  state actually provide them.
 
 ## Structured outputs
 

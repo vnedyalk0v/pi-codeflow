@@ -2,128 +2,161 @@
 
 Pi package for consistent AI coding workflows.
 
-**Project status:** early implementation / pre-MVP.
+## Project status
 
-> Warning: this repository is not ready for production use yet. It now contains
-> config loading, validation, guidance injection, lifecycle state helpers,
-> `/flow-start` semantic branch preparation, `/flow-check` local check running,
-> `/flow-commit` generated commit messages, `/flow-pr` generated PR
-> title/body creation, `/flow-watch` GitHub PR checks watching, read-only
-> `/flow-comments` review-thread triage, and safe `/flow-fix-comments`
-> review-thread reply/resolution gates, but it does not enforce the full
-> workflow in real projects.
+pi-codeflow is early and pre-release. Review the package source before installing
+it in real projects. It is not published to npm, does not claim production
+readiness, and does not automate merge or release authority.
 
-pi-codeflow is intended to guide Pi Coding Agent through a consistent coding
-lifecycle:
+## What Codeflow Does
 
-- semantic branch creation
-- implementation planning
-- configured local checks
-- self-review
-- templated commits
-- templated pull requests
-- CI tracking with GitHub PR checks summaries
-- reviewer comment triage
-- fix loops
-- final delivery reports
+Codeflow helps Pi Coding Agent follow a conservative repository lifecycle:
 
-## What this package will do
+- inject workflow guidance before agent runs;
+- prepare semantic branches with `/flow-start`;
+- run project-configured checks with `/flow-check`;
+- render and create commits from structured payloads with `/flow-commit`;
+- render and open or update PRs from structured payloads with `/flow-pr`;
+- read GitHub PR checks with `/flow-watch`;
+- list and triage GitHub review threads read-only with `/flow-comments`;
+- apply policy-gated review replies and resolutions with `/flow-fix-comments`.
 
-- Provide model-neutral workflow guidance for AI coding agents.
-- Inject proactive Codeflow guidance from validated configuration before agent
-  runs.
-- Standardize branch names, commit payloads, PR payloads, review replies, and
-  final reports.
-- Load project-specific workflow configuration from `.pi/codeflow.json`.
-- Run configured local checks and summarize results.
-- Help agents triage GitHub review comments read-only and apply safe
-  `/flow-fix-comments` replies/resolution only after classification,
-  verification, and policy gates pass.
-- Keep safety rules visible, auditable, and conservative by default.
-
-## What this package will not do
-
-- Replace human product, security, or code review decisions.
-- Force-push, delete branches, rewrite history, or perform destructive git
-  operations by default.
-- Require access to secrets for normal operation.
-- Generate production implementation code without an issue and accepted plan.
-- Hide model-specific instructions or depend on one model provider.
-
-## Validation
-
-Run the full local validation suite with:
-
-```sh
-npm run check
-```
-
-GitHub Actions runs the same package validation on pull requests targeting
-`dev` or `main`.
-
-## Proposed command surface
-
-| Command | Purpose |
-| --- | --- |
-| `/flow-start` | Classify a task and prepare a semantic work branch. |
-| `/flow-plan` | Produce an implementation plan. |
-| `/flow-status` | Show current lifecycle state. |
-| `/flow-check` | Run configured checks. |
-| `/flow-review` | Self-review the current diff. |
-| `/flow-commit` | Render and create a commit from a structured payload. |
-| `/flow-pr` | Render and open a templated pull request. |
-| `/flow-watch` | Watch GitHub checks. |
-| `/flow-comments` | Read-only review-thread listing, filtering, and triage validation. |
-| `/flow-fix-comments` | Verified reply and policy-gated resolution for triaged review threads. |
-| `/flow-report` | Produce a final delivery report. |
-
-## Intended package structure
+## Command Lifecycle
 
 ```text
-pi-codeflow/
-├── docs/          # product specs, workflow docs, release notes, decisions
-├── src/           # TypeScript config loading and validation foundation
-├── tests/         # unit tests and config fixtures
-├── extensions/    # future Pi extension implementation entry points
-├── skills/        # Pi skills that teach agents when to use Codeflow
-├── prompts/       # prompt templates for lifecycle phases
-├── templates/     # rendered output templates
-├── config/        # default and example Codeflow configuration
-├── schemas/       # draft JSON schemas for configuration and payloads
-└── .github/       # PR template, issue forms, and future workflow docs
+/flow-start
+  -> implement focused changes
+  -> /flow-check
+  -> /flow-commit
+  -> /flow-pr
+  -> /flow-watch
+  -> /flow-comments
+  -> fix valid review findings
+  -> /flow-check
+  -> /flow-commit
+  -> /flow-watch
+  -> /flow-fix-comments
 ```
 
-## Documentation
+Human review and merge remain outside Codeflow.
 
-- [MVP specification](docs/MVP.md)
-- [Product Requirements Document](docs/PRD.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Workflow](docs/WORKFLOW.md)
-- [Lifecycle state machine](docs/STATE_MACHINE.md)
+## Installation
+
+Current recommended installation paths are GitHub and local clone installs:
+
+```sh
+pi install https://github.com/vnedyalk0v/pi-codeflow
+```
+
+For project-local setup when supported by Pi:
+
+```sh
+pi install -l https://github.com/vnedyalk0v/pi-codeflow
+```
+
+See [Installation](docs/INSTALLATION.md) for pinned refs, temporary evaluation,
+local clone installs, requirements, and verification.
+
+## Quickstart
+
+1. Install pi-codeflow.
+2. Add `.pi/codeflow.json` to the target project.
+3. Start work with `/flow-start --type feat "Add Google OAuth login"`.
+4. Make focused changes with the agent.
+5. Run `/flow-check`.
+6. Commit through `/flow-commit --payload .pi/codeflow/commit-payload.json`.
+7. Open a PR through `/flow-pr --payload .pi/codeflow/pr-payload.json`.
+8. Watch checks with `/flow-watch --required`.
+9. Triage review threads with `/flow-comments`.
+10. Use `/flow-fix-comments` only after fixes and verification.
+
+See [Usage](docs/USAGE.md) for the full end-to-end flow, command reference, and
+payload examples.
+
+## Configuration
+
+Project configuration lives at:
+
+```text
+.pi/codeflow.json
+```
+
+See:
+
 - [Configuration](docs/CONFIGURATION.md)
+- [Examples](docs/EXAMPLES.md)
 - [Branching](docs/BRANCHING.md)
 - [Commits](docs/COMMITS.md)
 - [Pull Requests](docs/PULL_REQUESTS.md)
 - [Review Comments](docs/REVIEW_COMMENTS.md)
-- [Emergency Flow](docs/EMERGENCY_FLOW.md)
+
+## Safety Model
+
+Codeflow is conservative by default:
+
+- no normal work on reserved branches;
+- no force-push or destructive git operations;
+- no PR approval or merge automation;
+- no package publishing or deployment;
+- no review-thread resolution for `needs_human`;
+- GitHub mutations only through explicit commands and policy gates.
+
+See [Security Model](docs/SECURITY_MODEL.md).
+
+## Troubleshooting
+
+See [Troubleshooting](docs/TROUBLESHOOTING.md) for missing packages, missing
+commands, invalid config, GitHub CLI authentication, failed checks, PR failures,
+and review-thread resolution blockers.
+
+## Development and Validation
+
+Install dependencies and run the package validation suite:
+
+```sh
+npm install
+npm run check
+```
+
+Individual checks:
+
+```sh
+npm run typecheck
+npm test
+npm run check:json
+npm run check:text
+npm run check:docs
+```
+
+GitHub Actions runs the same package validation on PRs targeting `dev` or
+`main`, and on pushes to `dev` or `main`.
+
+## Limitations
+
+- Early pre-release package.
+- GitHub operations require GitHub CLI and authentication.
+- Local checks execute commands from trusted project configuration.
+- GitHub review-thread operations rely on GitHub GraphQL through `gh`.
+- `/flow-fix-comments` replies or resolves review threads; it does not edit
+  code.
+- Branch protection, human review, merge approval, and release authority remain
+  outside Codeflow.
+- Self-review automation and final report command automation are future work.
+
+## Documentation
+
+- [Installation](docs/INSTALLATION.md)
+- [Usage](docs/USAGE.md)
+- [Examples](docs/EXAMPLES.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Workflow](docs/WORKFLOW.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [Security Model](docs/SECURITY_MODEL.md)
+- [Release Process](docs/RELEASE_PROCESS.md)
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
-
-## Development note
-
-This repository now includes the first production foundations for configuration
-loading, validation, guidance generation, before-agent guidance injection,
-in-memory lifecycle state helpers, `/flow-start` semantic branch preparation,
-`/flow-check` configured local check running, `/flow-commit` generated commit
-messages from structured payloads, `/flow-pr` generated PR title/body creation
-through GitHub CLI, `/flow-watch` GitHub PR checks watching, and read-only
-`/flow-comments` review-thread listing, filtering, triage validation, summaries,
-bounded session state, and `/flow-fix-comments` structured review-fix payload
-validation, deterministic reply rendering, GitHub GraphQL reply/resolution
-mutations behind explicit apply flags, safety policy, and bounded outcome state.
-
-It still does not implement self-review automation, automatic code fixes from
-review comments, merge automation, auto-approval, branch deletion, workflow
-reruns, or persistent lifecycle storage beyond the minimal in-command
-session-state result.
+- [MVP specification](docs/MVP.md)
+- [Product Requirements Document](docs/PRD.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Lifecycle state machine](docs/STATE_MACHINE.md)
+- [Emergency Flow](docs/EMERGENCY_FLOW.md)

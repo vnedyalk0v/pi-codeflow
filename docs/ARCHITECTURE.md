@@ -10,6 +10,9 @@ title/body creation, `/flow-watch` GitHub PR checks watching, read-only
 `/flow-comments` review-thread triage, and safe `/flow-fix-comments`
 review-thread reply/resolution gates.
 
+User-facing setup and command guidance lives in [Installation](INSTALLATION.md)
+and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
+
 ## Components
 
 ### Policy Engine
@@ -155,6 +158,18 @@ review-thread reply/resolution gates.
 - **Inputs:** user task and repository context.
 - **Outputs:** concise model-neutral guidance.
 - **Must not:** contain production logic.
+
+### User Documentation
+
+- **Responsibility:** explain installation, configuration, command usage,
+  examples, troubleshooting, limitations, and safety boundaries for users and
+  future agents.
+- **Inputs:** implemented command behavior, schemas, prompts, templates, and
+  release status.
+- **Outputs:** README navigation plus `docs/INSTALLATION.md`, `docs/USAGE.md`,
+  `docs/EXAMPLES.md`, and `docs/TROUBLESHOOTING.md`.
+- **Must not:** claim npm publishing, production readiness, merge automation,
+  or commands that are not implemented.
 
 ### Prompts
 

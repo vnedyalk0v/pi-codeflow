@@ -68,6 +68,145 @@ Projects should use:
 The repository examples in `config/` are package examples, not active project
 config.
 
+## Starter examples
+
+Use [Examples](EXAMPLES.md) for copyable project configs:
+
+- minimal `.pi/codeflow.json`;
+- Node app checks;
+- Python service checks;
+- monorepo checks;
+- safe review-comments defaults;
+- default template paths;
+- GitHub checks watcher defaults.
+
+The packaged example files mirror those shapes:
+
+- `config/example.node.codeflow.json`
+- `config/example.python.codeflow.json`
+- `config/example.monorepo.codeflow.json`
+
+## Minimal `.pi/codeflow.json`
+
+Use this when a project wants Codeflow defaults and has not configured checks:
+
+```json
+{
+  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
+  "baseBranches": {
+    "default": "dev",
+    "allowed": ["dev", "main"],
+    "fallback": "main",
+    "missingDefaultBehavior": "block"
+  },
+  "checks": []
+}
+```
+
+An empty `checks` array is valid. `/flow-check` reports that no checks ran, and
+agents must not present that as passing verification evidence.
+
+## Check command configuration
+
+Checks run sequentially from `checks`. Each entry should use a project-owned
+command that is already safe for local developers to run:
+
+```json
+{
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "timeoutMs": 120000
+    },
+    {
+      "name": "test",
+      "command": "npm test",
+      "timeoutMs": 300000
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "required": false
+    }
+  ]
+}
+```
+
+`required: false` keeps an optional check from failing the full `/flow-check`
+run, but the failure is still reported.
+
+## Review-comments safety defaults
+
+The default review-comments config is conservative:
+
+```json
+{
+  "reviewComments": {
+    "enabled": true,
+    "provider": "github-graphql",
+    "unresolvedOnly": true,
+    "includeOutdated": false,
+    "autoReply": false,
+    "autoResolve": false,
+    "autoResolveClassifications": ["stale", "already_fixed"],
+    "requireChecksBeforeResolve": true,
+    "requireHumanForInvalid": true,
+    "requireHumanForNeedsHuman": true,
+    "maxThreadsPerRun": 50,
+    "replyTemplate": "templates/review-reply.md"
+  }
+}
+```
+
+This makes `/flow-comments` read-only and keeps `/flow-fix-comments` mutations
+behind explicit apply flags and policy gates.
+
+## Pull request and GitHub checks defaults
+
+The default PR config opens draft PRs, requires structured evidence, pushes the
+current feature branch for PR creation, and makes `/flow-watch` prefer required
+checks:
+
+```json
+{
+  "pullRequest": {
+    "baseBranch": "dev",
+    "draftByDefault": true,
+    "requireVerification": true,
+    "requireSelfReview": true,
+    "openWhenChecksFail": false,
+    "updateExisting": true,
+    "requirePassedChecksBeforePr": false,
+    "pushBeforeCreate": true,
+    "linkKeyword": "Refs",
+    "watchRequiredChecksOnly": true,
+    "checksWatchIntervalSeconds": 10,
+    "checksWatchTimeoutSeconds": 900,
+    "failFast": false
+  }
+}
+```
+
+## Template paths
+
+The default template paths are:
+
+```json
+{
+  "templates": {
+    "branchName": "templates/branch-name.md",
+    "commitMessage": "templates/commit-message.md",
+    "pullRequest": "templates/pull-request.md",
+    "reviewReply": "templates/review-reply.md",
+    "finalReport": "templates/final-report.md"
+  }
+}
+```
+
+Template paths resolve from the repository root and then the package root. Keep
+custom templates committed with the project config that references them.
+
 ## Merge behavior
 
 The v0.2 merge is conservative:

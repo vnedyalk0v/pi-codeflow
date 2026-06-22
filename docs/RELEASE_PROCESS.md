@@ -9,13 +9,18 @@ The release process is planned for a future milestone.
 5. Create a GitHub release with highlights, migration notes, and known limitations.
 6. Package publishing may be added later; it is not part of the bootstrap.
 
-No automated publishing should be added until implementation, CI, and security review are ready.
+CI validation should pass before merging feature work into `dev` and before
+promoting `dev` to `main`.
+
+No automated publishing should be added until implementation, CI, and security
+review are ready.
 
 ## Release gates
 
 Before publishing is automated, maintainers should confirm:
 
 - implementation code exists and is covered by CI;
+- the Validate workflow passes for the release or promotion PR;
 - package contents are reviewed for secrets and generated artifacts;
 - release notes describe compatibility and migration expectations;
 - rollback instructions are documented for failed releases.

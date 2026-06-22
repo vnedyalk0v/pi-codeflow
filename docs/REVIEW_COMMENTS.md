@@ -226,6 +226,8 @@ Implemented behavior:
 - renders replies from `templates/review-reply.md`;
 - calls `addPullRequestReviewThreadReply` only in apply-reply mode;
 - calls `resolveReviewThread` only in apply-resolution mode;
+- honors `reviewComments.autoResolveClassifications` before automatic
+  resolution;
 - never calls GitHub mutations during dry-run or preview-only mode;
 - stores bounded review-fix outcome state without full reply bodies;
 - records which latest comment a posted reply addressed;

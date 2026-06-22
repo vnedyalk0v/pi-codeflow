@@ -432,7 +432,7 @@ threads are never resolved.
 | `includeOutdated` | Includes outdated threads when true. Defaults to false. |
 | `autoReply` | Allows `/flow-fix-comments` to post policy-allowed replies without `--apply-replies`/`--apply`. Defaults to false. |
 | `autoResolve` | Allows `/flow-fix-comments` to resolve policy-allowed threads without `--apply-resolutions`/`--apply`. Defaults to false. |
-| `autoResolveClassifications` | Classification allow-list for non-valid automatic resolution. Defaults to `stale` and `already_fixed`; `valid` still requires explicit evidence, commit SHA, and checks. |
+| `autoResolveClassifications` | Classification allow-list for automatic resolution. Defaults to `stale` and `already_fixed`; add `valid` only when valid findings may be auto-resolved without explicit `--apply-resolutions`/`--apply`. |
 | `requireChecksBeforeResolve` | Requires passed latest `/flow-check` evidence or acceptable explicit verification evidence before resolution. Defaults to true. |
 | `requireHumanForInvalid` | Blocks `invalid` thread resolution by default unless explicit policy/user override allows it. |
 | `requireHumanForNeedsHuman` | Ensures `needs_human` remains a human-decision blocker and is never resolved. |

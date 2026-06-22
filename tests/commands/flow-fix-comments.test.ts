@@ -366,6 +366,40 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions).toEqual([]);
   });
 
+  it('honors the auto-resolve allow-list for valid findings', async () => {
+    const calls: string[] = [];
+    const config = getDefaultCodeflowConfig();
+    config.reviewComments.autoResolve = true;
+
+    const blocked = await runFlowFixComments({
+      payload: payload(),
+      config,
+      sessionState: session(),
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('resolve should not be called');
+      },
+    });
+
+    expect(calls).toEqual([]);
+    expect(blocked.status).toBe('blocked');
+    expect(blocked.blocked[0]?.reason).toContain('autoResolveClassifications');
+
+    config.reviewComments.autoResolveClassifications.push('valid');
+    const allowed = await runFlowFixComments({
+      payload: payload(),
+      config,
+      sessionState: session(),
+      resolveThread: async (options) => {
+        calls.push(`resolve:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'resolved', resolved: true };
+      },
+    });
+
+    expect(calls).toEqual(['resolve:PRRT_thread_1']);
+    expect(allowed.status).toBe('applied');
+  });
+
   it('records reply render failures before mutation state is lost', async () => {
     const calls: string[] = [];
     const state = session();

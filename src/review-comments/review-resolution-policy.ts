@@ -14,6 +14,7 @@ export interface EvaluateReviewResolutionPolicyOptions {
   latestGitHubChecksRun?: CodeflowStoredGitHubChecksRun | null;
   allowInvalidResolution?: boolean;
   prNumber?: number | null;
+  autoResolveMode?: boolean;
 }
 
 export interface CodeflowReviewResolutionPolicyDecision {
@@ -59,6 +60,12 @@ export function evaluateReviewResolutionPolicy(
   }
 
   if (
+    options.autoResolveMode === true &&
+    item.classification !== 'needs_human' &&
+    !config.autoResolveClassifications.includes(item.classification)
+  ) {
+    blockedReasons.push(`${item.classification} is not allowed by reviewComments.autoResolveClassifications`);
+  } else if (
     (item.classification === 'already_fixed' || item.classification === 'stale') &&
     !config.autoResolveClassifications.includes(item.classification)
   ) {

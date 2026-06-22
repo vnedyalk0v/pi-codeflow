@@ -17,6 +17,7 @@ export interface EvaluateReviewFixPolicyOptions {
   prNumber?: number | null;
   includeResolutionPolicy?: boolean;
   includeReplyPolicy?: boolean;
+  autoResolveMode?: boolean;
 }
 
 export function evaluateReviewFixPolicy(

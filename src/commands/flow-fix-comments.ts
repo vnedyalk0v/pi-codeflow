@@ -78,6 +78,7 @@ interface ReviewFixExecutionPlan {
   shouldIncludeReply: boolean;
   shouldIncludeResolution: boolean;
   skipReason: string | null;
+  repliedToCommentId: string | null;
 }
 
 export async function runFlowFixComments(
@@ -198,7 +199,7 @@ export async function runFlowFixComments(
     });
 
     for (const plan of plans) {
-      const { item, renderedReply, shouldIncludeReply, shouldIncludeResolution } = plan;
+      const { item, renderedReply, shouldIncludeReply, shouldIncludeResolution, repliedToCommentId } = plan;
 
       if (plan.skipReason) {
         replies.push(skippedReply(item, plan.skipReason));
@@ -209,7 +210,7 @@ export async function runFlowFixComments(
       if (shouldIncludeReply) {
         if (dryRun || !applyReplies) {
           replies.push(plannedReply(item, renderedReply?.body ?? null));
-        } else if (alreadyPostedReply(sessionState, item.threadId)) {
+        } else if (alreadyPostedReply(sessionState, item.threadId, repliedToCommentId)) {
           replies.push(skippedReply(item, 'reply was already posted in this Codeflow session'));
           warnings.push(`Skipping duplicate reply for ${item.threadId}; reply was already posted in this session.`);
         } else {
@@ -224,6 +225,7 @@ export async function runFlowFixComments(
               ...reply,
               classification: item.classification,
               body: renderedReply?.body ?? reply.body,
+              repliedToCommentId,
             });
           } catch (error) {
             mutationFailed = true;
@@ -577,6 +579,7 @@ async function buildReviewFixExecutionPlans(options: {
 
   for (const item of options.items) {
     const knownThread = options.knownThreadsById.get(item.threadId) ?? null;
+    const repliedToCommentId = knownThread?.latestCommentId ?? null;
     const resolutionModeRequested = shouldRenderOrApplyResolution({
       dryRun: options.dryRun,
       applyResolutions: options.applyResolutions,
@@ -608,6 +611,7 @@ async function buildReviewFixExecutionPlans(options: {
         shouldIncludeReply: false,
         shouldIncludeResolution: false,
         skipReason,
+        repliedToCommentId,
       });
       continue;
     }
@@ -636,6 +640,7 @@ async function buildReviewFixExecutionPlans(options: {
         shouldIncludeReply: false,
         shouldIncludeResolution: false,
         skipReason: 'thread is already resolved',
+        repliedToCommentId,
       });
       continue;
     }
@@ -680,6 +685,7 @@ async function buildReviewFixExecutionPlans(options: {
       shouldIncludeReply,
       shouldIncludeResolution,
       skipReason: null,
+      repliedToCommentId,
     });
   }
 
@@ -905,8 +911,22 @@ function failedResolution(item: CodeflowReviewFixItem, reason: string): Codeflow
   };
 }
 
-function alreadyPostedReply(sessionState: CodeflowSessionState, threadId: string): boolean {
-  return sessionState.reviewFix?.lastRun?.repliesPosted.some((reply) => reply.threadId === threadId) === true;
+function alreadyPostedReply(
+  sessionState: CodeflowSessionState,
+  threadId: string,
+  latestCommentId: string | null,
+): boolean {
+  return sessionState.reviewFix?.lastRun?.repliesPosted.some((reply) => {
+    if (reply.threadId !== threadId) {
+      return false;
+    }
+
+    if (!latestCommentId) {
+      return true;
+    }
+
+    return reply.repliedToCommentId === latestCommentId || reply.commentId === latestCommentId;
+  }) === true;
 }
 
 function alreadyResolvedThread(sessionState: CodeflowSessionState, threadId: string): boolean {

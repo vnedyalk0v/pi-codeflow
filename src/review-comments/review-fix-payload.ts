@@ -62,6 +62,7 @@ export interface CodeflowReviewReplyResult {
   commentId: string | null;
   url: string | null;
   body: string | null;
+  repliedToCommentId?: string | null;
   reason?: string;
 }
 

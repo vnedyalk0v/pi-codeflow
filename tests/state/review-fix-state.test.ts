@@ -46,6 +46,28 @@ describe('Codeflow review-fix state', () => {
     expect(state.lastRun?.summary.length ?? 0).toBeLessThanOrEqual(2000);
   });
 
+  it('stores replied-to comment metadata when available', () => {
+    const state = updateReviewFixStateWithResult(createInitialReviewFixState(), {
+      status: 'applied',
+      prNumber: 123,
+      replies: [{
+        threadId: 'PRRT_1',
+        classification: 'valid',
+        status: 'posted',
+        commentId: 'PRRC_reply_1',
+        url: null,
+        body: null,
+        repliedToCommentId: 'PRRC_review_1',
+      }],
+      resolutions: [],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'summary',
+    });
+
+    expect(state.lastRun?.repliesPosted[0]?.repliedToCommentId).toBe('PRRC_review_1');
+  });
+
   it('preserves posted reply metadata when a later dry-run preview is stored', () => {
     const applied = updateReviewFixStateWithResult(createInitialReviewFixState(), {
       status: 'applied',

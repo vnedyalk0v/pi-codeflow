@@ -15,6 +15,7 @@ export interface CodeflowStoredReviewCommentThread {
   isOutdated: boolean;
   author: string | null;
   latestCommentSummary: string;
+  latestCommentId?: string | null;
   classification?: string;
   requiresHumanDecision?: boolean;
   canResolveAfterChecks?: boolean;
@@ -108,6 +109,7 @@ function toStoredReviewCommentThread(
       thread.latestComment?.body ?? thread.firstComment?.body ?? '',
       MAX_STORED_COMMENT_SUMMARY_CHARS,
     ),
+    latestCommentId: thread.latestComment?.id ?? thread.firstComment?.id ?? null,
   };
 
   if (triageThread) {

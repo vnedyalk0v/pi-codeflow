@@ -76,6 +76,7 @@ describe('Codeflow review comments state', () => {
 
     expect(found.lastRun?.status).toBe('found');
     expect(found.lastRun?.threads[0]?.latestCommentSummary).toBe('Review finding body');
+    expect(found.lastRun?.threads[0]?.latestCommentId).toBe('PRRC_comment_1');
     expect(none.lastRun?.status).toBe('none');
   });
 

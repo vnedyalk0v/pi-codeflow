@@ -75,6 +75,7 @@ function session(options: {
           isOutdated: options.isOutdated ?? false,
           author: 'alice',
           latestCommentSummary: 'Please fix this.',
+          latestCommentId: 'PRRC_review_1',
           classification: options.classification ?? 'valid',
           requiresHumanDecision: options.requiresHumanDecision ?? false,
           canResolveAfterChecks: !options.requiresHumanDecision,
@@ -254,6 +255,54 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions).toEqual([]);
     expect(postedBody).not.toContain('I am resolving this thread');
     expect(postedBody).toContain('leaving this thread unresolved');
+  });
+
+  it('allows another reply after /flow-comments sees newer thread feedback', async () => {
+    const prior = session();
+    prior.reviewFix!.lastRun = {
+      status: 'applied',
+      prNumber: 123,
+      checkedAt: '2026-01-01T00:02:00.000Z',
+      repliesPosted: [{
+        threadId: 'PRRT_thread_1',
+        classification: 'valid',
+        commentId: 'PRRC_reply_1',
+        url: null,
+        repliedToCommentId: 'PRRC_review_1',
+      }],
+      threadsResolved: [],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'Replied to PRRT_thread_1.',
+    };
+
+    const duplicate = await runFlowFixComments({
+      payload: payload({ resolveRequested: false }),
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: prior,
+      replyToThread: async () => {
+        throw new Error('duplicate reply should not be posted');
+      },
+    });
+    expect(duplicate.replies[0]?.status).toBe('skipped');
+
+    prior.reviewComments!.lastRun!.threads[0]!.latestCommentId = 'PRRC_review_2';
+    const calls: string[] = [];
+    const refreshed = await runFlowFixComments({
+      payload: payload({ resolveRequested: false }),
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: prior,
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_2', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(refreshed.replies[0]?.status).toBe('posted');
+    expect(refreshed.sessionState.reviewFix?.lastRun?.repliesPosted[0]?.repliedToCommentId).toBe('PRRC_review_2');
   });
 
   it('posts reply-only applies even when resolution gates would fail', async () => {

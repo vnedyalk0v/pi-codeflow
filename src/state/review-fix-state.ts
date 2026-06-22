@@ -15,6 +15,7 @@ export interface CodeflowStoredReviewFixReply {
   classification: string;
   commentId: string | null;
   url: string | null;
+  repliedToCommentId?: string | null;
 }
 
 export interface CodeflowStoredReviewFixResolution {
@@ -82,12 +83,7 @@ export function toStoredReviewFixRun(
     repliesPosted: input.replies
       .filter((reply) => reply.status === 'posted')
       .slice(0, MAX_STORED_OUTCOMES)
-      .map((reply) => ({
-        threadId: reply.threadId,
-        classification: reply.classification,
-        commentId: reply.commentId,
-        url: reply.url,
-      })),
+      .map(toStoredReviewFixReply),
     threadsResolved: input.resolutions
       .filter((resolution) => resolution.status === 'resolved')
       .slice(0, MAX_STORED_OUTCOMES)
@@ -103,6 +99,21 @@ export function toStoredReviewFixRun(
     requiresHumanDecision: input.requiresHumanDecision.slice(0, MAX_STORED_OUTCOMES),
     summary: truncateText(input.summary, MAX_STORED_SUMMARY_CHARS),
   };
+}
+
+function toStoredReviewFixReply(reply: CodeflowReviewReplyResult): CodeflowStoredReviewFixReply {
+  const stored: CodeflowStoredReviewFixReply = {
+    threadId: reply.threadId,
+    classification: reply.classification,
+    commentId: reply.commentId,
+    url: reply.url,
+  };
+
+  if (reply.repliedToCommentId !== undefined) {
+    stored.repliedToCommentId = reply.repliedToCommentId;
+  }
+
+  return stored;
 }
 
 function mergeStoredReviewFixRuns(

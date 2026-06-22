@@ -189,7 +189,7 @@ Implemented behavior:
 - reject duplicate triage thread IDs, IDs that do not match the selected
   filtered threads, and payloads that omit selected threads;
 - produce deterministic summaries with bounded comment body previews;
-- store bounded latest review-comments state;
+- store bounded latest review-comments state, including latest comment IDs;
 - move lifecycle to `review_triage` when unresolved threads are found;
 - move to `blocked` when provided triage requires a human decision;
 - make no replies;
@@ -227,8 +227,12 @@ Implemented behavior:
 - calls `resolveReviewThread` only in apply-resolution mode;
 - never calls GitHub mutations during dry-run or preview-only mode;
 - stores bounded review-fix outcome state without full reply bodies;
+- records which latest comment a posted reply addressed;
 - skips threads already resolved by latest triage or prior `/flow-fix-comments`
   outcome state so retries stay idempotent;
+- skips duplicate replies only while the latest scanned comment is already
+  covered by the prior reply, so fresh follow-up feedback can receive a new
+  response;
 - never edits code, commits, pushes, approves, merges, reruns workflows, deletes
   branches, or mass-resolves comments.
 

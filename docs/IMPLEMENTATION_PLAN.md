@@ -3,30 +3,29 @@
 Implementation PRs should stay small and target one executable foundation layer
 at a time.
 
-## Current implementation PR
+## Current documentation PR
 
 Target issue:
 
-- #17 Add initial validation workflow after implementation starts.
+- #15 Write installation and usage guide.
 
-#17 adds the first GitHub Actions validation workflow now that the repository has
-implementation code, tests, schemas, docs checks, prompts, templates, and
-package scripts. It does not add publishing, release automation, deployments,
-secrets, or repository mutation permissions.
+#15 adds user-facing installation, usage, examples, limitations, and
+troubleshooting documentation now that the implemented workflow commands and CI
+validation are available. It does not add runtime features, dependencies,
+publishing, release automation, deployments, or secrets.
 
-Implementation scope:
+Documentation scope:
 
-- add `.github/workflows/validate.yml`;
-- validate pull requests targeting `dev` and `main`;
-- validate pushes to `dev` and `main`;
-- support manual workflow dispatch;
-- use Node 20 with npm dependency caching;
-- install dependencies with `npm ci`;
-- run `npm run check` as the canonical full package validation command;
-- document validation behavior and security boundaries.
+- add `docs/INSTALLATION.md`;
+- add `docs/USAGE.md`;
+- add `docs/EXAMPLES.md`;
+- add `docs/TROUBLESHOOTING.md`;
+- update README navigation and project status;
+- link source-of-truth docs from architecture, release, security, and agent
+  guidance.
 
-After #17 lands, the next remaining issue is #15 installation and usage
-documentation.
+After #15 lands, the v0.8 hardening roadmap has user-facing setup and workflow
+documentation for the implemented command surface.
 
 ## Implemented #7 scope
 
@@ -167,8 +166,8 @@ Implemented:
   rendering, GraphQL mutation arguments, command behavior, lifecycle behavior,
   and blocked human-decision paths.
 
-After #17 lands, the next remaining implementation work is #15 installation and
-usage documentation.
+After #17 landed, the remaining v0.8 work became #15 installation and usage
+documentation.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.

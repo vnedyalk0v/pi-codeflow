@@ -419,8 +419,8 @@ rendering, branch safety, GitHub CLI behavior, and bounded PR state.
 | `pushBeforeCreate` | Safely pushes the current feature branch before `gh pr create`. |
 | `linkKeyword` | Issue link keyword for default PR body rendering; default is `Refs`. |
 | `watchRequiredChecksOnly` | Makes `/flow-watch` default to `gh pr checks --required`; default is `true`. |
-| `checksWatchIntervalSeconds` | Default `/flow-watch` polling interval; default is `10`. |
-| `checksWatchTimeoutSeconds` | Default `/flow-watch` timeout; default is `900`. |
+| `checksWatchIntervalSeconds` | Default `/flow-watch` polling interval from `1` to `300` seconds; default is `10`. |
+| `checksWatchTimeoutSeconds` | Default `/flow-watch` timeout from `1` to `3600` seconds; default is `900`. |
 | `failFast` | Stops `/flow-watch` on the first selected failure when enabled; default is `false`. |
 
 Default behavior is conservative: structured payloads, verification,
@@ -489,9 +489,9 @@ Each check includes:
 - `command`: required shell-like command string, such as `npm run lint`.
 - `cwd`: optional working directory, resolved relative to the repository root or
   command cwd.
-- `timeoutMs`: optional timeout in milliseconds.
-- `timeoutSeconds`: backward-compatible timeout in seconds; prefer `timeoutMs`
-  for new configs.
+- `timeoutMs`: optional timeout from `1` to `3600000` milliseconds.
+- `timeoutSeconds`: backward-compatible timeout from `1` to `3600` seconds;
+  prefer `timeoutMs` for new configs.
 - `required`: optional boolean; defaults to `true` when omitted.
 
 Example:

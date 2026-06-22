@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { GhClientLike } from '../../src/github/gh-client';
-import { GithubCliError } from '../../src/github/github-errors';
+import { CodeflowPrChecksError, GithubCliError } from '../../src/github/github-errors';
 import {
   buildGetPrChecksArgs,
   buildWatchPrChecksArgs,
@@ -193,6 +193,19 @@ describe('getGitHubPrChecks', () => {
 });
 
 describe('watchGitHubPrChecks', () => {
+  it('rejects timeoutSeconds above one hour before polling GitHub', async () => {
+    const calls: string[][] = [];
+
+    await expect(
+      watchGitHubPrChecks({
+        pr: 123,
+        timeoutSeconds: 3_601,
+        ghClient: ghClient(calls, []),
+      }),
+    ).rejects.toThrow(CodeflowPrChecksError);
+    expect(calls).toEqual([]);
+  });
+
   it('polls until checks pass', async () => {
     const calls: string[][] = [];
     const result = await watchGitHubPrChecks({

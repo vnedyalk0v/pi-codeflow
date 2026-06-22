@@ -50,6 +50,9 @@ export interface ParsedFlowWatchArguments {
   timeoutSeconds?: number;
 }
 
+const MAX_FLOW_WATCH_INTERVAL_SECONDS = 300;
+const MAX_FLOW_WATCH_TIMEOUT_SECONDS = 3600;
+
 export async function runFlowWatch(
   options: FlowWatchOptions = {},
 ): Promise<FlowWatchResult> {
@@ -193,24 +196,40 @@ export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments 
     }
 
     if (token === '--interval') {
-      intervalSeconds = parsePositiveInteger(readFlagValue(tokens, index, '--interval'), '--interval');
+      intervalSeconds = parsePositiveInteger(
+        readFlagValue(tokens, index, '--interval'),
+        '--interval',
+        MAX_FLOW_WATCH_INTERVAL_SECONDS,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--interval=')) {
-      intervalSeconds = parsePositiveInteger(token.slice('--interval='.length), '--interval');
+      intervalSeconds = parsePositiveInteger(
+        token.slice('--interval='.length),
+        '--interval',
+        MAX_FLOW_WATCH_INTERVAL_SECONDS,
+      );
       continue;
     }
 
     if (token === '--timeout') {
-      timeoutSeconds = parsePositiveInteger(readFlagValue(tokens, index, '--timeout'), '--timeout');
+      timeoutSeconds = parsePositiveInteger(
+        readFlagValue(tokens, index, '--timeout'),
+        '--timeout',
+        MAX_FLOW_WATCH_TIMEOUT_SECONDS,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--timeout=')) {
-      timeoutSeconds = parsePositiveInteger(token.slice('--timeout='.length), '--timeout');
+      timeoutSeconds = parsePositiveInteger(
+        token.slice('--timeout='.length),
+        '--timeout',
+        MAX_FLOW_WATCH_TIMEOUT_SECONDS,
+      );
       continue;
     }
 
@@ -396,8 +415,16 @@ function makeDryRunResult(options: {
 }
 
 function validateFlowWatchTiming(intervalSeconds: number, timeoutSeconds: number): void {
-  parsePositiveInteger(String(intervalSeconds), 'intervalSeconds');
-  parsePositiveInteger(String(timeoutSeconds), 'timeoutSeconds');
+  parsePositiveInteger(
+    String(intervalSeconds),
+    'intervalSeconds',
+    MAX_FLOW_WATCH_INTERVAL_SECONDS,
+  );
+  parsePositiveInteger(
+    String(timeoutSeconds),
+    'timeoutSeconds',
+    MAX_FLOW_WATCH_TIMEOUT_SECONDS,
+  );
 }
 
 function validateRequiredMode(current: boolean | undefined, token: string): void {
@@ -412,7 +439,7 @@ function validateRequiredMode(current: boolean | undefined, token: string): void
   });
 }
 
-function parsePositiveInteger(value: string, flagName: string): number {
+function parsePositiveInteger(value: string, flagName: string, maxValue?: number): number {
   const parsed = Number.parseInt(value, 10);
 
   if (!/^\d+$/.test(value) || !Number.isInteger(parsed) || parsed <= 0) {
@@ -420,6 +447,14 @@ function parsePositiveInteger(value: string, flagName: string): number {
       code: 'invalid_arguments',
       message: `${flagName} requires a positive integer value.`,
       details: { flagName, value },
+    });
+  }
+
+  if (maxValue !== undefined && parsed > maxValue) {
+    throw new CodeflowPrChecksError({
+      code: 'invalid_arguments',
+      message: `${flagName} must be less than or equal to ${maxValue}.`,
+      details: { flagName, value, maximum: maxValue },
     });
   }
 

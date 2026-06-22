@@ -362,11 +362,13 @@
         "checksWatchIntervalSeconds": {
           "type": "integer",
           "minimum": 1,
+          "maximum": 300,
           "description": "Default polling interval in seconds for /flow-watch."
         },
         "checksWatchTimeoutSeconds": {
           "type": "integer",
           "minimum": 1,
+          "maximum": 3600,
           "description": "Default timeout in seconds for /flow-watch."
         },
         "failFast": {
@@ -400,11 +402,13 @@
           },
           "timeoutMs": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 3600000
           },
           "timeoutSeconds": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 3600,
             "description": "Backward-compatible timeout in seconds; prefer timeoutMs for new configs."
           },
           "required": {

@@ -75,9 +75,29 @@ describe('parseFlowWatchArguments', () => {
     expect(() => parseFlowWatchArguments('--merge')).toThrow(CodeflowPrChecksError);
     expect(() => parseFlowWatchArguments('gh pr merge')).toThrow(CodeflowPrChecksError);
   });
+
+  it('rejects interval and timeout flags above the configured bounds', () => {
+    expect(() => parseFlowWatchArguments('--interval 301')).toThrow(CodeflowPrChecksError);
+    expect(() => parseFlowWatchArguments('--timeout 3601')).toThrow(CodeflowPrChecksError);
+  });
 });
 
 describe('runFlowWatch', () => {
+  it('rejects configured timing defaults above the configured bounds', async () => {
+    const config = getDefaultCodeflowConfig();
+    config.pullRequest.checksWatchIntervalSeconds = 301;
+
+    await expect(
+      runFlowWatch({
+        dryRun: true,
+        config,
+        sessionState: sessionWithPr(),
+      }),
+    ).rejects.toMatchObject({
+      code: 'invalid_arguments',
+    });
+  });
+
   it('supports dry-run without calling GitHub or transitioning to verified', async () => {
     const calls: string[][] = [];
     const result = await runFlowWatch({

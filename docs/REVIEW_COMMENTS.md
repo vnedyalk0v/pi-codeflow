@@ -258,7 +258,7 @@ when a reply needs text evidence.
 
 When `reviewComments.requireChecksBeforeResolve` is true, resolution requires a
 passed latest `/flow-check` state or acceptable explicit payload evidence when no
-check state exists. Failed, skipped, timed-out, or unknown check evidence blocks
+check state exists, and stored `/flow-watch` GitHub checks must also match. Failed, skipped, timed-out, or unknown check evidence blocks
 resolution. `needs_human` and latest triage `requiresHumanDecision` always block
 resolution regardless of flags.
 

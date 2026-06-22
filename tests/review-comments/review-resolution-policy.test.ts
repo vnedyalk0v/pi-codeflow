@@ -226,6 +226,32 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(result.blockedReasons.join('\n')).toContain('not PR #123');
   });
 
+  it('ignores stored GitHub checks when check gating is disabled', () => {
+    const relaxed = getDefaultCodeflowConfig();
+    relaxed.reviewComments.requireChecksBeforeResolve = false;
+    const result = evaluateReviewResolutionPolicy({
+      item: item(),
+      config: relaxed.reviewComments,
+      knownThread: thread(),
+      latestCommit: commit(),
+      prNumber: 123,
+      latestGitHubChecksRun: {
+        status: 'failed',
+        prNumber: 456,
+        prUrl: null,
+        requiredOnly: true,
+        watched: true,
+        startedAt: '2026-01-01T00:00:00.000Z',
+        finishedAt: '2026-01-01T00:01:00.000Z',
+        durationMs: 60_000,
+        checks: [],
+        summary: 'failed',
+      },
+    });
+
+    expect(result.allowed).toBe(true);
+  });
+
   it('blocks GitHub checks that predate the fix commit', () => {
     const staleByTime = evaluateReviewResolutionPolicy({
       item: item(),

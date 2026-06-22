@@ -102,14 +102,16 @@ export function evaluateReviewResolutionPolicy(
     warnings.push(...checkDecision.warnings);
   }
 
-  const githubDecision = evaluateGitHubChecksForResolution({
-    item,
-    latestCommit: options.latestCommit ?? null,
-    latestGitHubChecksRun: options.latestGitHubChecksRun,
-    prNumber: options.prNumber ?? null,
-  });
-  blockedReasons.push(...githubDecision.blockedReasons);
-  warnings.push(...githubDecision.warnings);
+  if (config.requireChecksBeforeResolve) {
+    const githubDecision = evaluateGitHubChecksForResolution({
+      item,
+      latestCommit: options.latestCommit ?? null,
+      latestGitHubChecksRun: options.latestGitHubChecksRun,
+      prNumber: options.prNumber ?? null,
+    });
+    blockedReasons.push(...githubDecision.blockedReasons);
+    warnings.push(...githubDecision.warnings);
+  }
 
   if (item.classification === 'stale' && knownThread?.isOutdated !== true && !hasText(item.fixSummary)) {
     blockedReasons.push('stale threads must be marked outdated by GitHub or include evidence explaining why they are stale');

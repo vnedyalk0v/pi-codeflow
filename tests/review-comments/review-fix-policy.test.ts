@@ -99,18 +99,27 @@ describe('evaluateReviewFixPolicy', () => {
     expect(noSha.blockedReasons.join('\n')).toContain('commitSha');
   });
 
-  it('does not let resolution blockers suppress reply-only policy', () => {
-    const result = evaluateReviewFixPolicy({
+  it('does not let resolution blockers suppress reply policy', () => {
+    const replyOnly = evaluateReviewFixPolicy({
       item: item(),
       config: config.reviewComments,
       knownThread: thread(),
       latestCheckRun: checks('failed'),
       includeResolutionPolicy: false,
     });
+    const withBlockedResolution = evaluateReviewFixPolicy({
+      item: item(),
+      config: config.reviewComments,
+      knownThread: thread(),
+      latestCheckRun: checks('failed'),
+    });
 
-    expect(result.canReply).toBe(true);
-    expect(result.canResolve).toBe(false);
-    expect(result.blockedReasons).toEqual([]);
+    expect(replyOnly.canReply).toBe(true);
+    expect(replyOnly.canResolve).toBe(false);
+    expect(replyOnly.blockedReasons).toEqual([]);
+    expect(withBlockedResolution.canReply).toBe(true);
+    expect(withBlockedResolution.canResolve).toBe(false);
+    expect(withBlockedResolution.blockedReasons.join('\n')).toContain('not passed');
   });
 
   it('allows already_fixed and stale resolution when config allows them', () => {

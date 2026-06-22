@@ -225,6 +225,7 @@ Implemented behavior:
 - refuses mutation when explicit `--pr` and payload `prNumber` disagree;
 - refuses mutation when latest `/flow-comments` state is incomplete or failed;
 - renders replies from `templates/review-reply.md`;
+- still posts policy-allowed replies when resolution is blocked by checks;
 - calls `addPullRequestReviewThreadReply` only in apply-reply mode;
 - calls `resolveReviewThread` only in apply-resolution mode;
 - honors `reviewComments.autoResolveClassifications` before automatic

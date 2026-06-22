@@ -523,6 +523,30 @@ describe('runFlowFixComments', () => {
     expect(result.warnings.join('\n')).toContain('already reports it resolved');
   });
 
+  it('apply still posts safe replies when resolution is blocked', async () => {
+    const calls: string[] = [];
+    const result = await runFlowFixComments({
+      payload: payload(),
+      apply: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ checkStatus: 'failed' }),
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: null, body: options.body };
+      },
+      resolveThread: async () => {
+        calls.push('resolve');
+        throw new Error('resolve should not be called');
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('blocked');
+    expect(result.replies[0]?.status).toBe('posted');
+    expect(result.resolutions).toEqual([]);
+    expect(result.blocked[0]?.reason).toContain('not passed');
+  });
+
   it('apply calls reply before resolve when both are allowed', async () => {
     const calls: string[] = [];
     const result = await runFlowFixComments({

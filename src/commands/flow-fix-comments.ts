@@ -669,17 +669,20 @@ async function buildReviewFixExecutionPlans(options: {
       continue;
     }
 
+    const shouldIncludeResolution = policy.canResolve && resolutionModeRequested;
+    const shouldIncludeReply = policy.canReply && replyModeRequested;
+
     if (policy.blockedReasons.length > 0) {
       options.blocked.push({
         threadId: item.threadId,
         classification: item.classification,
         reason: policy.blockedReasons.join('; '),
       });
-      continue;
-    }
 
-    const shouldIncludeResolution = policy.canResolve && resolutionModeRequested;
-    const shouldIncludeReply = policy.canReply && replyModeRequested;
+      if (!shouldIncludeReply && !shouldIncludeResolution) {
+        continue;
+      }
+    }
     let renderedReply: CodeflowRenderedReviewReply | null = null;
 
     if (shouldIncludeReply) {

@@ -25,9 +25,10 @@ export function evaluateReviewFixPolicy(
 ): CodeflowReviewFixPolicyResult {
   const { item, config, knownThread } = options;
   const blockedReasons: string[] = [];
+  const replyBlockedReasons: string[] = [];
   const warnings: string[] = [];
   const includeReplyPolicy = options.includeReplyPolicy !== false;
-  let canReply = includeReplyPolicy ? evaluateReplyAllowed(item, knownThread, blockedReasons) : false;
+  let canReply = includeReplyPolicy ? evaluateReplyAllowed(item, knownThread, replyBlockedReasons) : false;
   let requiresHumanDecision = false;
   let shouldSkip = false;
 
@@ -60,18 +61,20 @@ export function evaluateReviewFixPolicy(
     : { allowed: false, blockedReasons: [], warnings: [] };
   warnings.push(...resolution.warnings);
 
-  if (includeResolutionPolicy && item.resolveRequested && !resolution.allowed) {
-    blockedReasons.push(...resolution.blockedReasons);
-  }
+  const sharedBlockedReasons = uniqueStrings(blockedReasons);
+  const replyReasons = uniqueStrings(replyBlockedReasons);
+  const resolutionReasons = includeResolutionPolicy && item.resolveRequested && !resolution.allowed
+    ? resolution.blockedReasons
+    : [];
 
   return {
     threadId: item.threadId,
     classification: item.classification,
-    canReply: includeReplyPolicy && canReply && blockedReasons.length === 0,
-    canResolve: includeResolutionPolicy && item.resolveRequested && resolution.allowed && blockedReasons.length === 0,
+    canReply: includeReplyPolicy && canReply && sharedBlockedReasons.length === 0 && replyReasons.length === 0,
+    canResolve: includeResolutionPolicy && item.resolveRequested && resolution.allowed && sharedBlockedReasons.length === 0,
     requiresHumanDecision,
     shouldSkip,
-    blockedReasons: uniqueStrings(blockedReasons),
+    blockedReasons: uniqueStrings([...sharedBlockedReasons, ...replyReasons, ...resolutionReasons]),
     warnings: uniqueStrings(warnings),
   };
 }

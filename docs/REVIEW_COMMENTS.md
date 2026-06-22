@@ -227,6 +227,7 @@ Implemented behavior:
 - refuses mutation when latest `/flow-comments` state is incomplete or failed;
 - renders replies from `templates/review-reply.md`;
 - still posts policy-allowed replies when resolution is blocked by checks;
+- avoids claiming a thread is resolved before the resolution mutation succeeds;
 - calls `addPullRequestReviewThreadReply` only in apply-reply mode;
 - calls `resolveReviewThread` only in apply-resolution mode;
 - honors `reviewComments.autoResolveClassifications` before automatic

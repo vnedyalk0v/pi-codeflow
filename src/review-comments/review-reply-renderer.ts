@@ -147,7 +147,7 @@ function buildReplyBody(item: CodeflowReviewFixItem): string {
         formatMarkdownBulletList(item.verification, 'No verification provided.'),
         '',
         item.resolveRequested
-          ? 'I am resolving this thread because the finding was fixed and verification passed.'
+          ? 'Resolution has been requested and will be applied separately after policy gates pass.'
           : 'I am leaving this thread unresolved until resolution is explicitly applied.',
       ].join('\n'));
     case 'already_fixed':
@@ -161,7 +161,7 @@ function buildReplyBody(item: CodeflowReviewFixItem): string {
         formatMarkdownBulletList(item.verification, 'No verification provided.'),
         '',
         item.resolveRequested
-          ? 'I am resolving this thread because the current code already satisfies the review comment and verification passed.'
+          ? 'Resolution has been requested and will be applied separately after policy gates pass.'
           : 'I am leaving this thread unresolved until resolution is explicitly applied.',
       ].join('\n'));
     case 'stale':
@@ -175,7 +175,7 @@ function buildReplyBody(item: CodeflowReviewFixItem): string {
         formatMarkdownBulletList(item.verification, 'No verification provided.'),
         '',
         item.resolveRequested
-          ? 'I am resolving this thread because it no longer applies and verification passed.'
+          ? 'Resolution has been requested and will be applied separately after policy gates pass.'
           : 'I am leaving this thread unresolved until resolution is explicitly applied.',
       ].join('\n'));
     case 'invalid':

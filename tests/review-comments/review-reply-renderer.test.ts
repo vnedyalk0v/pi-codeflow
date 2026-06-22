@@ -24,7 +24,7 @@ describe('renderReviewReply', () => {
     expect(result.body).toContain('Addressed in `abc1234`');
     expect(result.body).toContain('Updated validation and added coverage.');
     expect(result.body).toContain('npm test passed');
-    expect(result.body).toContain('resolving this thread');
+    expect(result.body).toContain('Resolution has been requested');
     expect(result.body).not.toMatch(/{{[^}]+}}/);
   });
 
@@ -41,9 +41,9 @@ describe('renderReviewReply', () => {
     }), { templateText });
 
     expect(alreadyFixed.body).toContain('already addressed');
-    expect(alreadyFixed.body).toContain('current code already satisfies');
+    expect(alreadyFixed.body).toContain('Resolution has been requested');
     expect(stale.body).toContain('thread is stale');
-    expect(stale.body).toContain('no longer applies');
+    expect(stale.body).toContain('Resolution has been requested');
   });
 
   it('renders invalid explanatory replies without default resolution', async () => {

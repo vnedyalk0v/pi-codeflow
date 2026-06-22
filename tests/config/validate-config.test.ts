@@ -211,6 +211,53 @@ describe('validateCodeflowConfig', () => {
     }
   });
 
+  it.each([
+    {
+      name: 'pull request watch interval above 300 seconds',
+      update(config: ReturnType<typeof cloneDefault>) {
+        config.pullRequest.checksWatchIntervalSeconds = 301;
+      },
+      path: '/pullRequest/checksWatchIntervalSeconds',
+    },
+    {
+      name: 'pull request watch timeout above 3600 seconds',
+      update(config: ReturnType<typeof cloneDefault>) {
+        config.pullRequest.checksWatchTimeoutSeconds = 3601;
+      },
+      path: '/pullRequest/checksWatchTimeoutSeconds',
+    },
+    {
+      name: 'check timeoutMs above 3600000',
+      update(config: ReturnType<typeof cloneDefault>) {
+        config.checks = [{ name: 'slow', command: 'npm test', timeoutMs: 3_600_001 }];
+      },
+      path: '/checks/0/timeoutMs',
+    },
+    {
+      name: 'check timeoutSeconds above 3600',
+      update(config: ReturnType<typeof cloneDefault>) {
+        config.checks = [{ name: 'slow', command: 'npm test', timeoutSeconds: 3_601 }];
+      },
+      path: '/checks/0/timeoutSeconds',
+    },
+  ])('rejects $name', ({ update, path }) => {
+    const config = cloneDefault();
+    update(config);
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path,
+            keyword: 'maximum',
+          }),
+        ]),
+      );
+    }
+  });
+
   it('returns a warning when a schema-valid config contains extends', () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       extends: './base.codeflow.json',

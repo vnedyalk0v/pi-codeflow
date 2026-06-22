@@ -191,6 +191,75 @@ describe('/flow-check command registration', () => {
     expect(notifications[0]?.message).toContain('Next expected actions:');
   });
 
+  it('does not return raw check output from the command handler', async () => {
+    const notifications: Array<{ message: string; level: string }> = [];
+    const handlers = new Map<string, (args: string, context: { cwd: string; ui: { notify: (message: string, level: 'info' | 'warning' | 'error') => void } }) => Promise<unknown>>();
+
+    registerCodeflowExtension(
+      {
+        on() {},
+        registerCommand(name, options) {
+          handlers.set(name, options.handler);
+        },
+      },
+      {
+        runFlowCheck: async () =>
+          ({
+            checkRun: {
+              status: 'passed',
+              startedAt: '2026-01-01T00:00:00.000Z',
+              finishedAt: '2026-01-01T00:00:01.000Z',
+              durationMs: 1000,
+              results: [
+                {
+                  name: 'unit',
+                  command: 'npm test',
+                  status: 'passed',
+                  exitCode: 0,
+                  signal: null,
+                  startedAt: '2026-01-01T00:00:00.000Z',
+                  finishedAt: '2026-01-01T00:00:01.000Z',
+                  durationMs: 1000,
+                  stdout: 'TOKEN=super-secret',
+                  stderr: 'password=super-secret',
+                  summary: 'unit passed.',
+                  required: true,
+                },
+              ],
+              summary: 'Codeflow checks passed.',
+              failedCheckNames: [],
+              passedCheckNames: ['unit'],
+              skippedCheckNames: [],
+            },
+            lifecyclePhase: 'local_checks',
+            nextExpectedActions: ['Proceed to self-review when available.'],
+            warnings: [],
+            sessionState: {
+              lifecycle: { phase: 'local_checks', workBranch: null },
+              checks: { lastRun: null },
+              commits: { lastCommit: null },
+              pullRequests: { lastPullRequest: null },
+              updatedAt: '2026-01-01T00:00:01.000Z',
+            },
+          }) satisfies FlowCheckResult,
+      },
+    );
+
+    const result = await handlers.get('flow-check')?.('', {
+      cwd: '/tmp/project',
+      ui: {
+        notify(message, level) {
+          notifications.push({ message, level });
+        },
+      },
+    });
+
+    expect(JSON.stringify(result)).not.toContain('super-secret');
+    expect(notifications[0]?.message).toContain('Codeflow check result.');
+    expect(notifications[0]?.message).toContain('Checks run: 1');
+    expect(notifications[0]?.message).toContain('Codeflow checks passed.');
+  });
+
   it('surfaces errors without commit, push, PR, or GitHub automation arguments', async () => {
     const notifications: Array<{ message: string; level: string }> = [];
     const handlers = new Map<string, (args: string, context: { cwd: string; ui: { notify: (message: string, level: 'info' | 'warning' | 'error') => void } }) => Promise<unknown>>();

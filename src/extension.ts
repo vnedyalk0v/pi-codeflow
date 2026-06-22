@@ -110,6 +110,12 @@ interface CodeflowExtensionSessionStore {
   set(cwd: string, state: CodeflowSessionState): void;
 }
 
+type FlowCheckCommandResult = Omit<FlowCheckResult, 'checkRun'> & {
+  checkRun: Omit<FlowCheckResult['checkRun'], 'results'> & {
+    results: Array<Omit<FlowCheckResult['checkRun']['results'][number], 'stdout' | 'stderr'>>;
+  };
+};
+
 interface CodeflowExtensionApi {
   on(
     eventName: 'before_agent_start',
@@ -134,7 +140,7 @@ interface CodeflowExtensionApi {
         context: CodeflowExtensionCommandContext,
       ) => Promise<
         | FlowStartResult
-        | FlowCheckResult
+        | FlowCheckCommandResult
         | FlowCommitResult
         | FlowPrResult
         | FlowWatchResult
@@ -260,7 +266,7 @@ async function handleFlowCheckCommand(
   context: CodeflowExtensionCommandContext,
   checkFlow: typeof runFlowCheck,
   sessionStore: CodeflowExtensionSessionStore,
-): Promise<FlowCheckResult> {
+): Promise<FlowCheckCommandResult> {
   await context.waitForIdle?.();
 
   try {
@@ -276,11 +282,32 @@ async function handleFlowCheckCommand(
       formatFlowCheckResult(result),
       result.checkRun.status === 'failed' ? 'warning' : 'info',
     );
-    return result;
+    return sanitizeFlowCheckCommandResult(result);
   } catch (error) {
     context.ui.notify(getFlowCheckErrorMessage(error), 'error');
     throw error;
   }
+}
+
+function sanitizeFlowCheckCommandResult(result: FlowCheckResult): FlowCheckCommandResult {
+  return {
+    ...result,
+    checkRun: {
+      ...result.checkRun,
+      results: result.checkRun.results.map((checkResult) => ({
+        name: checkResult.name,
+        command: checkResult.command,
+        status: checkResult.status,
+        exitCode: checkResult.exitCode,
+        signal: checkResult.signal,
+        startedAt: checkResult.startedAt,
+        finishedAt: checkResult.finishedAt,
+        durationMs: checkResult.durationMs,
+        summary: checkResult.summary,
+        required: checkResult.required,
+      })),
+    },
+  };
 }
 
 async function handleFlowCommitCommand(

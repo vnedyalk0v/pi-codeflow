@@ -11,6 +11,8 @@ export interface ResolvedCodeflowCheckCommand {
   required: boolean;
 }
 
+const MAX_CHECK_TIMEOUT_MS = 3_600_000;
+
 export function resolveCheckCommand(
   check: CodeflowCheckConfig,
   baseCwd: string,
@@ -59,7 +61,10 @@ export function resolveTimeoutMs(check: CodeflowCheckConfig): number | undefined
   const timeoutMs = check.timeoutMs ??
     (check.timeoutSeconds === undefined ? undefined : check.timeoutSeconds * 1000);
 
-  if (timeoutMs !== undefined && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) {
+  if (
+    timeoutMs !== undefined &&
+    (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > MAX_CHECK_TIMEOUT_MS)
+  ) {
     throw new CodeflowCheckError({
       code: 'invalid_check_config',
       message: `Codeflow check ${check.name} has an invalid timeout.`,

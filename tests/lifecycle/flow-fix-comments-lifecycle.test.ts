@@ -137,11 +137,38 @@ describe('/flow-fix-comments lifecycle behavior', () => {
         resolved: true,
       }),
     });
+    const humanSession = session();
+    humanSession.reviewComments!.lastRun!.threads.push({
+      threadId: 'PRRT_thread_2',
+      path: 'src/other.ts',
+      line: 2,
+      isResolved: false,
+      isOutdated: false,
+      author: 'alice',
+      latestCommentSummary: 'Needs maintainer decision.',
+      classification: 'needs_human',
+      requiresHumanDecision: true,
+      canResolveAfterChecks: false,
+    });
+    const withHumanDecision = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: humanSession,
+      resolveThread: async (options) => ({
+        threadId: options.threadId,
+        classification: 'valid',
+        status: 'resolved',
+        resolved: true,
+      }),
+    });
 
     expect(result.status).toBe('applied');
     expect(result.lifecyclePhase).toBe('verified');
     expect(partial.status).toBe('applied');
     expect(partial.lifecyclePhase).toBe('review_triage');
+    expect(withHumanDecision.status).toBe('applied');
+    expect(withHumanDecision.lifecyclePhase).toBe('review_triage');
   });
 
   it('moves needs_human and mutation failures to blocked', async () => {

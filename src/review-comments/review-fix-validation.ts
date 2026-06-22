@@ -81,7 +81,7 @@ function validateSemanticRules(
   const allowInvalidResolution = options.allowInvalidResolution === true;
   const knownThreadIds = getKnownThreadIds(options);
   const knownThreadsById = new Map(
-    (options.knownThreads ?? []).map((thread) => [thread.threadId, thread]),
+    (options.detached === true ? [] : options.knownThreads ?? []).map((thread) => [thread.threadId, thread]),
   );
   const seenThreadIds = new Set<string>();
 

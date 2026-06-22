@@ -148,8 +148,14 @@ describe('validateReviewFixPayload', () => {
       detached: true,
       config: config.reviewComments,
     });
+    const staleState = validateReviewFixPayload(validPayload(), {
+      knownThreads: [knownThread({ classification: 'needs_human', requiresHumanDecision: true })],
+      detached: true,
+      config: config.reviewComments,
+    });
 
     expect(result.valid).toBe(true);
+    expect(staleState.valid).toBe(true);
   });
 
   it('rejects huge reply bodies', () => {

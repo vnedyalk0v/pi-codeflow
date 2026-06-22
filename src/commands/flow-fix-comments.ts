@@ -802,7 +802,7 @@ function allKnownReviewThreadsResolved(
       return true;
     }
 
-    return !storedThread.isResolved && storedThread.requiresHumanDecision !== true;
+    return !storedThread.isResolved;
   });
 
   return unresolvedThreadIds.length > 0 && unresolvedThreadIds.every((threadId) => resolvedThreadIds.has(threadId));

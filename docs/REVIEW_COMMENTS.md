@@ -191,7 +191,8 @@ Implemented behavior:
 - produce deterministic summaries with bounded comment body previews;
 - store bounded latest review-comments state, including latest comment IDs;
 - move lifecycle to `review_triage` when unresolved threads are found;
-- move to `blocked` when provided triage requires a human decision;
+- move to `blocked` when provided triage requires a human decision and keep
+  unresolved human-decision threads from reaching `verified`;
 - make no replies;
 - resolve no threads;
 - make no code changes;
@@ -219,7 +220,7 @@ Implemented behavior:
 
 - validates `schemas/review-comment-fix.schema.json` payloads;
 - matches payload thread IDs to latest `/flow-comments` state unless `--detached`
-  is used;
+  is used, in which case stale stored triage metadata is ignored;
 - refuses mutation when `reviewComments.enabled` is false;
 - refuses mutation when explicit `--pr` and payload `prNumber` disagree;
 - refuses mutation when latest `/flow-comments` state is incomplete or failed;

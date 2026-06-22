@@ -50,6 +50,17 @@ lifecycle:
 - Generate production implementation code without an issue and accepted plan.
 - Hide model-specific instructions or depend on one model provider.
 
+## Validation
+
+Run the full local validation suite with:
+
+```sh
+npm run check
+```
+
+GitHub Actions runs the same package validation on pull requests targeting
+`dev` or `main`.
+
 ## Proposed command surface
 
 | Command | Purpose |

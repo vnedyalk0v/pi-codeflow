@@ -1,15 +1,22 @@
 # Workflows
 
-CI workflows are intentionally not added yet because there is no implementation
-code.
+## Validate
 
-Future CI should check:
+`validate.yml` runs package validation for:
 
-- formatting;
-- type checking;
-- tests;
-- package validation;
-- schema validity.
+- pull requests targeting `dev` or `main`;
+- pushes to `dev` or `main`;
+- manual `workflow_dispatch` runs.
 
-CI must not publish packages or require secrets until release automation is
-explicitly designed.
+The workflow uses Node 20, installs dependencies with `npm ci`, and runs the
+canonical local validation command:
+
+```sh
+npm run check
+```
+
+That command validates JSON files, text safety, Markdown docs format,
+TypeScript, and the test suite.
+
+The workflow is validation-only. It does not publish packages, deploy, require
+secrets, or request write permissions.

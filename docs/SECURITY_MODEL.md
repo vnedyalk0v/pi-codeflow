@@ -77,6 +77,12 @@ Codeflow should not require secrets for normal operation. It should avoid readin
 secret files and should redact likely tokens in check output, reports, PR bodies,
 and issue comments.
 
+## CI validation permissions
+
+The initial Validate workflow runs package checks with `contents: read`
+permissions only. It does not publish packages, deploy, request write
+permissions, or require repository secrets.
+
 ## Model neutrality
 
 Codeflow should not depend on one model provider, hidden provider-specific

@@ -248,6 +248,10 @@ Classification-specific action rules:
 | `invalid` | Allowed for concise explanation when evidence/rationale exists. | Blocked by default; allowed only by explicit project/user policy. |
 | `needs_human` | Blocked by default because Codeflow cannot make the decision. | Never allowed. |
 
+For `stale` resolution, GitHub `isOutdated` state counts as staleness evidence;
+`fixSummary` is required only when GitHub does not mark the thread outdated or
+when a reply needs text evidence.
+
 When `reviewComments.requireChecksBeforeResolve` is true, resolution requires a
 passed latest `/flow-check` state or acceptable explicit payload evidence when no
 check state exists. Failed, skipped, timed-out, or unknown check evidence blocks

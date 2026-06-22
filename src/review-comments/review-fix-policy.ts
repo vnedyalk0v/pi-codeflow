@@ -16,6 +16,7 @@ export interface EvaluateReviewFixPolicyOptions {
   allowInvalidResolution?: boolean;
   prNumber?: number | null;
   includeResolutionPolicy?: boolean;
+  includeReplyPolicy?: boolean;
 }
 
 export function evaluateReviewFixPolicy(
@@ -24,7 +25,8 @@ export function evaluateReviewFixPolicy(
   const { item, config, knownThread } = options;
   const blockedReasons: string[] = [];
   const warnings: string[] = [];
-  let canReply = evaluateReplyAllowed(item, knownThread, blockedReasons);
+  const includeReplyPolicy = options.includeReplyPolicy !== false;
+  let canReply = includeReplyPolicy ? evaluateReplyAllowed(item, knownThread, blockedReasons) : false;
   let requiresHumanDecision = false;
   let shouldSkip = false;
 
@@ -64,7 +66,7 @@ export function evaluateReviewFixPolicy(
   return {
     threadId: item.threadId,
     classification: item.classification,
-    canReply: canReply && blockedReasons.length === 0,
+    canReply: includeReplyPolicy && canReply && blockedReasons.length === 0,
     canResolve: includeResolutionPolicy && item.resolveRequested && resolution.allowed && blockedReasons.length === 0,
     requiresHumanDecision,
     shouldSkip,

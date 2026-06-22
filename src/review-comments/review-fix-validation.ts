@@ -159,7 +159,7 @@ function validateSemanticRules(
       allowInvalidResolution,
     });
 
-    validateItemReplyEvidenceRules({ errors, item, path });
+    validateItemReplyEvidenceRules({ errors, item, path, knownThread });
   }
 
   return errors;
@@ -235,11 +235,15 @@ function validateItemReplyEvidenceRules(options: {
   errors: CodeflowReviewFixValidationIssue[];
   item: CodeflowReviewFixItem;
   path: string;
+  knownThread?: CodeflowStoredReviewCommentThread;
 }): void {
-  const { errors, item, path } = options;
+  const { errors, item, path, knownThread } = options;
+  const staleNeedsTextEvidence = item.classification === 'stale' && (
+    knownThread?.isOutdated !== true || hasText(item.replyBody)
+  );
 
   if (
-    ['valid', 'already_fixed', 'stale'].includes(item.classification) &&
+    (['valid', 'already_fixed'].includes(item.classification) || staleNeedsTextEvidence) &&
     !hasText(item.fixSummary) &&
     (item.resolveRequested || hasText(item.replyBody))
   ) {

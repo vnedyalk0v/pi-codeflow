@@ -636,6 +636,7 @@ async function buildReviewFixExecutionPlans(options: {
       allowInvalidResolution: options.allowInvalidResolution,
       prNumber: options.prNumber,
       includeResolutionPolicy: resolutionModeRequested,
+      includeReplyPolicy: replyModeRequested,
     } satisfies EvaluateReviewFixPolicyOptions);
     options.warnings.push(...policy.warnings);
 

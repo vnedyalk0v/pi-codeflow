@@ -431,6 +431,23 @@ describe('runFlowFixComments', () => {
     expect(result.replies).toEqual([]);
   });
 
+  it('resolves GitHub-outdated stale threads without redundant text evidence', async () => {
+    const calls: string[] = [];
+    const result = await runFlowFixComments({
+      payload: payload({ classification: 'stale', commitSha: undefined, fixSummary: undefined }),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ classification: 'stale', isOutdated: true }),
+      resolveThread: async (options) => {
+        calls.push(`resolve:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'stale', status: 'resolved', resolved: true };
+      },
+    });
+
+    expect(calls).toEqual(['resolve:PRRT_thread_1']);
+    expect(result.status).toBe('applied');
+  });
+
   it('treats unresolved mutation results as failed and blocked', async () => {
     const result = await runFlowFixComments({
       payload: payload(),

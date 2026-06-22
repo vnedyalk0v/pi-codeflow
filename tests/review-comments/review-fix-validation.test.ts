@@ -130,6 +130,19 @@ describe('validateReviewFixPayload', () => {
     expect(detached.valid).toBe(true);
   });
 
+  it('allows outdated stale resolution without redundant text evidence', () => {
+    const result = validateReviewFixPayload(validPayload({
+      classification: 'stale',
+      commitSha: undefined,
+      fixSummary: undefined,
+    }), {
+      knownThreads: [knownThread({ classification: 'stale', isOutdated: true })],
+      config: config.reviewComments,
+    });
+
+    expect(result.valid).toBe(true);
+  });
+
   it('allows detached validation without matching latest state', () => {
     const result = validateReviewFixPayload(validPayload({ threadId: 'PRRT_detached' }), {
       detached: true,

@@ -177,6 +177,17 @@ describe('evaluateReviewResolutionPolicy', () => {
     expect(remoteCovered.allowed).toBe(true);
   });
 
+  it('allows stale resolution without text evidence when GitHub marks it outdated', () => {
+    const result = evaluateReviewResolutionPolicy({
+      item: item({ classification: 'stale', commitSha: undefined, fixSummary: undefined }),
+      config: config.reviewComments,
+      knownThread: thread({ classification: 'stale', isOutdated: true }),
+      latestCheckRun: checks('passed'),
+    });
+
+    expect(result.allowed).toBe(true);
+  });
+
   it('blocks stale resolution without outdated state or evidence', () => {
     const result = evaluateReviewResolutionPolicy({
       item: item({ classification: 'stale', commitSha: undefined, fixSummary: undefined }),

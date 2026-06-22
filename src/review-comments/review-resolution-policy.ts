@@ -70,7 +70,7 @@ export function evaluateReviewResolutionPolicy(
   }
 
   if (
-    ['valid', 'already_fixed', 'stale'].includes(item.classification) &&
+    (item.classification === 'valid' || item.classification === 'already_fixed') &&
     !hasText(item.fixSummary)
   ) {
     blockedReasons.push(`${item.classification} threads require fixSummary evidence before resolution`);

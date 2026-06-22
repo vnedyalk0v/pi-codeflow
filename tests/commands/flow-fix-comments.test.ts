@@ -503,6 +503,26 @@ describe('runFlowFixComments', () => {
     expect(result.sessionState.reviewFix?.lastRun?.status).toBe('failed');
   });
 
+  it('treats already-resolved resolution errors as idempotent success', async () => {
+    const result = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session(),
+      resolveThread: async () => {
+        throw new CodeflowReviewFixError({
+          code: 'thread_already_resolved',
+          message: 'GitHub reported the review thread is already resolved.',
+        });
+      },
+    });
+
+    expect(result.status).toBe('applied');
+    expect(result.blocked).toEqual([]);
+    expect(result.resolutions[0]?.status).toBe('resolved');
+    expect(result.warnings.join('\n')).toContain('already reports it resolved');
+  });
+
   it('apply calls reply before resolve when both are allowed', async () => {
     const calls: string[] = [];
     const result = await runFlowFixComments({

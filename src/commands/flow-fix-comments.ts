@@ -266,6 +266,18 @@ export async function runFlowFixComments(
               });
             }
           } catch (error) {
+            if (isThreadAlreadyResolvedError(error)) {
+              resolutions.push({
+                threadId: item.threadId,
+                classification: item.classification,
+                status: 'resolved',
+                resolved: true,
+                reason: 'GitHub reported the review thread is already resolved.',
+              });
+              warnings.push(`Skipping resolution for ${item.threadId}; GitHub already reports it resolved.`);
+              continue;
+            }
+
             mutationFailed = true;
             const message = error instanceof Error ? error.message : 'review-thread resolve mutation failed';
             resolutions.push(failedResolution(item, message));
@@ -939,6 +951,10 @@ function alreadyPostedReply(
 
     return reply.repliedToCommentId === latestCommentId || reply.commentId === latestCommentId;
   }) === true;
+}
+
+function isThreadAlreadyResolvedError(error: unknown): boolean {
+  return error instanceof CodeflowReviewFixError && error.code === 'thread_already_resolved';
 }
 
 function alreadyResolvedThread(

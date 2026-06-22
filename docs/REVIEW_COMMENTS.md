@@ -237,6 +237,8 @@ Implemented behavior:
 - skips duplicate replies only while the latest scanned comment is already
   covered by the prior reply, so fresh follow-up feedback can receive a new
   response;
+- treats GitHub `thread_already_resolved` responses as idempotent resolution
+  success;
 - never edits code, commits, pushes, approves, merges, reruns workflows, deletes
   branches, or mass-resolves comments.
 

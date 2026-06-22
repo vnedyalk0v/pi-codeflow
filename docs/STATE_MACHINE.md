@@ -30,8 +30,13 @@ transitions through PR check watching:
   are found, returns `blocked` when provided triage requires a human decision,
   and leaves the prior safe phase unchanged when no unresolved threads are found
   or when dry-run is used.
-- Persistent external state storage and mutating review-comment fix, reply, and
-  resolution behavior are not implemented yet.
+- `/flow-fix-comments` validates structured review-fix payloads, renders
+  replies, applies explicit reply/resolve mutations after policy gates, stores
+  bounded outcome state, returns `dry_run`, `applied`, `blocked`, or `failed`,
+  and never edits code, merges, approves, reruns workflows, deletes branches, or
+  mass-resolves comments.
+- Persistent external state storage and automatic review-fix editing are not
+  implemented yet.
 
 ## Lifecycle phases
 
@@ -66,10 +71,10 @@ and `git commit` all succeed. `/flow-pr` performs the `committed` ->
 check-state policy, branch push policy, and GitHub CLI PR creation all succeed.
 `/flow-watch` performs the `pr_opened` or `ci_waiting` check-status transition
 from read-only GitHub PR checks. `/flow-comments` performs the read-only review
-thread transition into `review_triage` or `blocked` for human decisions; future
-`/flow-fix-comments` should return to checks and commits before any reply or
-resolution. Other action text remains proactive guidance, not a full mutation
-engine.
+thread transition into `review_triage` or `blocked` for human decisions.
+`/flow-fix-comments` performs only policy-gated reply/resolution mutations after
+fixes, checks, commits, and review-fix evidence exist. Other action text remains
+proactive guidance, not a full mutation engine.
 
 | Phase | Next expected action focus |
 | --- | --- |
@@ -271,7 +276,8 @@ non-destructive fetch attempt made before base branch resolution.
   `fixing_review_findings` and make fixing findings plus `/flow-check` the next
   expected action.
 - Stale or already fixed threads: remain in `review_triage` until evidence is
-  recorded; reply and resolution remain future work.
+  recorded; `/flow-fix-comments` may later reply or resolve when evidence,
+  verification, and policy allow it.
 - Invalid threads: remain in `review_triage` for a concise explanation draft, or
   move to `blocked` when policy requires human review.
 - `needs_human` threads: move to `blocked` with a human decision request.
@@ -279,18 +285,31 @@ non-destructive fetch attempt made before base branch resolution.
 - `/flow-comments` never replies, resolves, edits files, commits, pushes,
   approves, merges, or calls GraphQL mutations.
 
-## Future `/flow-fix-comments` transition details
+## `/flow-fix-comments` transition details
 
-- Uses stored triage state and acts only on explicit classifications.
-- Valid fixes: `fixing_review_findings` -> `local_checks` after edits.
-- Passing checks: `local_checks` -> `ready_to_commit` or `committed` through
-  `/flow-commit` when the fix is staged and payload validation succeeds.
-- Pushed fix commits: `committed` -> `ci_waiting` through the PR flow and
-  `/flow-watch`.
-- Replies and resolutions: occur only after verification and return to
-  `review_triage` or `verified` based on remaining threads.
-- `needs_human` is never auto-resolved.
-- `invalid` is never auto-resolved unless policy explicitly allows it.
+- Dry-run or preview-only mode remains in `review_triage` or
+  `fixing_review_findings`; it does not call GitHub mutations or claim
+  `verified`.
+- Valid unresolved fixes remain in `fixing_review_findings` or `review_triage`
+  until verification and commit evidence are present.
+- Reply mutations are allowed only for policy-allowed classifications and only
+  when `--apply-replies`, `--apply`, or deliberate config auto-reply behavior is
+  active.
+- Resolution mutations are allowed only for explicit thread IDs, explicit
+  classifications, required verification, and `--apply-resolutions`, `--apply`,
+  or deliberate config auto-resolve behavior.
+- `valid` resolution requires `commitSha`, fix evidence, verification, and
+  checks-before-resolve when configured.
+- `already_fixed` and `stale` resolution require evidence, verification, config
+  allow-list support, and checks-before-resolve when configured.
+- `invalid` resolution is blocked by default and allowed only by explicit policy.
+- `needs_human` and triage `requiresHumanDecision` always move to `blocked` or
+  a safe non-final phase; they are never auto-resolved.
+- Incomplete `/flow-comments` scans block mutation.
+- Mutation failures move to `blocked` or remain in a safe non-final phase with a
+  clear error.
+- Successful allowed replies/resolutions may move toward `verified` only when
+  checks passed and no blockers remain.
 
 ## Retry transitions
 
@@ -352,8 +371,9 @@ pr_opened
 
 The comment is classified as `invalid`. Read-only `/flow-comments` records the
 classification and draft rationale only; it does not change code, post the
-reply, or resolve the thread. Reply and resolution policy remains future
-`/flow-fix-comments` work.
+reply, or resolve the thread. `/flow-fix-comments` may post a concise
+non-resolving explanation when explicitly applied, but invalid-thread resolution
+is blocked by default.
 
 ### Emergency hotfix flow
 

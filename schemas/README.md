@@ -19,3 +19,7 @@ patterns aligned with `src/git/git-ref.ts` whenever branch validation changes.
 `review-comment-triage.schema.json` describes read-only triage output for
 normalized GitHub review threads. It requires review thread IDs rather than
 ordinary issue comment IDs.
+
+`review-comment-fix.schema.json` describes structured evidence consumed by
+`/flow-fix-comments` before Codeflow renders replies or applies review-thread
+resolution mutations.

@@ -2,11 +2,14 @@
 
 Codeflow review-comment automation must be conservative because GitHub review
 threads can represent reviewer authority, security concerns, and merge blockers.
-The first #14 implementation slice now provides the read-only `/flow-comments`
-foundation. It lists, normalizes, filters, summarizes, validates structured
-triage payloads, and stores bounded session state. It does not implement
-`/flow-fix-comments`, thread replies, thread resolution, automatic fixes,
-GitHub mutations, or merge automation.
+The #14 implementation now provides the read-only `/flow-comments` foundation
+and the safe mutating `/flow-fix-comments` foundation. `/flow-comments` lists,
+normalizes, filters, summarizes, validates structured triage payloads, and
+stores bounded session state. `/flow-fix-comments` consumes review-fix evidence,
+renders deterministic replies, and performs GitHub review-thread reply/resolve
+mutations only behind explicit apply flags and policy gates. It does not
+implement automatic fixes, merge automation, auto-approval, branch deletion,
+workflow reruns, or mass-resolution.
 
 ## GitHub comment concepts
 
@@ -49,16 +52,19 @@ Read-only `/flow-comments` queries pull request review threads and includes:
 - `createdAt` and `updatedAt`;
 - URL or permalink when available.
 
-### Future reply operation
+### Implemented reply operation
 
-A future mutating command may reply to an addressed thread with the GraphQL
-mutation `addPullRequestReviewThreadReply`. `/flow-comments` does not implement
-that mutation.
+`/flow-fix-comments` may reply to an addressed thread with the GraphQL mutation
+`addPullRequestReviewThreadReply` after payload validation, classification
+checks, and reply policy pass. `/flow-comments` remains read-only and does not
+call this mutation.
 
-### Future resolve operation
+### Implemented resolve operation
 
-A future mutating command may resolve a safe thread with the GraphQL mutation
-`resolveReviewThread`. `/flow-comments` does not implement that mutation.
+`/flow-fix-comments` may resolve a safe thread with the GraphQL mutation
+`resolveReviewThread` after payload validation, classification checks, required
+verification, and resolution policy pass. `/flow-comments` remains read-only and
+does not call this mutation.
 
 ## Normalized data model
 
@@ -183,9 +189,11 @@ Implemented behavior:
 - reject duplicate triage thread IDs, IDs that do not match the selected
   filtered threads, and payloads that omit selected threads;
 - produce deterministic summaries with bounded comment body previews;
-- store bounded latest review-comments state;
-- move lifecycle to `review_triage` when unresolved threads are found;
-- move to `blocked` when provided triage requires a human decision;
+- store bounded latest review-comments state, including latest comment IDs;
+- move lifecycle to `review_triage` when unresolved threads are found and avoid
+  `verified` after filtered scans that did not cover every fetched thread;
+- move to `blocked` when provided triage requires a human decision and keep
+  unresolved human-decision threads from reaching `verified`;
 - make no replies;
 - resolve no threads;
 - make no code changes;
@@ -193,20 +201,74 @@ Implemented behavior:
 
 ### `/flow-fix-comments`
 
-`/flow-fix-comments` remains future work and should be mutating only after prior
-triage state exists.
+`/flow-fix-comments` is implemented as the safe mutating follow-up to
+`/flow-comments`. It does not edit source files or create fixes itself. Instead,
+it consumes a structured review-fix payload after the agent has made focused
+fixes, run verification, and committed when needed.
 
-Planned behavior:
+Usage examples:
 
-- use stored triage state;
-- fix `valid` findings only within the reviewed scope;
-- run `/flow-check` after fixes;
-- commit through `/flow-commit` after checks pass;
-- reply to addressed threads with the configured template;
-- resolve only addressed `valid`, `stale`, or `already_fixed` threads when
-  policy allows it;
-- never resolve `needs_human`;
-- never resolve `invalid` automatically unless policy explicitly allows it.
+```text
+/flow-fix-comments --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --dry-run --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply-replies --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply-resolutions --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --apply --payload .pi/codeflow/review-comment-fix.json
+/flow-fix-comments --pr 123 --payload .pi/codeflow/review-comment-fix.json
+```
+
+Implemented behavior:
+
+- validates `schemas/review-comment-fix.schema.json` payloads;
+- matches payload thread IDs to latest `/flow-comments` state unless `--detached`
+  is used, in which case stale stored triage metadata is ignored during
+  validation and execution;
+- refuses mutation when `reviewComments.enabled` is false;
+- refuses mutation when explicit `--pr` and payload `prNumber` disagree;
+- refuses mutation when latest `/flow-comments` state is incomplete, failed, or
+  for another PR before enforcing stored thread IDs;
+- renders replies from `templates/review-reply.md`;
+- still posts policy-allowed replies when resolution is blocked by checks;
+- avoids claiming a thread is resolved before the resolution mutation succeeds;
+- calls `addPullRequestReviewThreadReply` only in apply-reply mode;
+- calls `resolveReviewThread` only in apply-resolution mode;
+- honors `reviewComments.autoResolveClassifications` before automatic
+  resolution;
+- never calls GitHub mutations during dry-run or preview-only mode;
+- stores bounded review-fix outcome state without full reply bodies, keeping
+  newest outcomes when history is truncated;
+- records which latest comment a posted reply addressed;
+- skips threads already resolved by latest triage or prior `/flow-fix-comments`
+  outcome state so retries stay idempotent, unless fresh triage shows the
+  thread was reopened;
+- skips duplicate replies only while the latest scanned comment is already
+  covered by the prior reply, so fresh follow-up feedback can receive a new
+  response;
+- treats GitHub `thread_already_resolved` responses as idempotent resolution
+  success;
+- redacts rendered reply bodies from generic GitHub mutation failures;
+- never edits code, commits, pushes, approves, merges, reruns workflows, deletes
+  branches, or mass-resolves comments.
+
+Classification-specific action rules:
+
+| Classification | Reply policy | Resolution policy |
+| --- | --- | --- |
+| `valid` | Allowed only with `fixSummary` and verification evidence. | Allowed only with `commitSha`, verification, and checks-before-resolve evidence. |
+| `already_fixed` | Allowed with evidence and verification. | Allowed only when config permits `already_fixed` and checks-before-resolve passes. |
+| `stale` | Allowed with evidence and verification. | Allowed only when config permits `stale`, the thread is outdated or evidence explains staleness, and checks-before-resolve passes. |
+| `invalid` | Allowed for concise explanation when evidence/rationale exists. | Blocked by default; allowed only by explicit project/user policy. |
+| `needs_human` | Blocked by default because Codeflow cannot make the decision. | Never allowed. |
+
+For `stale` resolution, GitHub `isOutdated` state counts as staleness evidence;
+`fixSummary` is required only when GitHub does not mark the thread outdated or
+when a reply needs text evidence.
+
+When `reviewComments.requireChecksBeforeResolve` is true, resolution requires a
+passed latest `/flow-check` state or acceptable explicit payload evidence when no
+check state exists, and stored `/flow-watch` GitHub checks must also match. Failed, skipped, timed-out, or unknown check evidence blocks
+resolution. `needs_human` and latest triage `requiresHumanDecision` always block
+resolution regardless of flags.
 
 ## Safety policy
 
@@ -224,6 +286,9 @@ Review-thread automation must follow these rules:
 - Read-only triage drafts for `valid` findings must not claim a fix is already
   complete.
 - Resolution requires explicit classification and passing verification.
+- `/flow-fix-comments` requires explicit `--apply-replies`,
+  `--apply-resolutions`, or `--apply` unless config auto-reply/auto-resolve is
+  deliberately enabled.
 - Auto-resolution can be disabled by config and defaults to disabled.
 
 ## Lifecycle expectations
@@ -237,7 +302,13 @@ not update state or transition lifecycle.
 When valid comments exist, the next phase is `fixing_review_findings`. After
 fixes are applied, the agent returns to `/flow-check`, then `/flow-commit`, then
 pushes through the PR flow and uses `/flow-watch` for remote verification.
-Replies and resolution are allowed only after verification.
+`/flow-fix-comments` can then dry-run planned replies/resolutions or apply only
+the allowed mutations requested by flags.
+
+`/flow-fix-comments --dry-run` or preview-only mode does not claim final
+verification. Successful allowed replies/resolutions may move toward `verified`
+when check evidence passed and no blockers remain. Mutation failures move to
+`blocked` or another safe non-final phase with a clear error.
 
 When a thread is `needs_human`, the workflow must move to `blocked` or remain in
 `review_triage` with an explicit human decision request. The agent must not make

@@ -9,20 +9,26 @@ Target issue:
 
 - #14 Implement review comments triage loop.
 
-PR 14B implements the read-only `/flow-comments` foundation. It does not add
-`/flow-fix-comments`, review-thread replies, review-thread resolution, automatic
-code fixes, runtime dependencies, GitHub mutations, or merge automation.
+PR 14C implements the mutating `/flow-fix-comments` safe reply/resolution
+foundation after PR 14B's read-only `/flow-comments` triage. It does not add
+automatic code fixes, runtime dependencies, merge automation, auto-approval,
+branch deletion, workflow reruns, or mass-resolution.
 
 Implementation scope:
 
-- add `/flow-comments` command registration and argument parsing;
-- query GitHub review threads with `gh api graphql` and variables;
-- normalize review thread and comment data models;
-- filter unresolved/all/outdated threads plus authors and paths;
-- validate structured triage payloads;
-- produce deterministic triage summaries;
-- store bounded latest review-comments state;
-- document that PR 14C is next for mutating fixes, replies, and safe resolution.
+- add `/flow-fix-comments` command registration and argument parsing;
+- validate `schemas/review-comment-fix.schema.json` payloads;
+- consume latest `/flow-comments`, `/flow-check`, `/flow-commit`, and
+  `/flow-watch` session state;
+- render review-thread replies from `templates/review-reply.md`;
+- call `addPullRequestReviewThreadReply` and `resolveReviewThread` through
+  `gh api graphql` variables only after explicit apply flags;
+- enforce classification-specific policy for `valid`, `invalid`, `stale`,
+  `already_fixed`, and `needs_human`;
+- require checks-before-resolve where configured;
+- store bounded latest review-fix outcome state;
+- document that after #14 is complete, remaining work is #15 docs and #17
+  CI/hardening.
 
 ## Implemented #7 scope
 
@@ -129,7 +135,7 @@ Implementation scope:
 
 ### PR 14B: read-only `/flow-comments`
 
-Implemented in the current slice:
+Implemented:
 
 - command registration and arguments for unresolved-only, all threads, outdated
   threads, author filters, and path filters;
@@ -146,18 +152,25 @@ Implemented in the current slice:
 
 ### PR 14C: mutating `/flow-fix-comments`
 
+Current implementation work:
+
 - Consume stored triage state.
-- Fix `valid` findings only within reviewed scope.
-- Run `/flow-check` after fixes.
-- Commit through `/flow-commit` after checks pass.
-- Reply to addressed threads using `templates/review-reply.md`.
+- Validate review-fix evidence payloads.
+- Render replies using `templates/review-reply.md`.
+- Reply to addressed threads with `addPullRequestReviewThreadReply` only after
+  explicit apply and policy gates.
 - Resolve only allowed `valid`, `stale`, or `already_fixed` threads after
   verification and policy checks.
-- Never auto-resolve `needs_human`.
-- Never auto-resolve `invalid` unless project policy explicitly allows it.
-- Update state and final reports with review-comment outcomes.
-- Add tests for safety gates, checks-before-resolve, reply rendering, GraphQL
-  mutation arguments, and blocked human-decision paths.
+- Block `needs_human` and latest triage `requiresHumanDecision` always.
+- Block `invalid` resolution by default unless explicit policy allows it.
+- Require checks-before-resolve where configured.
+- Store bounded review-fix state.
+- Add tests for validation, safety gates, checks-before-resolve, reply
+  rendering, GraphQL mutation arguments, command behavior, lifecycle behavior,
+  and blocked human-decision paths.
+
+After #14 lands, the next remaining implementation work is #15 documentation and
+#17 CI/hardening.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.
@@ -184,7 +197,8 @@ work before Codeflow should claim full pre-commit verification automation.
   handling, lifecycle transitions, and bounded GitHub checks state.
 - Unit tests for review-thread GraphQL parsing, normalization, triage schema
   validation, filters, summaries, lifecycle transitions, state storage, and
-  human-decision blockers; future `/flow-fix-comments` tests should add reply
-  rendering and checks-before-resolve gates.
+  human-decision blockers; `/flow-fix-comments` tests cover reply rendering,
+  GraphQL mutations, checks-before-resolve gates, lifecycle behavior, and bounded
+  state updates.
 - Manual check that unplanned review comment automation, auto-approval, merge
   automation, branch deletion, and workflow reruns remain out of scope.

@@ -76,6 +76,7 @@ describe('Codeflow review comments state', () => {
 
     expect(found.lastRun?.status).toBe('found');
     expect(found.lastRun?.threads[0]?.latestCommentSummary).toBe('Review finding body');
+    expect(found.lastRun?.threads[0]?.latestCommentId).toBe('PRRC_comment_1');
     expect(none.lastRun?.status).toBe('none');
   });
 
@@ -115,7 +116,7 @@ describe('Codeflow review comments state', () => {
     expect(state.lastRun?.threads[0]?.classification).toBe('needs_human');
   });
 
-  it('bounds stored threads, summaries, and omits full huge bodies', () => {
+  it('stores full thread metadata with bounded summaries and omits full huge bodies', () => {
     const hugeBody = 'large body '.repeat(1000);
     const state = updateReviewCommentsStateWithResult(createInitialReviewCommentsState(), {
       status: 'found',
@@ -129,7 +130,9 @@ describe('Codeflow review comments state', () => {
       summary: 'summary '.repeat(1000),
     });
 
-    expect(state.lastRun?.threads).toHaveLength(50);
+    expect(state.lastRun?.threads).toHaveLength(60);
+    expect(state.lastRun?.threadIds).toHaveLength(60);
+    expect(state.lastRun?.threadIds?.at(-1)).toBe('PRRT_thread_60');
     expect(state.lastRun?.summary.length ?? 0).toBeLessThanOrEqual(2000);
     expect(JSON.stringify(state)).not.toContain(hugeBody);
   });

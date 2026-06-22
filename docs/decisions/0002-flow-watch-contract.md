@@ -132,12 +132,18 @@ The future implementation must follow the existing command trio pattern:
 
 - `--pr <number>`: positive integer PR number. When present, it overrides the
   session state's `lastPullRequest.number` for cross-session use.
-- `--once`: explicit single-sample mode. This is also the default.
+- `--once`: explicit single-sample mode. This ADR originally specified it as
+  the default; the current implementation supersedes that default.
 - `--watch`: opt into bounded polling by repeating the read-only sample until a
   terminal status or timeout.
 - `--timeout <ms>`: positive integer timeout for `--watch`. It must not create
   an indefinite wait. A default timeout is acceptable for `--watch`, but the
   implementation plan must test that polling stops at the bound.
+
+> **Superseded default note (2026-06-22):** The implemented command now defaults
+> to bounded watch mode. `/flow-watch --once` remains the explicit single-sample
+> escape hatch. `docs/WORKFLOW.md` and `docs/CONFIGURATION.md` describe current
+> behavior.
 
 No argument may trigger merge, approval, review submission, comment posting,
 branch mutation, check rerun, workflow dispatch, or deletion.
@@ -211,9 +217,10 @@ text is rendered.
 - **Q2 PR number source:** support both session state and explicit `--pr
   <number>`. Rationale: session state is the normal `/flow-pr` handoff, while
   explicit `--pr` makes fresh agent sessions usable.
-- **Q3 poll vs. single sample:** default to a single sample; add `--watch` with
-  `--timeout <ms>` for bounded polling. Rationale: single samples fit agent turn
-  limits, and polling must never block indefinitely.
+- **Q3 poll vs. single sample:** originally default to a single sample; add
+  `--watch` with `--timeout <ms>` for bounded polling. This default is
+  superseded by the implemented bounded watch default above. Rationale: single
+  samples fit agent turn limits, and polling must never block indefinitely.
 - **Q4 authentication failure:** map `gh_auth_required` to `unavailable` and
   `blocked`, not to an unhandled hard throw. Rationale: the agent needs a clear
   next action to authenticate or ask the operator.

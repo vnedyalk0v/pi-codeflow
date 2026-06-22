@@ -18,6 +18,9 @@ export const GH_PR_CHECKS_JSON_FIELDS = [
   'workflow',
 ].join(',');
 
+const MAX_PR_CHECKS_WATCH_INTERVAL_SECONDS = 300;
+const MAX_PR_CHECKS_WATCH_TIMEOUT_SECONDS = 3600;
+
 export interface GetGitHubPrChecksOptions {
   cwd?: string;
   pr?: number | string;
@@ -116,8 +119,16 @@ export async function watchGitHubPrChecks(
 ): Promise<import('./pr-checks-parser').CodeflowPrChecksWatchResult> {
   const intervalSeconds = options.intervalSeconds ?? 10;
   const timeoutSeconds = options.timeoutSeconds ?? 900;
-  assertPositiveSeconds(intervalSeconds, 'intervalSeconds');
-  assertPositiveSeconds(timeoutSeconds, 'timeoutSeconds');
+  assertPositiveSeconds(
+    intervalSeconds,
+    'intervalSeconds',
+    MAX_PR_CHECKS_WATCH_INTERVAL_SECONDS,
+  );
+  assertPositiveSeconds(
+    timeoutSeconds,
+    'timeoutSeconds',
+    MAX_PR_CHECKS_WATCH_TIMEOUT_SECONDS,
+  );
 
   const sleep = options.sleep ?? defaultSleep;
   const nowMs = options.nowMs ?? Date.now;
@@ -455,12 +466,20 @@ function githubErrorDetails(error: GithubCliError): Record<string, unknown> {
   };
 }
 
-function assertPositiveSeconds(value: number, name: string): void {
+function assertPositiveSeconds(value: number, name: string, maxValue: number): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new CodeflowPrChecksError({
       code: 'invalid_arguments',
       message: `${name} must be greater than zero.`,
       details: { [name]: value },
+    });
+  }
+
+  if (value > maxValue) {
+    throw new CodeflowPrChecksError({
+      code: 'invalid_arguments',
+      message: `${name} must be less than or equal to ${maxValue}.`,
+      details: { [name]: value, maximum: maxValue },
     });
   }
 }

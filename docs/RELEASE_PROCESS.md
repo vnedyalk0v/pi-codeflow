@@ -14,22 +14,27 @@ promoting `dev` to `main`.
 
 ## Promotion merge policy
 
-Use a merge commit for `dev` to `main` promotion PRs. Squash-merging promotion
-PRs makes `main` and `dev` diverge, which can create conflicts on the next
-promotion PR even when file content is already aligned.
+GitHub currently reports `mergeCommitAllowed: false`, so merge commits are not
+enabled for this repository. Use the allowed promotion merge method chosen by
+maintainers.
 
-Open the promotion PR from `dev` itself, or from a branch that preserves `dev`
-ancestry. Do not copy the `dev` tree onto `main` as a single-parent commit.
+For promotion PRs:
 
-Before opening a promotion PR, fetch and confirm `main` is already in `dev`:
+1. Open the promotion PR from `dev` itself, or from a branch that preserves
+   `dev` ancestry.
+2. When a promotion is squash-merged, immediately sync `main` back into `dev`
+   before opening the next promotion PR.
+3. After syncing, verify tree equality:
 
-```sh
-git fetch origin --prune
-git merge-base --is-ancestor origin/main origin/dev
-```
+   ```sh
+   git fetch origin --prune
+   git rev-parse origin/main^{tree}
+   git rev-parse origin/dev^{tree}
+   ```
 
-If the check fails because a previous promotion was squashed, sync `main` back
-into `dev` before opening the next promotion PR.
+   The tree hashes should match when branch content is aligned.
+4. Do not rely only on commit counts because histories can differ while content
+   matches.
 
 No automated publishing should be added until implementation, CI, and security
 review are ready.

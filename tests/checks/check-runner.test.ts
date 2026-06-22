@@ -163,6 +163,23 @@ describe('runCodeflowChecks', () => {
     await expect(fileExists(lateFile)).resolves.toBe(false);
   });
 
+  it('rejects check timeouts above one hour', async () => {
+    await expect(
+      runCodeflowChecks({
+        dryRun: true,
+        checks: [
+          {
+            name: 'too slow',
+            command: `${node} -e "console.log('ok')"`,
+            timeoutMs: 3_600_001,
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'invalid_check_config',
+    });
+  });
+
   it('handles an empty check list', async () => {
     const result = await runCodeflowChecks({ checks: [] });
 

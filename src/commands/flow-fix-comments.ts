@@ -138,9 +138,16 @@ export async function runFlowFixComments(
     });
   }
 
+  const reviewCommentsPrMismatch = !options.detached && prNumber !== null && latestReviewComments !== null &&
+    latestReviewComments.prNumber !== null && latestReviewComments.prNumber !== prNumber;
+  const canValidateAgainstReviewState = options.detached !== true &&
+    latestReviewComments?.status !== 'failed' &&
+    !reviewCommentsPrMismatch;
+
   const validation = validateReviewFixPayload(options.payload, {
-    knownThreads: latestReviewComments?.threads,
-    knownThreadIds: latestReviewComments?.threadIds,
+    knownThreads: canValidateAgainstReviewState ? latestReviewComments?.threads : undefined,
+    knownThreadIds: canValidateAgainstReviewState ? latestReviewComments?.threadIds : undefined,
+    requireThreadMatch: canValidateAgainstReviewState,
     detached: options.detached,
     config: config.reviewComments,
     allowInvalidResolution: options.allowInvalidResolution,
@@ -162,9 +169,6 @@ export async function runFlowFixComments(
     (options.detached === true ? [] : latestReviewComments?.threads ?? []).map((thread) => [thread.threadId, thread]),
   );
   let mutationFailed = false;
-
-  const reviewCommentsPrMismatch = !options.detached && prNumber !== null && latestReviewComments !== null &&
-    latestReviewComments.prNumber !== null && latestReviewComments.prNumber !== prNumber;
 
   if (!options.detached && latestReviewComments?.status === 'failed') {
     blockAllReviewFixItems(

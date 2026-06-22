@@ -225,7 +225,8 @@ Implemented behavior:
   validation and execution;
 - refuses mutation when `reviewComments.enabled` is false;
 - refuses mutation when explicit `--pr` and payload `prNumber` disagree;
-- refuses mutation when latest `/flow-comments` state is incomplete or failed;
+- refuses mutation when latest `/flow-comments` state is incomplete, failed, or
+  for another PR before enforcing stored thread IDs;
 - renders replies from `templates/review-reply.md`;
 - still posts policy-allowed replies when resolution is blocked by checks;
 - avoids claiming a thread is resolved before the resolution mutation succeeds;

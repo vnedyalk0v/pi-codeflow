@@ -209,12 +209,12 @@ describe('runFlowFixComments', () => {
     expect(result.blocked[0]?.reason).toContain('/flow-comments ID metadata');
   });
 
-  it('blocks when /flow-comments state belongs to a different PR', async () => {
+  it('blocks when /flow-comments state belongs to a different PR before validating thread IDs', async () => {
     const calls: string[] = [];
     const state = session();
     state.reviewComments!.lastRun!.prNumber = 456;
     const result = await runFlowFixComments({
-      payload: payload(),
+      payload: payload({ threadId: 'PRRT_thread_from_target_pr' }),
       applyResolutions: true,
       config: getDefaultCodeflowConfig(),
       sessionState: state,
@@ -231,6 +231,18 @@ describe('runFlowFixComments', () => {
     expect(calls).toEqual([]);
     expect(result.status).toBe('blocked');
     expect(result.blocked[0]?.reason).toContain('belongs to PR #456, not PR #123');
+  });
+
+  it('blocks failed /flow-comments state before validating thread IDs', async () => {
+    const result = await runFlowFixComments({
+      payload: payload({ threadId: 'PRRT_thread_from_failed_scan' }),
+      apply: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session({ reviewStatus: 'failed' }),
+    });
+
+    expect(result.status).toBe('blocked');
+    expect(result.blocked[0]?.reason).toContain('incomplete or failed');
   });
 
   it('rejects explicit PR mismatches before detached mutations', async () => {

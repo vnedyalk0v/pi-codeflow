@@ -162,6 +162,21 @@ describe('/flow-fix-comments lifecycle behavior', () => {
         resolved: true,
       }),
     });
+    const filteredSession = session();
+    filteredSession.reviewComments!.lastRun!.fetchedThreadCount = 2;
+    filteredSession.reviewComments!.lastRun!.filteredThreadCount = 1;
+    const filtered = await runFlowFixComments({
+      payload: payload(),
+      applyResolutions: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: filteredSession,
+      resolveThread: async (options) => ({
+        threadId: options.threadId,
+        classification: 'valid',
+        status: 'resolved',
+        resolved: true,
+      }),
+    });
 
     expect(result.status).toBe('applied');
     expect(result.lifecyclePhase).toBe('verified');
@@ -169,6 +184,8 @@ describe('/flow-fix-comments lifecycle behavior', () => {
     expect(partial.lifecyclePhase).toBe('review_triage');
     expect(withHumanDecision.status).toBe('applied');
     expect(withHumanDecision.lifecyclePhase).toBe('review_triage');
+    expect(filtered.status).toBe('applied');
+    expect(filtered.lifecyclePhase).toBe('review_triage');
   });
 
   it('moves needs_human and mutation failures to blocked', async () => {

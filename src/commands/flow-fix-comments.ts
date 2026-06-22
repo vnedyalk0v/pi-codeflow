@@ -791,6 +791,10 @@ function allKnownReviewThreadsResolved(
     return false;
   }
 
+  if (reviewState.fetchedThreadCount !== reviewState.filteredThreadCount) {
+    return false;
+  }
+
   const storedThreadsById = new Map(reviewState.threads.map((thread) => [thread.threadId, thread]));
   const knownThreadIds = reviewState.threadIds ?? reviewState.threads.map((thread) => thread.threadId);
   const resolvedThreadIds = new Set(

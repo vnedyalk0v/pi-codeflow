@@ -190,7 +190,8 @@ Implemented behavior:
   filtered threads, and payloads that omit selected threads;
 - produce deterministic summaries with bounded comment body previews;
 - store bounded latest review-comments state, including latest comment IDs;
-- move lifecycle to `review_triage` when unresolved threads are found;
+- move lifecycle to `review_triage` when unresolved threads are found and avoid
+  `verified` after filtered scans that did not cover every fetched thread;
 - move to `blocked` when provided triage requires a human decision and keep
   unresolved human-decision threads from reaching `verified`;
 - make no replies;

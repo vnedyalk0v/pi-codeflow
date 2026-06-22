@@ -7,28 +7,26 @@ at a time.
 
 Target issue:
 
-- #14 Implement review comments triage loop.
+- #17 Add initial validation workflow after implementation starts.
 
-PR 14C implements the mutating `/flow-fix-comments` safe reply/resolution
-foundation after PR 14B's read-only `/flow-comments` triage. It does not add
-automatic code fixes, runtime dependencies, merge automation, auto-approval,
-branch deletion, workflow reruns, or mass-resolution.
+#17 adds the first GitHub Actions validation workflow now that the repository has
+implementation code, tests, schemas, docs checks, prompts, templates, and
+package scripts. It does not add publishing, release automation, deployments,
+secrets, or repository mutation permissions.
 
 Implementation scope:
 
-- add `/flow-fix-comments` command registration and argument parsing;
-- validate `schemas/review-comment-fix.schema.json` payloads;
-- consume latest `/flow-comments`, `/flow-check`, `/flow-commit`, and
-  `/flow-watch` session state;
-- render review-thread replies from `templates/review-reply.md`;
-- call `addPullRequestReviewThreadReply` and `resolveReviewThread` through
-  `gh api graphql` variables only after explicit apply flags;
-- enforce classification-specific policy for `valid`, `invalid`, `stale`,
-  `already_fixed`, and `needs_human`;
-- require checks-before-resolve where configured;
-- store bounded latest review-fix outcome state;
-- document that after #14 is complete, remaining work is #15 docs and #17
-  CI/hardening.
+- add `.github/workflows/validate.yml`;
+- validate pull requests targeting `dev` and `main`;
+- validate pushes to `dev` and `main`;
+- support manual workflow dispatch;
+- use Node 20 with npm dependency caching;
+- install dependencies with `npm ci`;
+- run `npm run check` as the canonical full package validation command;
+- document validation behavior and security boundaries.
+
+After #17 lands, the next remaining issue is #15 installation and usage
+documentation.
 
 ## Implemented #7 scope
 
@@ -152,7 +150,7 @@ Implemented:
 
 ### PR 14C: mutating `/flow-fix-comments`
 
-Current implementation work:
+Implemented:
 
 - Consume stored triage state.
 - Validate review-fix evidence payloads.
@@ -169,8 +167,8 @@ Current implementation work:
   rendering, GraphQL mutation arguments, command behavior, lifecycle behavior,
   and blocked human-decision paths.
 
-After #14 lands, the next remaining implementation work is #15 documentation and
-#17 CI/hardening.
+After #17 lands, the next remaining implementation work is #15 installation and
+usage documentation.
 
 There is not currently a dedicated self-review issue; self-review remains future
 work before Codeflow should claim full pre-commit verification automation.

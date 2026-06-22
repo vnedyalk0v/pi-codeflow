@@ -84,15 +84,42 @@ resolution.
     /flow-comments
     ```
 
-13. After fixing valid review comments and running checks again, preview and
-    apply safe replies or resolutions:
+13. After fixing valid review comments, run checks again:
+
+    ```text
+    /flow-check
+    ```
+
+14. Stage the intended review-fix changes.
+
+15. Prepare a fresh commit payload for the review-fix commit.
+
+16. Commit the review fix:
+
+    ```text
+    /flow-commit --payload .pi/codeflow/commit-payload.json
+    ```
+
+17. Update the PR with the review-fix commit:
+
+    ```text
+    /flow-pr --payload .pi/codeflow/pr-payload.json
+    ```
+
+18. Watch checks for the updated PR:
+
+    ```text
+    /flow-watch --required
+    ```
+
+19. Preview and apply safe replies or resolutions:
 
     ```text
     /flow-fix-comments --dry-run --payload .pi/codeflow/review-comment-fix.json
     /flow-fix-comments --apply --payload .pi/codeflow/review-comment-fix.json
     ```
 
-14. Final human review and merge remain outside Codeflow.
+20. Final human review and merge remain outside Codeflow.
 
 ## Recommended AI-agent workflow
 

@@ -21,6 +21,9 @@ These rules apply to AI agents working in this repository.
   - `build/`
   - `revert/`
 - Prefer small PRs with one clear purpose.
+- Promotion PRs from `dev` to `main` should use a merge commit, not squash
+  merge. If a promotion is squashed, sync `main` back into `dev` before opening
+  the next promotion PR.
 
 ## Docs-first and issue-first workflow
 

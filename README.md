@@ -34,6 +34,7 @@ Codeflow helps Pi Coding Agent follow a conservative repository lifecycle:
   -> fix valid review findings
   -> /flow-check
   -> /flow-commit
+  -> /flow-pr
   -> /flow-watch
   -> /flow-fix-comments
 ```

@@ -12,6 +12,25 @@ The release process is planned for a future milestone.
 CI validation should pass before merging feature work into `dev` and before
 promoting `dev` to `main`.
 
+## Promotion merge policy
+
+Use a merge commit for `dev` to `main` promotion PRs. Squash-merging promotion
+PRs makes `main` and `dev` diverge, which can create conflicts on the next
+promotion PR even when file content is already aligned.
+
+Open the promotion PR from `dev` itself, or from a branch that preserves `dev`
+ancestry. Do not copy the `dev` tree onto `main` as a single-parent commit.
+
+Before opening a promotion PR, fetch and confirm `main` is already in `dev`:
+
+```sh
+git fetch origin --prune
+git merge-base --is-ancestor origin/main origin/dev
+```
+
+If the check fails because a previous promotion was squashed, sync `main` back
+into `dev` before opening the next promotion PR.
+
 No automated publishing should be added until implementation, CI, and security
 review are ready.
 

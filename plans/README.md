@@ -8,10 +8,10 @@ honor its STOP conditions, and update your row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 001 | Align promotion merge policy with repository settings | P1 | S | - | TODO |
-| 002 | Sanitize `/flow-check` command return data | P1 | M | - | TODO |
-| 003 | Bound configured Codeflow timeouts | P2 | S | - | TODO |
-| 004 | Align the `/flow-watch` ADR with implemented defaults | P3 | S | - | TODO |
+| 001 | Align promotion merge policy with repository settings | P1 | S | - | DONE |
+| 002 | Sanitize `/flow-check` command return data | P1 | M | - | DONE |
+| 003 | Bound configured Codeflow timeouts | P2 | S | - | DONE |
+| 004 | Align the `/flow-watch` ADR with implemented defaults | P3 | S | - | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)

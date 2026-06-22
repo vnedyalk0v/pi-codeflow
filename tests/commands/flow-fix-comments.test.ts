@@ -233,6 +233,25 @@ describe('runFlowFixComments', () => {
     expect(result.blocked[0]?.reason).toContain('belongs to PR #456, not PR #123');
   });
 
+  it('rejects explicit PR mismatches before detached mutations', async () => {
+    const calls: string[] = [];
+
+    await expect(runFlowFixComments({
+      payload: { ...payload(), prNumber: 456 },
+      pr: 123,
+      detached: true,
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: session(),
+      replyToThread: async () => {
+        calls.push('reply');
+        throw new Error('reply should not be called');
+      },
+    })).rejects.toThrow('--pr 123 does not match payload.prNumber 456');
+
+    expect(calls).toEqual([]);
+  });
+
   it('apply replies posts only allowed replies and stays in review triage', async () => {
     const calls: string[] = [];
     let postedBody = '';
@@ -525,9 +544,9 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions[0]?.status).toBe('skipped');
   });
 
-  it('skips session-recorded resolved threads on retries', async () => {
+  it('skips session-recorded resolved threads when latest triage still shows resolved', async () => {
     const calls: string[] = [];
-    const state = session({ isResolved: false });
+    const state = session({ isResolved: true });
     state.reviewFix!.lastRun = {
       status: 'applied',
       prNumber: 123,
@@ -555,6 +574,35 @@ describe('runFlowFixComments', () => {
     expect(result.resolutions[0]?.status).toBe('skipped');
     expect(result.resolutions[0]?.reason).toContain('already resolved in this Codeflow session');
     expect(result.warnings.join('\n')).toContain('Skipping duplicate resolution');
+  });
+
+  it('lets fresh unresolved triage override session-recorded resolved threads', async () => {
+    const calls: string[] = [];
+    const state = session({ isResolved: false });
+    state.reviewFix!.lastRun = {
+      status: 'applied',
+      prNumber: 123,
+      checkedAt: '2026-01-01T00:02:00.000Z',
+      repliesPosted: [],
+      threadsResolved: [{ threadId: 'PRRT_thread_1', classification: 'valid' }],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'Resolved PRRT_thread_1.',
+    };
+
+    const result = await runFlowFixComments({
+      payload: payload({ resolveRequested: false }),
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('applied');
   });
 
   it('does not commit, push, merge, approve, delete branches, or rerun workflows', async () => {

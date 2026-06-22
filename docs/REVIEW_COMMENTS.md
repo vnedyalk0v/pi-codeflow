@@ -221,6 +221,7 @@ Implemented behavior:
 - matches payload thread IDs to latest `/flow-comments` state unless `--detached`
   is used;
 - refuses mutation when `reviewComments.enabled` is false;
+- refuses mutation when explicit `--pr` and payload `prNumber` disagree;
 - refuses mutation when latest `/flow-comments` state is incomplete or failed;
 - renders replies from `templates/review-reply.md`;
 - calls `addPullRequestReviewThreadReply` only in apply-reply mode;
@@ -229,7 +230,8 @@ Implemented behavior:
 - stores bounded review-fix outcome state without full reply bodies;
 - records which latest comment a posted reply addressed;
 - skips threads already resolved by latest triage or prior `/flow-fix-comments`
-  outcome state so retries stay idempotent;
+  outcome state so retries stay idempotent, unless fresh triage shows the
+  thread was reopened;
 - skips duplicate replies only while the latest scanned comment is already
   covered by the prior reply, so fresh follow-up feedback can receive a new
   response;

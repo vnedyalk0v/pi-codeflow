@@ -545,7 +545,17 @@ function resolvePrNumber(
   sessionState: CodeflowSessionState,
 ): number | null {
   if (options.pr !== undefined) {
-    return parsePositiveInteger(String(options.pr), 'pr');
+    const prNumber = parsePositiveInteger(String(options.pr), 'pr');
+
+    if (options.payload.prNumber !== undefined && options.payload.prNumber !== prNumber) {
+      throw new CodeflowReviewFixError({
+        code: 'invalid_arguments',
+        message: `--pr ${prNumber} does not match payload.prNumber ${options.payload.prNumber}.`,
+        details: { prNumber, payloadPrNumber: options.payload.prNumber },
+      });
+    }
+
+    return prNumber;
   }
 
   if (options.payload.prNumber !== undefined) {
@@ -602,7 +612,7 @@ async function buildReviewFixExecutionPlans(options: {
       continue;
     }
 
-    if (alreadyResolvedThread(options.sessionState, item.threadId)) {
+    if (alreadyResolvedThread(options.sessionState, item.threadId, knownThread)) {
       const skipReason = 'thread was already resolved in this Codeflow session';
       options.warnings.push(`Skipping duplicate resolution for ${item.threadId}; ${skipReason}.`);
       plans.push({
@@ -929,7 +939,15 @@ function alreadyPostedReply(
   }) === true;
 }
 
-function alreadyResolvedThread(sessionState: CodeflowSessionState, threadId: string): boolean {
+function alreadyResolvedThread(
+  sessionState: CodeflowSessionState,
+  threadId: string,
+  knownThread: CodeflowStoredReviewCommentThread | null,
+): boolean {
+  if (knownThread?.isResolved === false) {
+    return false;
+  }
+
   return sessionState.reviewFix?.lastRun?.threadsResolved.some((resolution) => resolution.threadId === threadId) === true;
 }
 

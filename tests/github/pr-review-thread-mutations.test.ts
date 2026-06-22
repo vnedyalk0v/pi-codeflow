@@ -21,6 +21,7 @@ describe('review thread GraphQL mutation builders', () => {
     expect(PR_REVIEW_THREAD_REPLY_MUTATION).toContain('addPullRequestReviewThreadReply');
     expect(PR_REVIEW_THREAD_REPLY_MUTATION).toContain('pullRequestReviewThreadId: $threadId');
     expect(PR_REVIEW_THREAD_REPLY_MUTATION).toContain('body: $body');
+    expect(PR_REVIEW_THREAD_REPLY_MUTATION).not.toContain('thread {');
     expect(PR_REVIEW_THREAD_REPLY_MUTATION).not.toContain('PRRT_thread_1');
     expect(PR_REVIEW_THREAD_REPLY_MUTATION).not.toContain('Thanks; fixed.');
   });

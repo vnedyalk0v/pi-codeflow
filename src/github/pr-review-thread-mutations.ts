@@ -10,10 +10,6 @@ export const PR_REVIEW_THREAD_REPLY_MUTATION = `mutation CodeflowAddPullRequestR
       id
       url
     }
-    thread {
-      id
-      isResolved
-    }
   }
 }`;
 

@@ -18,6 +18,9 @@ Use a merge commit for `dev` to `main` promotion PRs. Squash-merging promotion
 PRs makes `main` and `dev` diverge, which can create conflicts on the next
 promotion PR even when file content is already aligned.
 
+Open the promotion PR from `dev` itself, or from a branch that preserves `dev`
+ancestry. Do not copy the `dev` tree onto `main` as a single-parent commit.
+
 Before opening a promotion PR, fetch and confirm `main` is already in `dev`:
 
 ```sh

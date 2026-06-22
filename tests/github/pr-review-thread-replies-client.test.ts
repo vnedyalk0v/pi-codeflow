@@ -50,9 +50,9 @@ describe('replyToReviewThread', () => {
         body: replyBody,
         ghClient: ghClient([], [new GithubCliError({
           code: 'gh_command_failed',
-          message: 'GraphQL validation failed',
+          message: `GraphQL validation failed for body=${replyBody}`,
           args: ['api', 'graphql', '-f', `body=${replyBody}`],
-          stderr: 'GraphQL validation failed',
+          stderr: `GraphQL validation failed for body=${replyBody}`,
         })]),
       });
       throw new Error('expected reply mutation to fail');

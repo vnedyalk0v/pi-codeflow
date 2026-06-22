@@ -252,6 +252,25 @@ describe('runFlowFixComments', () => {
     expect(calls).toEqual([]);
   });
 
+  it('detached mode ignores stale stored thread metadata during execution', async () => {
+    const calls: string[] = [];
+    const state = session({ classification: 'needs_human', requiresHumanDecision: true, isResolved: true });
+    const result = await runFlowFixComments({
+      payload: payload({ resolveRequested: false }),
+      detached: true,
+      applyReplies: true,
+      config: getDefaultCodeflowConfig(),
+      sessionState: state,
+      replyToThread: async (options) => {
+        calls.push(`reply:${options.threadId}`);
+        return { threadId: options.threadId, classification: 'valid', status: 'posted', commentId: 'PRRC_reply_1', url: null, body: options.body };
+      },
+    });
+
+    expect(calls).toEqual(['reply:PRRT_thread_1']);
+    expect(result.status).toBe('applied');
+  });
+
   it('apply replies posts only allowed replies and stays in review triage', async () => {
     const calls: string[] = [];
     let postedBody = '';

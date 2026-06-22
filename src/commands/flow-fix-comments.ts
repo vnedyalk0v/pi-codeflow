@@ -159,7 +159,7 @@ export async function runFlowFixComments(
   const blocked: CodeflowReviewFixBlockedItem[] = [];
   const requiresHumanDecision: string[] = [];
   const knownThreadsById = new Map(
-    (latestReviewComments?.threads ?? []).map((thread) => [thread.threadId, thread]),
+    (options.detached === true ? [] : latestReviewComments?.threads ?? []).map((thread) => [thread.threadId, thread]),
   );
   let mutationFailed = false;
 

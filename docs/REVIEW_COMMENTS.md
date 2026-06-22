@@ -220,7 +220,8 @@ Implemented behavior:
 
 - validates `schemas/review-comment-fix.schema.json` payloads;
 - matches payload thread IDs to latest `/flow-comments` state unless `--detached`
-  is used, in which case stale stored triage metadata is ignored;
+  is used, in which case stale stored triage metadata is ignored during
+  validation and execution;
 - refuses mutation when `reviewComments.enabled` is false;
 - refuses mutation when explicit `--pr` and payload `prNumber` disagree;
 - refuses mutation when latest `/flow-comments` state is incomplete or failed;
@@ -241,6 +242,7 @@ Implemented behavior:
   response;
 - treats GitHub `thread_already_resolved` responses as idempotent resolution
   success;
+- redacts rendered reply bodies from generic GitHub mutation failures;
 - never edits code, commits, pushes, approves, merges, reruns workflows, deletes
   branches, or mass-resolves comments.
 

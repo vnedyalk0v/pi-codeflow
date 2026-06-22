@@ -160,7 +160,7 @@ export function mapGithubMutationError(
 
   return new CodeflowReviewFixError({
     code: 'mutation_failed',
-    message: `gh ${error.args.join(' ')} failed while ${action}: ${error.message}`,
+    message: `GitHub mutation failed while ${action}: ${error.message}`,
     details: githubErrorDetails(error),
     cause: error,
   });
@@ -205,11 +205,15 @@ function looksLikeThreadNotFound(value: string): boolean {
 
 function githubErrorDetails(error: GithubCliError): Record<string, unknown> {
   return {
-    args: error.args,
+    args: redactGraphqlArgs(error.args),
     exitCode: error.exitCode ?? null,
     stdout: truncateText(error.stdout, 1000),
     stderr: truncateText(error.stderr, 1000),
   };
+}
+
+function redactGraphqlArgs(args: string[]): string[] {
+  return args.map((arg) => arg.startsWith('body=') ? 'body=<redacted>' : arg);
 }
 
 function readString(value: unknown): string | null {

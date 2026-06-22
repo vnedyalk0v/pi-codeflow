@@ -41,6 +41,29 @@ describe('replyToReviewThread', () => {
     expect(calls[0]?.join(' ')).not.toContain('mergePullRequest');
   });
 
+  it('redacts reply bodies from generic mutation failures', async () => {
+    const replyBody = 'Sensitive reply body with internal notes.';
+
+    try {
+      await replyToReviewThread({
+        threadId: 'PRRT_thread_1',
+        body: replyBody,
+        ghClient: ghClient([], [new GithubCliError({
+          code: 'gh_command_failed',
+          message: 'GraphQL validation failed',
+          args: ['api', 'graphql', '-f', `body=${replyBody}`],
+          stderr: 'GraphQL validation failed',
+        })]),
+      });
+      throw new Error('expected reply mutation to fail');
+    } catch (error) {
+      expect(error).toMatchObject({ code: 'mutation_failed' });
+      expect(error instanceof Error ? error.message : '').not.toContain(replyBody);
+      expect(JSON.stringify((error as { details?: unknown }).details)).not.toContain(replyBody);
+      expect(JSON.stringify((error as { details?: { args?: string[] } }).details?.args)).toContain('body=<redacted>');
+    }
+  });
+
   it('maps permission and missing thread errors clearly', async () => {
     await expect(replyToReviewThread({
       threadId: 'PRRT_thread_1',

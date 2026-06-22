@@ -132,12 +132,14 @@ function mergeStoredReviewFixRuns(
 function mergeUniqueByThreadId<T extends { threadId: string }>(previous: T[], next: T[]): T[] {
   const merged = new Map<string, T>();
 
-  for (const item of previous) {
+  for (const item of next) {
     merged.set(item.threadId, item);
   }
 
-  for (const item of next) {
-    merged.set(item.threadId, item);
+  for (const item of previous) {
+    if (!merged.has(item.threadId)) {
+      merged.set(item.threadId, item);
+    }
   }
 
   return [...merged.values()];

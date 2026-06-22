@@ -234,7 +234,8 @@ Implemented behavior:
 - honors `reviewComments.autoResolveClassifications` before automatic
   resolution;
 - never calls GitHub mutations during dry-run or preview-only mode;
-- stores bounded review-fix outcome state without full reply bodies;
+- stores bounded review-fix outcome state without full reply bodies, keeping
+  newest outcomes when history is truncated;
 - records which latest comment a posted reply addressed;
 - skips threads already resolved by latest triage or prior `/flow-fix-comments`
   outcome state so retries stay idempotent, unless fresh triage shows the

@@ -94,7 +94,7 @@ describe('Codeflow review-fix state', () => {
     ]);
   });
 
-  it('bounds stored outcomes', () => {
+  it('bounds stored outcomes and keeps newest merged entries', () => {
     const replies = Array.from({ length: 60 }, (_, index) => ({
       threadId: `PRRT_${index}`,
       classification: 'valid' as const,
@@ -112,8 +112,20 @@ describe('Codeflow review-fix state', () => {
       requiresHumanDecision: [],
       summary: 'summary',
     });
+    const merged = updateReviewFixStateWithResult(state, {
+      status: 'applied',
+      prNumber: 123,
+      replies: [{ threadId: 'PRRT_new', classification: 'valid', status: 'posted', commentId: 'PRRC_new', url: null, body: null }],
+      resolutions: [{ threadId: 'PRRT_resolved', classification: 'valid', status: 'resolved', resolved: true }],
+      blocked: [],
+      requiresHumanDecision: [],
+      summary: 'summary',
+    });
 
     expect(state.lastRun?.repliesPosted).toHaveLength(50);
+    expect(merged.lastRun?.repliesPosted).toHaveLength(50);
+    expect(merged.lastRun?.repliesPosted[0]?.threadId).toBe('PRRT_new');
+    expect(merged.lastRun?.threadsResolved[0]?.threadId).toBe('PRRT_resolved');
   });
 
   it('updates session lifecycle with latest review-fix result', () => {

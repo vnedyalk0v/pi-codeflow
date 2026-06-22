@@ -86,13 +86,17 @@ The packaged example files mirror those shapes:
 - `config/example.python.codeflow.json`
 - `config/example.monorepo.codeflow.json`
 
+Project config snippets are patches that merge over package defaults before
+validation. Omit `$schema` in partial snippets unless a future project-config
+patch schema exists. The packaged `config/example.*.codeflow.json` files are
+full resolved examples and can reference `schemas/codeflow.schema.json`.
+
 ## Minimal `.pi/codeflow.json`
 
 Use this when a project wants Codeflow defaults and has not configured checks:
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "baseBranches": {
     "default": "dev",
     "allowed": ["dev", "main"],

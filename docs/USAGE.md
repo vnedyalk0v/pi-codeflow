@@ -54,35 +54,37 @@ resolution.
    /flow-check
    ```
 
-6. Prepare a commit payload at `.pi/codeflow/commit-payload.json`.
+6. Stage the intended changes with git or your editor's source-control UI.
 
-7. Commit through Codeflow:
+7. Prepare a commit payload at `.pi/codeflow/commit-payload.json`.
+
+8. Commit through Codeflow:
 
    ```text
    /flow-commit --payload .pi/codeflow/commit-payload.json
    ```
 
-8. Prepare a PR payload at `.pi/codeflow/pr-payload.json`.
+9. Prepare a PR payload at `.pi/codeflow/pr-payload.json`.
 
-9. Open the PR:
+10. Open the PR:
 
-   ```text
-   /flow-pr --payload .pi/codeflow/pr-payload.json
-   ```
+    ```text
+    /flow-pr --payload .pi/codeflow/pr-payload.json
+    ```
 
-10. Watch required checks:
+11. Watch required checks:
 
     ```text
     /flow-watch --required
     ```
 
-11. Triage review threads:
+12. Triage review threads:
 
     ```text
     /flow-comments
     ```
 
-12. After fixing valid review comments and running checks again, preview and
+13. After fixing valid review comments and running checks again, preview and
     apply safe replies or resolutions:
 
     ```text
@@ -90,7 +92,7 @@ resolution.
     /flow-fix-comments --apply --payload .pi/codeflow/review-comment-fix.json
     ```
 
-13. Final human review and merge remain outside Codeflow.
+14. Final human review and merge remain outside Codeflow.
 
 ## Recommended AI-agent workflow
 
@@ -156,10 +158,12 @@ Key options:
 - `--all` or `--continue-on-failure` continues after failures.
 - `--stop-on-failure` stops at the first required failure.
 
-Mutates: Codeflow session state for latest local check results.
+Mutates: Codeflow session state for latest local check results. Configured check
+commands may also mutate the worktree if the project config uses formatters,
+fixers, generators, or other write-capable commands.
 
-Does not mutate: source files, git commits, branches, PRs, GitHub checks, or
-review comments.
+Does not mutate by itself: source files, git commits, branches, PRs, GitHub
+checks, or review comments.
 
 Expected next step: fix failures and rerun, or prepare commit payloads after
 checks are acceptable.

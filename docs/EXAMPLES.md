@@ -4,13 +4,16 @@ These examples are starter `.pi/codeflow.json` files for projects that install
 pi-codeflow. Copy the smallest one that fits, then adjust check commands to the
 project's existing scripts.
 
+Project configs are patches that merge over package defaults before validation.
+These partial snippets omit `$schema` because the current schema describes the
+resolved config after defaults are merged.
+
 ## Minimal project config
 
 Use this when the project wants Codeflow defaults and has no local checks yet:
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "baseBranches": {
     "default": "dev",
     "allowed": ["dev", "main"],
@@ -28,7 +31,6 @@ which should not be treated as verification evidence.
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "baseBranches": {
     "default": "dev",
     "allowed": ["dev", "main"],
@@ -62,7 +64,6 @@ which should not be treated as verification evidence.
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "baseBranches": {
     "default": "dev",
     "allowed": ["dev", "main"],
@@ -96,7 +97,6 @@ which should not be treated as verification evidence.
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "baseBranches": {
     "default": "dev",
     "allowed": ["dev", "main"],
@@ -130,7 +130,6 @@ Do not add a new dependency only for Codeflow checks.
 
 ```json
 {
-  "$schema": "https://github.com/vnedyalk0v/pi-codeflow/schemas/codeflow.schema.json",
   "reviewComments": {
     "enabled": true,
     "provider": "github-graphql",

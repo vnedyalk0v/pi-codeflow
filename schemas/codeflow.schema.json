@@ -181,9 +181,7 @@
       "type": "object",
       "required": [
         "template",
-        "conventional",
         "allowedTypes",
-        "requireStructuredPayload",
         "performCommit",
         "requireBody",
         "requireVerification",
@@ -198,9 +196,6 @@
         "template": {
           "type": "string",
           "minLength": 1
-        },
-        "conventional": {
-          "type": "boolean"
         },
         "allowedTypes": {
           "type": "array",
@@ -222,9 +217,6 @@
           },
           "uniqueItems": true,
           "minItems": 1
-        },
-        "requireStructuredPayload": {
-          "type": "boolean"
         },
         "performCommit": {
           "type": "boolean"
@@ -412,7 +404,6 @@
       "type": "object",
       "required": [
         "enabled",
-        "provider",
         "includeAuthors",
         "excludeAuthors",
         "unresolvedOnly",
@@ -422,19 +413,12 @@
         "autoResolveClassifications",
         "requireChecksBeforeResolve",
         "requireHumanForInvalid",
-        "requireHumanForNeedsHuman",
         "maxThreadsPerRun",
         "replyTemplate"
       ],
       "properties": {
         "enabled": {
           "type": "boolean"
-        },
-        "provider": {
-          "type": "string",
-          "enum": [
-            "github-graphql"
-          ]
         },
         "includeAuthors": {
           "type": "array",
@@ -483,9 +467,6 @@
         "requireHumanForInvalid": {
           "type": "boolean"
         },
-        "requireHumanForNeedsHuman": {
-          "type": "boolean"
-        },
         "maxThreadsPerRun": {
           "type": "integer",
           "minimum": 1,
@@ -529,10 +510,8 @@
         "enabled",
         "defaultPath",
         "allowReservedBranchWork",
-        "requireReason",
         "requireFinalReport",
-        "requireStructuredCommitAndPr",
-        "documentBackportToDev"
+        "requireStructuredCommitAndPr"
       ],
       "properties": {
         "enabled": {
@@ -548,16 +527,10 @@
         "allowReservedBranchWork": {
           "type": "boolean"
         },
-        "requireReason": {
-          "type": "boolean"
-        },
         "requireFinalReport": {
           "type": "boolean"
         },
         "requireStructuredCommitAndPr": {
-          "type": "boolean"
-        },
-        "documentBackportToDev": {
           "type": "boolean"
         }
       },
@@ -598,8 +571,7 @@
         "proactive",
         "requireStructuredPayloads",
         "renderOutputsFromTemplates",
-        "stopForHumanDecisions",
-        "trackedPhases"
+        "stopForHumanDecisions"
       ],
       "properties": {
         "proactive": {
@@ -613,34 +585,6 @@
         },
         "stopForHumanDecisions": {
           "type": "boolean"
-        },
-        "trackedPhases": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "idle",
-              "initialized",
-              "branch_prepared",
-              "planning",
-              "implementing",
-              "local_checks",
-              "self_review",
-              "fixing_local_findings",
-              "ready_to_commit",
-              "committed",
-              "pr_opened",
-              "ci_waiting",
-              "review_triage",
-              "fixing_review_findings",
-              "verified",
-              "final_reported",
-              "blocked",
-              "emergency"
-            ]
-          },
-          "uniqueItems": true,
-          "minItems": 1
         }
       },
       "additionalProperties": false

@@ -40,7 +40,7 @@ export function validateReviewFixPayload(
     return invalidResult(mapJsonSchemaValidationErrors(validator.errors ?? []));
   }
 
-  const payload = JSON.parse(JSON.stringify(input)) as CodeflowReviewFixPayload;
+  const payload = structuredClone(input) as CodeflowReviewFixPayload;
   const semanticErrors = validateSemanticRules(payload, options);
 
   if (semanticErrors.length > 0) {

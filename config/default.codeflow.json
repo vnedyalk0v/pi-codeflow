@@ -46,7 +46,6 @@
   },
   "commits": {
     "template": "templates/commit-message.md",
-    "conventional": true,
     "allowedTypes": [
       "feat",
       "fix",
@@ -60,7 +59,6 @@
       "build",
       "revert"
     ],
-    "requireStructuredPayload": true,
     "performCommit": true,
     "requireBody": true,
     "requireVerification": true,
@@ -93,7 +91,6 @@
   "checks": [],
   "reviewComments": {
     "enabled": true,
-    "provider": "github-graphql",
     "includeAuthors": [],
     "excludeAuthors": [],
     "unresolvedOnly": true,
@@ -106,7 +103,6 @@
     ],
     "requireChecksBeforeResolve": true,
     "requireHumanForInvalid": true,
-    "requireHumanForNeedsHuman": true,
     "maxThreadsPerRun": 50,
     "replyTemplate": "templates/review-reply.md"
   },
@@ -114,10 +110,8 @@
     "enabled": true,
     "defaultPath": "hotfix_branch",
     "allowReservedBranchWork": false,
-    "requireReason": true,
     "requireFinalReport": true,
-    "requireStructuredCommitAndPr": true,
-    "documentBackportToDev": true
+    "requireStructuredCommitAndPr": true
   },
   "templates": {
     "branchName": "templates/branch-name.md",
@@ -129,27 +123,7 @@
     "proactive": true,
     "requireStructuredPayloads": true,
     "renderOutputsFromTemplates": true,
-    "stopForHumanDecisions": true,
-    "trackedPhases": [
-      "idle",
-      "initialized",
-      "branch_prepared",
-      "planning",
-      "implementing",
-      "local_checks",
-      "self_review",
-      "fixing_local_findings",
-      "ready_to_commit",
-      "committed",
-      "pr_opened",
-      "ci_waiting",
-      "review_triage",
-      "fixing_review_findings",
-      "verified",
-      "final_reported",
-      "blocked",
-      "emergency"
-    ]
+    "stopForHumanDecisions": true
   },
   "safety": {
     "blockDirectWorkOnReservedBranches": true,

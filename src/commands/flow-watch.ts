@@ -14,6 +14,11 @@ import {
   updateSessionStateWithGitHubChecks,
   type CodeflowSessionState,
 } from '../state/session-state';
+import {
+  parsePositiveInteger,
+  readFlagValue,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowWatchOptions {
   cwd?: string;
@@ -140,7 +145,7 @@ export async function runFlowWatch(
 }
 
 export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(args, '/flow-watch', invalidFlowWatchArguments);
   let dryRun = false;
   let pr: number | undefined;
   let requiredOnly: boolean | undefined;
@@ -185,20 +190,25 @@ export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments 
     }
 
     if (token === '--pr') {
-      pr = parsePositiveInteger(readFlagValue(tokens, index, '--pr'), '--pr');
+      pr = parsePositiveInteger(
+        readFlagValue(tokens, index, '--pr', invalidFlowWatchArguments),
+        '--pr',
+        invalidFlowWatchArguments,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--pr=')) {
-      pr = parsePositiveInteger(token.slice('--pr='.length), '--pr');
+      pr = parsePositiveInteger(token.slice('--pr='.length), '--pr', invalidFlowWatchArguments);
       continue;
     }
 
     if (token === '--interval') {
       intervalSeconds = parsePositiveInteger(
-        readFlagValue(tokens, index, '--interval'),
+        readFlagValue(tokens, index, '--interval', invalidFlowWatchArguments),
         '--interval',
+        invalidFlowWatchArguments,
         MAX_FLOW_WATCH_INTERVAL_SECONDS,
       );
       index += 1;
@@ -209,6 +219,7 @@ export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments 
       intervalSeconds = parsePositiveInteger(
         token.slice('--interval='.length),
         '--interval',
+        invalidFlowWatchArguments,
         MAX_FLOW_WATCH_INTERVAL_SECONDS,
       );
       continue;
@@ -216,8 +227,9 @@ export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments 
 
     if (token === '--timeout') {
       timeoutSeconds = parsePositiveInteger(
-        readFlagValue(tokens, index, '--timeout'),
+        readFlagValue(tokens, index, '--timeout', invalidFlowWatchArguments),
         '--timeout',
+        invalidFlowWatchArguments,
         MAX_FLOW_WATCH_TIMEOUT_SECONDS,
       );
       index += 1;
@@ -228,6 +240,7 @@ export function parseFlowWatchArguments(args: string): ParsedFlowWatchArguments 
       timeoutSeconds = parsePositiveInteger(
         token.slice('--timeout='.length),
         '--timeout',
+        invalidFlowWatchArguments,
         MAX_FLOW_WATCH_TIMEOUT_SECONDS,
       );
       continue;
@@ -418,11 +431,13 @@ function validateFlowWatchTiming(intervalSeconds: number, timeoutSeconds: number
   parsePositiveInteger(
     String(intervalSeconds),
     'intervalSeconds',
+    invalidFlowWatchArguments,
     MAX_FLOW_WATCH_INTERVAL_SECONDS,
   );
   parsePositiveInteger(
     String(timeoutSeconds),
     'timeoutSeconds',
+    invalidFlowWatchArguments,
     MAX_FLOW_WATCH_TIMEOUT_SECONDS,
   );
 }
@@ -439,99 +454,10 @@ function validateRequiredMode(current: boolean | undefined, token: string): void
   });
 }
 
-function parsePositiveInteger(value: string, flagName: string, maxValue?: number): number {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!/^\d+$/.test(value) || !Number.isInteger(parsed) || parsed <= 0) {
-    throw new CodeflowPrChecksError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a positive integer value.`,
-      details: { flagName, value },
-    });
-  }
-
-  if (maxValue !== undefined && parsed > maxValue) {
-    throw new CodeflowPrChecksError({
-      code: 'invalid_arguments',
-      message: `${flagName} must be less than or equal to ${maxValue}.`,
-      details: { flagName, value, maximum: maxValue },
-    });
-  }
-
-  return parsed;
-}
-
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new CodeflowPrChecksError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
-}
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new CodeflowPrChecksError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-watch arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
+function invalidFlowWatchArguments(message: string, details?: Record<string, unknown>): CodeflowPrChecksError {
+  return new CodeflowPrChecksError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }

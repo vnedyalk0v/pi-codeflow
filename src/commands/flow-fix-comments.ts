@@ -38,6 +38,12 @@ import {
   type CodeflowSessionState,
 } from '../state/session-state';
 import { parseJson } from '../utils/json';
+import {
+  parsePositiveInteger,
+  readFlagValue,
+  resolveCommandBaseCwd,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowFixCommentsOptions {
   cwd?: string;
@@ -356,7 +362,11 @@ export async function runFlowFixComments(
 }
 
 export function parseFlowFixCommentsArguments(args: string): ParsedFlowFixCommentsArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(
+    args,
+    '/flow-fix-comments',
+    invalidFlowFixCommentsArguments,
+  );
   let dryRun = false;
   let applyReplies = false;
   let applyResolutions = false;
@@ -402,18 +412,26 @@ export function parseFlowFixCommentsArguments(args: string): ParsedFlowFixCommen
     }
 
     if (token === '--pr') {
-      pr = parsePositiveInteger(readFlagValue(tokens, index, '--pr'), '--pr');
+      pr = parsePositiveInteger(
+        readFlagValue(tokens, index, '--pr', invalidFlowFixCommentsArguments),
+        '--pr',
+        invalidFlowFixCommentsArguments,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--pr=')) {
-      pr = parsePositiveInteger(token.slice('--pr='.length), '--pr');
+      pr = parsePositiveInteger(
+        token.slice('--pr='.length),
+        '--pr',
+        invalidFlowFixCommentsArguments,
+      );
       continue;
     }
 
     if (token === '--payload') {
-      payloadPath = readFlagValue(tokens, index, '--payload');
+      payloadPath = readFlagValue(tokens, index, '--payload', invalidFlowFixCommentsArguments);
       index += 1;
       continue;
     }
@@ -561,7 +579,11 @@ function resolvePrNumber(
   sessionState: CodeflowSessionState,
 ): number | null {
   if (options.pr !== undefined) {
-    const prNumber = parsePositiveInteger(String(options.pr), 'pr');
+    const prNumber = parsePositiveInteger(
+      String(options.pr),
+      'pr',
+      invalidFlowFixCommentsArguments,
+    );
 
     if (options.payload.prNumber !== undefined && options.payload.prNumber !== prNumber) {
       throw new CodeflowReviewFixError({
@@ -980,101 +1002,15 @@ function alreadyResolvedThread(
   return sessionState.reviewFix?.lastRun?.threadsResolved.some((resolution) => resolution.threadId === threadId) === true;
 }
 
-function resolveCommandBaseCwd(cwd: string, configPath: string | null): string {
-  if (configPath === null) {
-    return cwd;
-  }
-
-  return path.dirname(path.dirname(configPath));
-}
-
-function parsePositiveInteger(value: string, flagName: string): number {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!/^\d+$/.test(value) || !Number.isInteger(parsed) || parsed <= 0) {
-    throw new CodeflowReviewFixError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a positive integer value.`,
-      details: { flagName, value },
-    });
-  }
-
-  return parsed;
-}
-
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new CodeflowReviewFixError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
-}
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new CodeflowReviewFixError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-fix-comments arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
+function invalidFlowFixCommentsArguments(
+  message: string,
+  details?: Record<string, unknown>,
+): CodeflowReviewFixError {
+  return new CodeflowReviewFixError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }
 
 function uniqueStrings(values: string[]): string[] {

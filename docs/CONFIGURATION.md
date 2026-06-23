@@ -80,7 +80,7 @@ Use [Examples](EXAMPLES.md) for copyable project configs:
 - default template paths;
 - GitHub checks watcher defaults.
 
-The packaged example files mirror those shapes:
+The packaged example files are small patches over package defaults:
 
 - `config/example.node.codeflow.json`
 - `config/example.python.codeflow.json`
@@ -88,8 +88,7 @@ The packaged example files mirror those shapes:
 
 Project config snippets are patches that merge over package defaults before
 validation. Omit `$schema` in partial snippets unless a future project-config
-patch schema exists. The packaged `config/example.*.codeflow.json` files are
-full resolved examples and can reference `schemas/codeflow.schema.json`.
+patch schema exists.
 
 ## Minimal `.pi/codeflow.json`
 

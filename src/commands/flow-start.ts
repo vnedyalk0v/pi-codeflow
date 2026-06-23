@@ -11,6 +11,10 @@ import type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
 import { getNextExpectedActions } from '../lifecycle/lifecycle-transitions';
 import { assertWorkBranchIsNotReserved } from '../safety/workflow-safety';
 import { isReservedBranch } from '../safety/reserved-branch-policy';
+import {
+  readFlagValue,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowStartOptions {
   cwd?: string;
@@ -238,7 +242,7 @@ export async function prepareCodeflowBranch(
 }
 
 export function parseFlowStartArguments(args: string): ParsedFlowStartArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(args, '/flow-start', invalidFlowStartArguments);
   const taskTokens: string[] = [];
   let type: string | undefined;
   let ticket: string | undefined;
@@ -259,7 +263,7 @@ export function parseFlowStartArguments(args: string): ParsedFlowStartArguments 
     }
 
     if (token === '--type') {
-      type = readFlagValue(tokens, index, '--type');
+      type = readFlagValue(tokens, index, '--type', invalidFlowStartArguments);
       index += 1;
       continue;
     }
@@ -270,7 +274,7 @@ export function parseFlowStartArguments(args: string): ParsedFlowStartArguments 
     }
 
     if (token === '--ticket') {
-      ticket = readFlagValue(tokens, index, '--ticket');
+      ticket = readFlagValue(tokens, index, '--ticket', invalidFlowStartArguments);
       index += 1;
       continue;
     }
@@ -492,78 +496,10 @@ async function getCurrentBranch(gitClient: GitClient): Promise<string | null> {
   }
 }
 
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new FlowStartError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
+function invalidFlowStartArguments(message: string, details?: Record<string, unknown>): FlowStartError {
+  return new FlowStartError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new FlowStartError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-start arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
-}
-

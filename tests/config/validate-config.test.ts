@@ -29,7 +29,11 @@ describe('validateCodeflowConfig', () => {
     'config/example.python.codeflow.json',
     'config/example.monorepo.codeflow.json',
   ])('validates %s', (relativePath) => {
-    const result = validateCodeflowConfig(readJson(relativePath));
+    const config = mergeCodeflowConfig(
+      getDefaultCodeflowConfig(),
+      readJson(relativePath) as Record<string, unknown>,
+    );
+    const result = validateCodeflowConfig(config);
 
     expect(result.valid).toBe(true);
   });

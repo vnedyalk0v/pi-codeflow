@@ -19,8 +19,6 @@ Thanks for considering a contribution to pi-codeflow.
 - Explain why new dependencies are needed before adding them.
 - Include verification steps in every PR.
 
-## Current phase
-
-This project is in planning / pre-MVP.
+## Project phase
 
 Production extension code should be tied to an issue and an accepted plan.

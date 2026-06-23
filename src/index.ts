@@ -86,7 +86,7 @@ export type {
 } from './commits/commit-payload';
 export { CodeflowCommitError, type CodeflowCommitErrorCode } from './commits/commit-errors';
 export { validatePrPayload } from './pull-requests/pr-payload-validation';
-export { renderPrTitle } from './pull-requests/pr-title-renderer';
+export { renderPrTitle } from './pull-requests/pr-summary';
 export { renderPrBody } from './pull-requests/pr-body-renderer';
 export { createCodeflowPullRequestFromPayload } from './pull-requests/pr-policy';
 export { createGitHubPullRequest } from './github/pr-client';

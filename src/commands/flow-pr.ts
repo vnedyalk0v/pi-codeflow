@@ -15,6 +15,11 @@ import { parseJson } from '../utils/json';
 import { createCodeflowPullRequestFromPayload } from '../pull-requests/pr-policy';
 import { CodeflowPrError } from '../pull-requests/pr-errors';
 import type { CodeflowPrPayload, CodeflowPrResult } from '../pull-requests/pr-payload';
+import {
+  readFlagValue,
+  resolveCommandBaseCwd,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowPrOptions {
   cwd?: string;
@@ -105,7 +110,7 @@ export async function runFlowPr(options: FlowPrOptions): Promise<FlowPrResult> {
 }
 
 export function parseFlowPrArguments(args: string): ParsedFlowPrArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(args, '/flow-pr', invalidFlowPrArguments);
   let dryRun = false;
   let draft: boolean | undefined;
   let allowUnverified = false;
@@ -154,7 +159,7 @@ export function parseFlowPrArguments(args: string): ParsedFlowPrArguments {
     }
 
     if (token === '--payload') {
-      payloadPath = readFlagValue(tokens, index, '--payload');
+      payloadPath = readFlagValue(tokens, index, '--payload', invalidFlowPrArguments);
       index += 1;
       continue;
     }
@@ -165,7 +170,7 @@ export function parseFlowPrArguments(args: string): ParsedFlowPrArguments {
     }
 
     if (token === '--base') {
-      baseBranch = readFlagValue(tokens, index, '--base');
+      baseBranch = readFlagValue(tokens, index, '--base', invalidFlowPrArguments);
       index += 1;
       continue;
     }
@@ -176,7 +181,7 @@ export function parseFlowPrArguments(args: string): ParsedFlowPrArguments {
     }
 
     if (token === '--head') {
-      headBranch = readFlagValue(tokens, index, '--head');
+      headBranch = readFlagValue(tokens, index, '--head', invalidFlowPrArguments);
       index += 1;
       continue;
     }
@@ -277,14 +282,6 @@ export function formatFlowPrResult(result: FlowPrResult): string {
   return lines.join('\n');
 }
 
-function resolveCommandBaseCwd(cwd: string, configPath: string | null): string {
-  if (configPath === null) {
-    return cwd;
-  }
-
-  return path.dirname(path.dirname(configPath));
-}
-
 function getFlowPrNextExpectedActions(
   phase: CodeflowLifecyclePhase,
   status: CodeflowPrResult['status'],
@@ -306,77 +303,10 @@ function getFlowPrNextExpectedActions(
   return ['Resolve the PR blocker, then rerun /flow-pr.'];
 }
 
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new CodeflowPrError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
-}
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new CodeflowPrError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-pr arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
+function invalidFlowPrArguments(message: string, details?: Record<string, unknown>): CodeflowPrError {
+  return new CodeflowPrError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }

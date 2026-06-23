@@ -19,7 +19,7 @@ export function buildCodeflowConfigLoadFailureGuidance(
     warning,
     'Do not perform workflow-changing operations until Codeflow config is fixed.',
   ];
-  const expectedTools = ['/flow-status'];
+  const expectedTools: string[] = [];
 
   const systemPromptAppend = formatCodeflowGuidanceSection('Codeflow guidance warning', [
     'Codeflow is active, but configuration could not be loaded safely.',
@@ -27,7 +27,7 @@ export function buildCodeflowConfigLoadFailureGuidance(
     '',
     'Required behavior:',
     '- Tell the user that Codeflow config could not be loaded.',
-    '- Do not perform branch, commit, PR, review, or report workflow changes until config is fixed.',
+    '- Do not perform branch, commit, PR, or review workflow changes until config is fixed.',
     '- Do not invent missing Codeflow tool behavior or bypass configuration validation.',
     '- Ask for a human decision if continuing would require guessing policy.',
     '',

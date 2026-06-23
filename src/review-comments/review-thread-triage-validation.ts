@@ -1,7 +1,9 @@
-import { readFileSync } from 'node:fs';
+import type { ValidateFunction } from 'ajv/dist/2020.js';
 
-import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
-
+import {
+  createJsonSchemaValidator,
+  mapJsonSchemaValidationErrors,
+} from '../utils/schema-validation';
 import type { CodeflowReviewThread } from './review-thread';
 import {
   CODEFLOW_REVIEW_COMMENT_CLASSIFICATIONS,
@@ -29,7 +31,7 @@ export function validateReviewCommentTriage(
   const validator = getReviewCommentTriageValidator();
 
   if (!validator(input)) {
-    return invalidResult(mapValidationErrors(validator.errors ?? []));
+    return invalidResult(mapJsonSchemaValidationErrors(validator.errors ?? []));
   }
 
   const triage = JSON.parse(JSON.stringify(input)) as CodeflowReviewCommentTriage;
@@ -56,14 +58,7 @@ function getReviewCommentTriageValidator(): ValidateFunction {
 }
 
 function createReviewCommentTriageValidator(): ValidateFunction {
-  const schemaText = readFileSync(
-    new URL('../../schemas/review-comment-triage.schema.json', import.meta.url),
-    'utf8',
-  );
-  const schema = JSON.parse(schemaText);
-  const ajv = new Ajv2020({ allErrors: true, strict: false });
-
-  return ajv.compile(schema as AnySchema);
+  return createJsonSchemaValidator(new URL('../../schemas/review-comment-triage.schema.json', import.meta.url));
 }
 
 function validateSemanticRules(
@@ -178,74 +173,4 @@ function invalidResult(
     requiresHumanDecisionCount: triage ? countRequiresHumanDecision(triage) : 0,
     threadCount: triage?.threads.length ?? 0,
   };
-}
-
-function mapValidationErrors(errors: ErrorObject[]): CodeflowReviewCommentTriageValidationIssue[] {
-  return errors.map((error) => {
-    const path = getErrorPath(error);
-    const issue: CodeflowReviewCommentTriageValidationIssue = {
-      path,
-      keyword: error.keyword,
-      message: getErrorMessage(error, path),
-      details: { ...error.params },
-    };
-    const allowedValues = getAllowedValues(error);
-
-    if (allowedValues.length > 0) {
-      issue.allowedValues = allowedValues;
-    }
-
-    return issue;
-  });
-}
-
-function getErrorPath(error: ErrorObject): string {
-  const params = error.params as Record<string, unknown>;
-
-  if (error.keyword === 'required' && typeof params.missingProperty === 'string') {
-    return joinJsonPointer(error.instancePath, params.missingProperty);
-  }
-
-  if (error.keyword === 'additionalProperties' && typeof params.additionalProperty === 'string') {
-    return joinJsonPointer(error.instancePath, params.additionalProperty);
-  }
-
-  return error.instancePath || '/';
-}
-
-function joinJsonPointer(basePath: string, segment: string): string {
-  const escapedSegment = segment.replaceAll('~', '~0').replaceAll('/', '~1');
-  return `${basePath || ''}/${escapedSegment}`;
-}
-
-function getAllowedValues(error: ErrorObject): unknown[] {
-  const params = error.params as Record<string, unknown>;
-
-  if (Array.isArray(params.allowedValues)) {
-    return params.allowedValues;
-  }
-
-  if ('allowedValue' in params) {
-    return [params.allowedValue];
-  }
-
-  return [];
-}
-
-function getErrorMessage(error: ErrorObject, path: string): string {
-  const params = error.params as Record<string, unknown>;
-
-  if (error.keyword === 'required' && typeof params.missingProperty === 'string') {
-    return `${path} is required`;
-  }
-
-  if (error.keyword === 'additionalProperties' && typeof params.additionalProperty === 'string') {
-    return `${path} is not allowed`;
-  }
-
-  if (error.keyword === 'if') {
-    return `${path} failed a conditional schema requirement`;
-  }
-
-  return error.message ?? `${path} is invalid`;
 }

@@ -17,16 +17,12 @@ import {
 
 export const CODEFLOW_WORKFLOW_TOOLS = [
   '/flow-start',
-  '/flow-plan',
-  '/flow-status',
   '/flow-check',
-  '/flow-review',
   '/flow-commit',
   '/flow-pr',
   '/flow-watch',
   '/flow-comments',
   '/flow-fix-comments',
-  '/flow-report',
 ] as const;
 
 export function buildCodeflowGuidance(
@@ -113,25 +109,24 @@ function getWorkflowGuidance(config: CodeflowConfig): string[] {
     config.guidance.renderOutputsFromTemplates
   ) {
     lines.push(
-      'Do not manually invent branch, commit, PR, review reply, or final report formats.',
+      'Do not manually invent branch, commit, PR, or review reply formats.',
     );
   }
 
   if (config.guidance.requireStructuredPayloads) {
     lines.push(
-      'Provide structured payloads when Codeflow asks for branch, commit, PR, review, or report data.',
+      'Provide structured payloads when Codeflow asks for branch, commit, PR, or review data.',
     );
   }
 
   if (config.guidance.renderOutputsFromTemplates) {
     lines.push(
-      'Let Codeflow render final branch names, commit messages, PR titles/bodies, review replies, and reports from templates.',
+      'Let Codeflow render final branch names, commit messages, PR titles/bodies, and review replies from templates.',
     );
   }
 
   lines.push(
     'Use Codeflow tools when available instead of raw git workflow operations for workflow steps.',
-    'If a required Codeflow tool is not implemented yet, explain the limitation rather than pretending it exists.',
     'Do not work directly on reserved branches during normal workflow.',
     'Treat safety boundaries as fallback airbags, not the normal user experience.',
   );
@@ -157,7 +152,6 @@ function getMessageGuidance(config: CodeflowConfig): string {
   }
 
   lines.push(
-    'If required Codeflow tooling is not implemented yet, explain that limitation.',
     'Treat safety boundaries as fallback airbags.',
   );
 

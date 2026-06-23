@@ -76,7 +76,7 @@ describe('runFlowStart', () => {
       createdBranch: false,
       switchedBranch: false,
     });
-    expect(result.nextExpectedActions.join('\n')).toContain('/flow-plan');
+    expect(result.nextExpectedActions.join('\n')).toContain('structured plan');
     await expect(currentBranch(repo)).resolves.toBe('dev');
   });
 

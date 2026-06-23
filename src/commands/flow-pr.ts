@@ -1,6 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { loadCodeflowConfig } from '../config/load-config';
 import type { GhClientLike } from '../github/gh-client';
@@ -11,8 +8,9 @@ import {
   updateSessionStateWithPullRequest,
   type CodeflowSessionState,
 } from '../state/session-state';
+import { readJsonPayloadFile } from '../utils/json-payload';
 import { createCodeflowPullRequestFromPayload } from '../pull-requests/pr-policy';
-import { CodeflowPrError } from '../pull-requests/pr-errors';
+import { CodeflowPrError, type CodeflowPrErrorCode } from '../pull-requests/pr-errors';
 import type { CodeflowPrPayload, CodeflowPrResult } from '../pull-requests/pr-payload';
 import {
   readFlagValue,
@@ -221,36 +219,15 @@ export async function readFlowPrPayloadFile(
   payloadPath: string,
   cwd = process.cwd(),
 ): Promise<CodeflowPrPayload> {
-  const resolvedPath = path.isAbsolute(payloadPath)
-    ? payloadPath
-    : path.resolve(cwd, payloadPath);
-  let text: string;
-
-  try {
-    text = await readFile(resolvedPath, 'utf8');
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code === 'ENOENT'
-      ? 'payload_file_not_found'
-      : 'payload_file_unreadable';
-
-    throw new CodeflowPrError({
-      code,
-      message: `PR payload file could not be read: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
-
-  try {
-    return JSON.parse(text) as CodeflowPrPayload;
-  } catch (error) {
-    throw new CodeflowPrError({
-      code: 'invalid_payload_json',
-      message: `PR payload file contains invalid JSON: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
+  return readJsonPayloadFile<CodeflowPrPayload, CodeflowPrErrorCode>({
+    payloadPath,
+    cwd,
+    label: 'PR payload',
+    fileNotFoundCode: 'payload_file_not_found',
+    fileUnreadableCode: 'payload_file_unreadable',
+    invalidJsonCode: 'invalid_payload_json',
+    createError: (options) => new CodeflowPrError(options),
+  });
 }
 
 export function formatFlowPrResult(result: FlowPrResult): string {

@@ -23,10 +23,13 @@ export async function replyToReviewThread(
       threadId: options.threadId,
       body: options.body,
     }));
-    const parsed = parseJsonObject(result.stdout, 'GitHub GraphQL returned invalid JSON for review-thread reply.');
-    throwOnGraphqlErrors(parsed, 'replying to review thread');
-    const mutation = readMutationObject(parsed, 'addPullRequestReviewThreadReply');
-    const comment = isRecord(mutation.comment) ? mutation.comment : null;
+    const parsed = parseReviewThreadMutationJson(
+      result.stdout,
+      'GitHub GraphQL returned invalid JSON for review-thread reply.',
+    );
+    throwOnReviewThreadGraphqlErrors(parsed, 'replying to review thread');
+    const mutation = readReviewThreadMutationObject(parsed, 'addPullRequestReviewThreadReply');
+    const comment = isJsonRecord(mutation.comment) ? mutation.comment : null;
 
     return {
       threadId: options.threadId,
@@ -41,11 +44,14 @@ export async function replyToReviewThread(
   }
 }
 
-function readMutationObject(parsed: Record<string, unknown>, field: string): Record<string, unknown> {
-  const data = isRecord(parsed.data) ? parsed.data : null;
+export function readReviewThreadMutationObject(
+  parsed: Record<string, unknown>,
+  field: string,
+): Record<string, unknown> {
+  const data = isJsonRecord(parsed.data) ? parsed.data : null;
   const value = data?.[field];
 
-  if (!isRecord(value)) {
+  if (!isJsonRecord(value)) {
     throw new CodeflowReviewFixError({
       code: 'unexpected_response',
       message: `GitHub GraphQL response did not contain ${field} data.`,
@@ -56,7 +62,10 @@ function readMutationObject(parsed: Record<string, unknown>, field: string): Rec
   return value;
 }
 
-function throwOnGraphqlErrors(parsed: Record<string, unknown>, action: string): void {
+export function throwOnReviewThreadGraphqlErrors(
+  parsed: Record<string, unknown>,
+  action: string,
+): void {
   if (!Array.isArray(parsed.errors) || parsed.errors.length === 0) {
     return;
   }
@@ -165,7 +174,10 @@ export function mapGithubMutationError(
   });
 }
 
-function parseJsonObject(stdout: string, message: string): Record<string, unknown> {
+export function parseReviewThreadMutationJson(
+  stdout: string,
+  message: string,
+): Record<string, unknown> {
   let parsed: unknown;
 
   try {
@@ -179,7 +191,7 @@ function parseJsonObject(stdout: string, message: string): Record<string, unknow
     });
   }
 
-  if (!isRecord(parsed)) {
+  if (!isJsonRecord(parsed)) {
     throw new CodeflowReviewFixError({
       code: 'unexpected_response',
       message,
@@ -223,6 +235,6 @@ function readString(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isJsonRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

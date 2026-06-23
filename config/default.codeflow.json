@@ -123,8 +123,7 @@
     "branchName": "templates/branch-name.md",
     "commitMessage": "templates/commit-message.md",
     "pullRequest": "templates/pull-request.md",
-    "reviewReply": "templates/review-reply.md",
-    "finalReport": "templates/final-report.md"
+    "reviewReply": "templates/review-reply.md"
   },
   "guidance": {
     "proactive": true,

@@ -11,7 +11,8 @@ title/body creation, `/flow-watch` GitHub PR checks watching, read-only
 review-thread reply/resolution gates.
 
 User-facing setup and command guidance lives in [Installation](INSTALLATION.md)
-and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
+and [Usage](USAGE.md). Configuration examples live in
+[Configuration](CONFIGURATION.md#starter-examples).
 
 ## Components
 
@@ -42,10 +43,10 @@ and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
   v0.6; `/flow-pr` implemented foundation in v0.6; `/flow-watch` implemented
   foundation in v0.7; `/flow-comments` read-only review triage implemented
   foundation in v0.7; `/flow-fix-comments` safe reply/resolution implemented
-  foundation in v0.7; later report commands are future work.
+  foundation in v0.7; final report command automation is future work.
 - **Responsibility:** expose commands such as `/flow-start`, `/flow-check`,
   `/flow-commit`, `/flow-pr`, `/flow-watch`, `/flow-comments`,
-  `/flow-fix-comments`, and `/flow-report`.
+  and `/flow-fix-comments`.
 - **Inputs:** user commands, agent payloads, and state.
 - **Outputs:** tool results and state transitions.
 - **Must not:** perform unsafe operations without policy approval.
@@ -55,8 +56,8 @@ and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
 - **Status:** branch template foundation exists in v0.4; commit message renderer
   foundation is implemented in v0.6. PR title/body rendering foundation is
   implemented in v0.6 for #12.
-- **Responsibility:** render branch names, commit messages, PR bodies, review
-  replies, and final reports.
+- **Responsibility:** render branch names, commit messages, PR bodies, and
+  review replies.
 - **Inputs:** structured payloads and template files.
 - **Outputs:** rendered text artifacts.
 - **Must not:** ask the model to freeform final outputs.
@@ -166,7 +167,7 @@ and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
 - **Inputs:** implemented command behavior, schemas, prompts, templates, and
   release status.
 - **Outputs:** README navigation plus `docs/INSTALLATION.md`, `docs/USAGE.md`,
-  `docs/EXAMPLES.md`, and `docs/TROUBLESHOOTING.md`.
+  `docs/CONFIGURATION.md`, and `docs/TROUBLESHOOTING.md`.
 - **Must not:** claim npm publishing, production readiness, merge automation,
   or commands that are not implemented.
 

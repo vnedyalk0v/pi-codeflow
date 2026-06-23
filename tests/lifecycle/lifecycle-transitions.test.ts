@@ -7,6 +7,7 @@ import {
   mergeCodeflowConfig,
   type CodeflowLifecyclePhase,
 } from '../../src/index';
+import { getExpectedToolsForPhase } from '../../src/lifecycle/lifecycle-transitions';
 
 function actionsFor(phase: CodeflowLifecyclePhase) {
   return getNextExpectedActions(
@@ -35,7 +36,7 @@ describe('getNextExpectedActions', () => {
     const actions = actionsFor('branch_prepared').join('\n');
 
     expect(actions).toContain('feat/guidance-injection');
-    expect(actions).toContain('/flow-plan');
+    expect(actions).toContain('structured plan');
   });
 
   it('returns configured check actions for local_checks', () => {
@@ -78,5 +79,14 @@ describe('getNextExpectedActions', () => {
     expect(actions).toContain('emergency reason');
     expect(actions).toContain('structured commit and PR payloads');
     expect(actions).toContain('final report');
+  });
+
+  it('returns only implemented extension commands as expected tools', () => {
+    const config = getDefaultCodeflowConfig();
+
+    expect(getExpectedToolsForPhase('branch_prepared', config)).toEqual(['/flow-start']);
+    expect(getExpectedToolsForPhase('self_review', config)).toEqual([]);
+    expect(getExpectedToolsForPhase('verified', config)).toEqual([]);
+    expect(getExpectedToolsForPhase('blocked', config)).toEqual([]);
   });
 });

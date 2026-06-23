@@ -1,6 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { loadCodeflowConfig } from '../config/load-config';
 import type { GhClientLike } from '../github/gh-client';
@@ -20,6 +17,7 @@ import {
   updateSessionStateWithReviewComments,
   type CodeflowSessionState,
 } from '../state/session-state';
+import { readJsonPayloadFile } from '../utils/json-payload';
 import {
   parsePositiveInteger,
   readFlagValue,
@@ -371,36 +369,15 @@ export async function readReviewCommentTriagePayloadFile(
   payloadPath: string,
   cwd = process.cwd(),
 ): Promise<CodeflowReviewCommentTriage> {
-  const resolvedPath = path.isAbsolute(payloadPath)
-    ? payloadPath
-    : path.resolve(cwd, payloadPath);
-  let text: string;
-
-  try {
-    text = await readFile(resolvedPath, 'utf8');
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code === 'ENOENT'
-      ? 'triage_payload_file_not_found'
-      : 'triage_payload_file_unreadable';
-
-    throw new CodeflowReviewCommentsError({
-      code,
-      message: `Review comment triage payload file could not be read: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
-
-  try {
-    return JSON.parse(text) as CodeflowReviewCommentTriage;
-  } catch (error) {
-    throw new CodeflowReviewCommentsError({
-      code: 'invalid_triage_payload_json',
-      message: `Review comment triage payload file contains invalid JSON: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
+  return readJsonPayloadFile<CodeflowReviewCommentTriage, CodeflowReviewCommentsError['code']>({
+    payloadPath,
+    cwd,
+    label: 'Review comment triage payload',
+    fileNotFoundCode: 'triage_payload_file_not_found',
+    fileUnreadableCode: 'triage_payload_file_unreadable',
+    invalidJsonCode: 'invalid_triage_payload_json',
+    createError: (options) => new CodeflowReviewCommentsError(options),
+  });
 }
 
 function makeDryRunResult(options: {

@@ -38,13 +38,13 @@ review-fix editing, and merge automation are later work.
 
 | Phase | Purpose | Command or tool |
 | --- | --- | --- |
-| `idle` | No active Codeflow task. | `/flow-status` |
+| `idle` | No active Codeflow task. | None |
 | `initialized` | Task is accepted and classified. | `/flow-start` |
 | `branch_prepared` | Semantic branch is ready. | `/flow-start` |
-| `planning` | Implementation plan is produced. | `/flow-plan` |
+| `planning` | Implementation plan is produced. | Agent planning |
 | `implementing` | Changes are made. | Agent editing tools |
 | `local_checks` | Configured checks run. | `/flow-check` |
-| `self_review` | Agent reviews its own diff. | `/flow-review` |
+| `self_review` | Agent reviews its own diff. | Agent review |
 | `fixing_local_findings` | Local check or self-review issues are fixed. | Agent editing tools, `/flow-check` |
 | `ready_to_commit` | Diff is ready for commit payload generation. | `/flow-commit` |
 | `committed` | Local commit exists. | `/flow-pr` |
@@ -52,18 +52,18 @@ review-fix editing, and merge automation are later work.
 | `ci_waiting` | Remote checks are running. | `/flow-watch` |
 | `review_triage` | Reviewer comments are classified. | `/flow-comments` |
 | `fixing_review_findings` | Valid reviewer comments are addressed. | `/flow-fix-comments`, `/flow-check` |
-| `verified` | Local and relevant remote verification passed or was explicitly accepted. | `/flow-report` |
-| `final_reported` | Work is summarized for the user. | `/flow-report` |
-| `blocked` | Agent cannot safely continue. | `/flow-status` |
-| `emergency` | Explicit emergency path is active. | `/flow-start`, `/flow-commit`, `/flow-pr`, `/flow-report` |
+| `verified` | Local and relevant remote verification passed or was explicitly accepted. | Final response |
+| `final_reported` | Work is summarized for the user. | Final response |
+| `blocked` | Agent cannot safely continue. | None |
+| `emergency` | Explicit emergency path is active. | `/flow-start`, `/flow-commit`, `/flow-pr` |
 
 ## After `/flow-start`
 
 After a successful `/flow-start`, Codeflow reports `branch_prepared`. The next
 expected actions are to continue only on the prepared work branch and move to
-planning with `/flow-plan` when that command exists, or provide a structured plan
-if the user asks. `/flow-start` does not run checks, commit, push, open a PR, or
-perform implementation.
+planning with a structured plan when the task is not straightforward.
+`/flow-start` does not run checks, commit, push, open a PR, or perform
+implementation.
 
 ## After `/flow-check`
 
@@ -245,7 +245,7 @@ Behavior:
 - **Purpose:** no active Codeflow task.
 - **Entry conditions:** repository is available and no task is active.
 - **Expected agent behavior:** wait for a task or issue; do not mutate files.
-- **Expected command/tool:** `/flow-status`.
+- **Expected command/tool:** none.
 - **Allowed transitions:** `initialized`, `emergency`.
 - **Failure transitions:** `blocked`.
 - **Output artifacts:** none.
@@ -282,7 +282,7 @@ Behavior:
 - **Entry conditions:** task and branch metadata exist.
 - **Expected agent behavior:** create a concise plan with files, checks, risks,
   and rollback notes.
-- **Expected command/tool:** `/flow-plan`.
+- **Expected command/tool:** agent planning.
 - **Allowed transitions:** `implementing`, `blocked`, `emergency`.
 - **Failure transitions:** `blocked` if requirements are unclear.
 - **Output artifacts:** implementation plan.
@@ -321,7 +321,7 @@ Behavior:
   skipped.
 - **Expected agent behavior:** review for task fit, safety, docs, tests, and
   regressions.
-- **Expected command/tool:** `/flow-review`.
+- **Expected command/tool:** agent review.
 - **Allowed transitions:** `ready_to_commit`, `fixing_local_findings`,
   `blocked`.
 - **Failure transitions:** `fixing_local_findings` on findings.
@@ -438,7 +438,7 @@ Behavior:
 - **Entry conditions:** checks, self-review, CI, and review triage are
   acceptable.
 - **Expected agent behavior:** prepare final delivery report.
-- **Expected command/tool:** `/flow-report`.
+- **Expected command/tool:** final response.
 - **Allowed transitions:** `final_reported`, `review_triage`, `blocked`.
 - **Failure transitions:** `blocked` if required evidence is missing.
 - **Output artifacts:** verification summary.
@@ -449,14 +449,13 @@ Behavior:
 - **Entry conditions:** verification evidence exists.
 - **Expected agent behavior:** report changed files, checks, issues, decisions,
   risks, and `finalPhase`.
-- **Expected command/tool:** `/flow-report`.
+- **Expected command/tool:** final response.
 - **Allowed transitions:** `idle`.
 - **Failure transitions:** none.
-- **Output artifacts:** final report payload and rendered report.
+- **Output artifacts:** final report.
 
-The final report payload must include `finalPhase`. Completed normal work should
-usually report `final_reported`; blocked work should report `blocked` and explain
-the blocker.
+Completed normal work should usually report `final_reported`; blocked work
+should report `blocked` and explain the blocker.
 
 ### `blocked`
 
@@ -464,7 +463,7 @@ the blocker.
 - **Entry conditions:** missing information, invalid config, unsafe state, or
   human decision needed.
 - **Expected agent behavior:** stop, explain blocker, and ask for guidance.
-- **Expected command/tool:** `/flow-status`.
+- **Expected command/tool:** none.
 - **Allowed transitions:** prior safe phase, `emergency`, `idle`.
 - **Failure transitions:** none.
 - **Output artifacts:** blocker report.
@@ -475,8 +474,7 @@ the blocker.
 - **Entry conditions:** user requests urgent handling and provides reason.
 - **Expected agent behavior:** prefer a `hotfix/` branch; still use structured
   payloads and final report.
-- **Expected command/tool:** `/flow-start`, `/flow-commit`, `/flow-pr`,
-  `/flow-report`.
+- **Expected command/tool:** `/flow-start`, `/flow-commit`, `/flow-pr`.
 - **Allowed transitions:** `branch_prepared`, `planning`, `verified`,
   `final_reported`, `blocked`.
 - **Failure transitions:** `blocked` if reason or authority is missing.

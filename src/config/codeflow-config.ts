@@ -130,7 +130,6 @@ export interface CodeflowTemplatesConfig {
   commitMessage: string;
   pullRequest: string;
   reviewReply: string;
-  finalReport: string;
 }
 
 export interface CodeflowGuidanceConfig {

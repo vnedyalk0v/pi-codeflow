@@ -1,10 +1,7 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { loadCodeflowConfig } from '../config/load-config';
 import { createGitCommitFromPayload } from '../commits/commit-policy';
-import { CodeflowCommitError } from '../commits/commit-errors';
+import { CodeflowCommitError, type CodeflowCommitErrorCode } from '../commits/commit-errors';
 import type {
   CodeflowCommitPayload,
   CodeflowCommitResult,
@@ -16,6 +13,7 @@ import {
   updateSessionStateWithCommit,
   type CodeflowSessionState,
 } from '../state/session-state';
+import { readJsonPayloadFile } from '../utils/json-payload';
 import {
   readFlagValue,
   resolveCommandBaseCwd,
@@ -159,36 +157,15 @@ export async function readFlowCommitPayloadFile(
   payloadPath: string,
   cwd = process.cwd(),
 ): Promise<CodeflowCommitPayload> {
-  const resolvedPath = path.isAbsolute(payloadPath)
-    ? payloadPath
-    : path.resolve(cwd, payloadPath);
-  let text: string;
-
-  try {
-    text = await readFile(resolvedPath, 'utf8');
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code === 'ENOENT'
-      ? 'payload_file_not_found'
-      : 'payload_file_unreadable';
-
-    throw new CodeflowCommitError({
-      code,
-      message: `Commit payload file could not be read: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
-
-  try {
-    return JSON.parse(text) as CodeflowCommitPayload;
-  } catch (error) {
-    throw new CodeflowCommitError({
-      code: 'invalid_payload_json',
-      message: `Commit payload file contains invalid JSON: ${resolvedPath}`,
-      details: { payloadPath: resolvedPath },
-      cause: error,
-    });
-  }
+  return readJsonPayloadFile<CodeflowCommitPayload, CodeflowCommitErrorCode>({
+    payloadPath,
+    cwd,
+    label: 'Commit payload',
+    fileNotFoundCode: 'payload_file_not_found',
+    fileUnreadableCode: 'payload_file_unreadable',
+    invalidJsonCode: 'invalid_payload_json',
+    createError: (options) => new CodeflowCommitError(options),
+  });
 }
 
 export function formatFlowCommitResult(result: FlowCommitResult): string {

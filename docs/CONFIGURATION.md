@@ -70,14 +70,14 @@ config.
 
 ## Starter examples
 
-Use [Examples](EXAMPLES.md) for copyable project configs:
+Use these starter examples for copyable project configs:
 
 - minimal `.pi/codeflow.json`;
 - Node app checks;
 - Python service checks;
 - monorepo checks;
 - safe review-comments defaults;
-- default template paths;
+- template paths;
 - GitHub checks watcher defaults.
 
 The packaged example files are small patches over package defaults:
@@ -201,8 +201,7 @@ The default template paths are:
     "branchName": "templates/branch-name.md",
     "commitMessage": "templates/commit-message.md",
     "pullRequest": "templates/pull-request.md",
-    "reviewReply": "templates/review-reply.md",
-    "finalReport": "templates/final-report.md"
+    "reviewReply": "templates/review-reply.md"
   }
 }
 ```
@@ -699,8 +698,7 @@ payload.
     "branchName": "templates/branch-name.md",
     "commitMessage": "templates/commit-message.md",
     "pullRequest": "templates/pull-request.md",
-    "reviewReply": "templates/review-reply.md",
-    "finalReport": "templates/final-report.md"
+    "reviewReply": "templates/review-reply.md"
   },
   "guidance": {
     "proactive": true,

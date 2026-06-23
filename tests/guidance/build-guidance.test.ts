@@ -5,6 +5,7 @@ import {
   getDefaultCodeflowConfig,
   mergeCodeflowConfig,
 } from '../../src/index';
+import { CODEFLOW_WORKFLOW_TOOLS } from '../../src/guidance/build-guidance';
 
 function makeProjectConfig() {
   return mergeCodeflowConfig(getDefaultCodeflowConfig(), {
@@ -47,15 +48,29 @@ describe('buildCodeflowGuidance', () => {
     expect(result.systemPromptAppend).toContain('Reserved branches: trunk, stable');
   });
 
-  it('mentions expected Codeflow tools without claiming they are implemented', () => {
+  it('mentions implemented Codeflow tools', () => {
     const result = buildCodeflowGuidance(getDefaultCodeflowConfig());
 
     expect(result.systemPromptAppend).toContain('/flow-start');
     expect(result.systemPromptAppend).toContain('/flow-check');
     expect(result.systemPromptAppend).toContain('/flow-commit');
     expect(result.systemPromptAppend).toContain('/flow-pr');
-    expect(result.systemPromptAppend).toContain('when available');
-    expect(result.systemPromptAppend).toContain('not implemented yet');
+    expect(result.systemPromptAppend).not.toContain('/flow-plan');
+    expect(result.systemPromptAppend).not.toContain('/flow-status');
+    expect(result.systemPromptAppend).not.toContain('/flow-review');
+    expect(result.systemPromptAppend).not.toContain('/flow-report');
+  });
+
+  it('lists only implemented command tools in the guidance tool surface', () => {
+    expect([...CODEFLOW_WORKFLOW_TOOLS]).toEqual([
+      '/flow-start',
+      '/flow-check',
+      '/flow-commit',
+      '/flow-pr',
+      '/flow-watch',
+      '/flow-comments',
+      '/flow-fix-comments',
+    ]);
   });
 
   it('requires structured payloads and template-rendered outputs', () => {

@@ -11,9 +11,8 @@ Config files in this directory are defaults and small project examples:
 - `example.monorepo.codeflow.json` sketches monorepo project overrides.
 
 `checks` is an ordered array. Leave it empty when a repository has no local
-checks yet. Add commands only after they exist in the target project. New config
-should prefer `timeoutMs`; existing `timeoutSeconds` remains accepted for
-compatibility.
+checks yet. Add commands only after they exist in the target project. Use
+`timeoutMs` when a check needs a timeout.
 
 `commits` controls `/flow-commit` payload validation, title length policy,
 template rendering, staged-change commit execution, and latest-check policy. The

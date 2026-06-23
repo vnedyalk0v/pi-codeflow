@@ -20,7 +20,6 @@ import {
   updateSessionStateWithReviewComments,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
 import {
   parsePositiveInteger,
   readFlagValue,
@@ -393,7 +392,7 @@ export async function readReviewCommentTriagePayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowReviewCommentTriage;
+    return JSON.parse(text) as CodeflowReviewCommentTriage;
   } catch (error) {
     throw new CodeflowReviewCommentsError({
       code: 'invalid_triage_payload_json',

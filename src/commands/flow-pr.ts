@@ -11,7 +11,6 @@ import {
   updateSessionStateWithPullRequest,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
 import { createCodeflowPullRequestFromPayload } from '../pull-requests/pr-policy';
 import { CodeflowPrError } from '../pull-requests/pr-errors';
 import type { CodeflowPrPayload, CodeflowPrResult } from '../pull-requests/pr-payload';
@@ -243,7 +242,7 @@ export async function readFlowPrPayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowPrPayload;
+    return JSON.parse(text) as CodeflowPrPayload;
   } catch (error) {
     throw new CodeflowPrError({
       code: 'invalid_payload_json',

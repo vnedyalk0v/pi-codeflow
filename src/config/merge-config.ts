@@ -1,5 +1,5 @@
 import type { CodeflowConfig } from './codeflow-config';
-import { cloneJson, isPlainObject } from '../utils/json';
+import { isPlainObject } from '../utils/json';
 
 export function mergeCodeflowConfig(
   defaultConfig: CodeflowConfig,
@@ -18,11 +18,11 @@ export function mergeCodeflowConfig(
 
 function mergeValues(defaultValue: unknown, projectValue: unknown): unknown {
   if (projectValue === undefined) {
-    return cloneJson(defaultValue);
+    return structuredClone(defaultValue);
   }
 
   if (isPlainObject(defaultValue) && isPlainObject(projectValue)) {
-    const merged: Record<string, unknown> = cloneJson(defaultValue);
+    const merged: Record<string, unknown> = structuredClone(defaultValue);
 
     for (const [key, value] of Object.entries(projectValue)) {
       const currentValue = Object.hasOwn(merged, key) ? merged[key] : undefined;
@@ -38,5 +38,5 @@ function mergeValues(defaultValue: unknown, projectValue: unknown): unknown {
     return merged;
   }
 
-  return cloneJson(projectValue);
+  return structuredClone(projectValue);
 }

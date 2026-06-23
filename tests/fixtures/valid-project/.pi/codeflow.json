@@ -15,7 +15,7 @@
     {
       "name": "unit tests",
       "command": "npm test",
-      "timeoutSeconds": 120
+      "timeoutMs": 120000
     }
   ],
   "pullRequest": {

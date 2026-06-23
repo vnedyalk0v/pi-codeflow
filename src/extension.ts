@@ -1,7 +1,6 @@
 import type { LoadCodeflowConfigResult } from './config/load-config';
 import { loadCodeflowConfig } from './config/load-config';
 import {
-  FlowStartError,
   formatFlowStartResult,
   parseFlowStartArguments,
   runFlowStart,
@@ -47,11 +46,8 @@ import {
   runFlowFixComments,
   type FlowFixCommentsResult,
 } from './commands/flow-fix-comments';
-import { CodeflowCheckError } from './checks/check-errors';
 import { CodeflowCommitError } from './commits/commit-errors';
 import { CodeflowPrError } from './pull-requests/pr-errors';
-import { CodeflowPrChecksError } from './github/github-errors';
-import { CodeflowReviewCommentsError } from './review-comments/review-comments-errors';
 import { CodeflowReviewFixError } from './review-comments/review-fix-errors';
 import { buildCodeflowGuidance } from './guidance/build-guidance';
 import type { CodeflowGuidanceResult } from './guidance/guidance-context';
@@ -256,7 +252,7 @@ async function handleFlowStartCommand(
     context.ui.notify(formatFlowStartResult(result), 'info');
     return result;
   } catch (error) {
-    context.ui.notify(getFlowStartErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-start', error), 'error');
     throw error;
   }
 }
@@ -284,7 +280,7 @@ async function handleFlowCheckCommand(
     );
     return sanitizeFlowCheckCommandResult(result);
   } catch (error) {
-    context.ui.notify(getFlowCheckErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-check', error), 'error');
     throw error;
   }
 }
@@ -342,7 +338,7 @@ async function handleFlowCommitCommand(
     context.ui.notify(formatFlowCommitResult(result), 'info');
     return result;
   } catch (error) {
-    context.ui.notify(getFlowCommitErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-commit', error), 'error');
     throw error;
   }
 }
@@ -383,7 +379,7 @@ async function handleFlowPrCommand(
     context.ui.notify(formatFlowPrResult(result), 'info');
     return result;
   } catch (error) {
-    context.ui.notify(getFlowPrErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-pr', error), 'error');
     throw error;
   }
 }
@@ -411,7 +407,7 @@ async function handleFlowWatchCommand(
     );
     return result;
   } catch (error) {
-    context.ui.notify(getFlowWatchErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-watch', error), 'error');
     throw error;
   }
 }
@@ -439,7 +435,7 @@ async function handleFlowCommentsCommand(
     );
     return result;
   } catch (error) {
-    context.ui.notify(getFlowCommentsErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-comments', error), 'error');
     throw error;
   }
 }
@@ -483,7 +479,7 @@ async function handleFlowFixCommentsCommand(
     );
     return result;
   } catch (error) {
-    context.ui.notify(getFlowFixCommentsErrorMessage(error), 'error');
+    context.ui.notify(formatCommandError('/flow-fix-comments', error), 'error');
     throw error;
   }
 }
@@ -501,88 +497,10 @@ function createInMemorySessionStore(): CodeflowExtensionSessionStore {
   };
 }
 
-function getFlowStartErrorMessage(error: unknown): string {
-  if (error instanceof FlowStartError) {
-    return `/flow-start failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-start failed: ${error.message}`;
-  }
-
-  return '/flow-start failed.';
-}
-
-function getFlowCheckErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowCheckError) {
-    return `/flow-check failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-check failed: ${error.message}`;
-  }
-
-  return '/flow-check failed.';
-}
-
-function getFlowCommitErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowCommitError) {
-    return `/flow-commit failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-commit failed: ${error.message}`;
-  }
-
-  return '/flow-commit failed.';
-}
-
-function getFlowPrErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowPrError) {
-    return `/flow-pr failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-pr failed: ${error.message}`;
-  }
-
-  return '/flow-pr failed.';
-}
-
-function getFlowWatchErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowPrChecksError) {
-    return `/flow-watch failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-watch failed: ${error.message}`;
-  }
-
-  return '/flow-watch failed.';
-}
-
-function getFlowCommentsErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowReviewCommentsError) {
-    return `/flow-comments failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-comments failed: ${error.message}`;
-  }
-
-  return '/flow-comments failed.';
-}
-
-function getFlowFixCommentsErrorMessage(error: unknown): string {
-  if (error instanceof CodeflowReviewFixError) {
-    return `/flow-fix-comments failed: ${error.message}`;
-  }
-
-  if (error instanceof Error) {
-    return `/flow-fix-comments failed: ${error.message}`;
-  }
-
-  return '/flow-fix-comments failed.';
+function formatCommandError(command: string, error: unknown): string {
+  return error instanceof Error
+    ? `${command} failed: ${error.message}`
+    : `${command} failed.`;
 }
 
 async function loadGuidance(

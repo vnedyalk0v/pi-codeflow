@@ -9,7 +9,7 @@ import Ajv2020, {
 
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
-import { cloneJson, isPlainObject, parseJson } from '../utils/json';
+import { isPlainObject } from '../utils/json';
 import { buildCommitTitle } from './commit-summary';
 import type {
   CodeflowCommitPayload,
@@ -225,7 +225,7 @@ function getCommitPayloadValidator(): ValidateFunction {
 
 function createCommitPayloadValidator(): ValidateFunction {
   const schemaText = readFileSync(getCommitPayloadSchemaPath(), 'utf8');
-  const schema = parseJson(schemaText);
+  const schema = JSON.parse(schemaText);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
 
   return ajv.compile(schema as AnySchema);
@@ -243,7 +243,7 @@ function mapValidationErrors(errors: ErrorObject[]): CodeflowCommitValidationIss
       path,
       keyword: error.keyword,
       message: getErrorMessage(error, path),
-      details: cloneJson(error.params) as Record<string, unknown>,
+      details: structuredClone(error.params) as Record<string, unknown>,
     };
 
     if (allowedValues.length > 0) {

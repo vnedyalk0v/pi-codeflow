@@ -16,7 +16,6 @@ import {
   updateSessionStateWithCommit,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
 import {
   readFlagValue,
   resolveCommandBaseCwd,
@@ -181,7 +180,7 @@ export async function readFlowCommitPayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowCommitPayload;
+    return JSON.parse(text) as CodeflowCommitPayload;
   } catch (error) {
     throw new CodeflowCommitError({
       code: 'invalid_payload_json',

@@ -227,16 +227,6 @@ array. A project can also override one nested field, such as
 If a project sets a required object such as `baseBranches` to `null`, the merge
 keeps that `null` value and schema validation fails.
 
-## Optional `extends` behavior
-
-`extends` is reserved for a later milestone. The schema accepts the field so
-future config files can keep a stable shape, but the v0.2 loader does not
-resolve it.
-
-If `.pi/codeflow.json` or an explicit config file contains `extends`, the loader
-returns a typed `unsupported_extends` load error. Direct schema validation may
-return a warning for `extends`, but it does not load extended files.
-
 ## Validation behavior
 
 - Parse JSON before any git mutation.
@@ -256,7 +246,7 @@ return a warning for `extends`, but it does not load extended files.
 - Template paths that cannot be resolved are invalid before rendering.
 
 The v0.2 loader exposes typed load failures for missing explicit files, invalid
-JSON, unreadable files, unsupported `extends`, and schema validation failure.
+JSON, unreadable files, and schema validation failure.
 
 ## Validation error examples
 
@@ -348,23 +338,14 @@ Pull request base outside allowed base branches:
 
 ## Safety flags
 
-The `safety` object is intentionally conservative. Some fields are reserved so
-config files can keep a stable shape without implying mutable runtime controls.
+The `safety` object is intentionally small. Unsupported safety controls are
+rejected by schema validation instead of accepted as no-ops.
 
 - `requireCleanWorkingTreeForStart`: enforced by `/flow-start`. When true, a
   dirty working tree is blocked. When false, `/flow-start` proceeds and reports
   a warning instead.
 - `blockDirectWorkOnReservedBranches`: affects guidance messaging only.
   Reserved-branch protection is always enforced regardless of this flag.
-- `redactSecretsFromReports`: reserved and non-disablable. Secret redaction is
-  always applied to summaries, reports, and PR bodies.
-- `allowDestructiveGitOperations`: reserved for a future milestone. Destructive
-  git operations are not implemented; this flag currently has no effect.
-- `allowForcePush`: reserved for a future milestone. Force-push is not
-  implemented; this flag currently has no effect.
-- `allowDirectPushToRemote`: reserved for a future milestone. Feature-branch
-  pushes are controlled by `pullRequest.pushBeforeCreate` or `/flow-pr --push`;
-  this flag currently has no effect.
 
 ## Commit policy
 
@@ -489,8 +470,6 @@ Each check includes:
 - `cwd`: optional working directory, resolved relative to the repository root or
   command cwd.
 - `timeoutMs`: optional timeout from `1` to `3600000` milliseconds.
-- `timeoutSeconds`: backward-compatible timeout from `1` to `3600` seconds;
-  prefer `timeoutMs` for new configs.
 - `required`: optional boolean; defaults to `true` when omitted.
 
 Example:
@@ -751,11 +730,7 @@ payload.
   },
   "safety": {
     "blockDirectWorkOnReservedBranches": true,
-    "allowDestructiveGitOperations": false,
-    "allowForcePush": false,
-    "allowDirectPushToRemote": false,
-    "requireCleanWorkingTreeForStart": true,
-    "redactSecretsFromReports": true
+    "requireCleanWorkingTreeForStart": true
   }
 }
 ```

@@ -1,4 +1,3 @@
-import { parseJson } from '../utils/json';
 import { withTempFile } from '../utils/temp-file';
 import { truncateText } from '../utils/text';
 import { CodeflowPrError } from '../pull-requests/pr-errors';
@@ -197,7 +196,7 @@ async function viewExistingPullRequest(
       '--limit',
       '1',
     ]);
-    const parsed = parseJson(result.stdout) as ExistingPrView[];
+    const parsed = JSON.parse(result.stdout) as ExistingPrView[];
     const existingPr = Array.isArray(parsed) ? parsed[0] : undefined;
 
     if (typeof existingPr?.url === 'string' && existingPr.url.length > 0) {

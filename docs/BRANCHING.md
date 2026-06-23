@@ -101,8 +101,7 @@ feat/add-google-oauth-login-2
 feat/add-google-oauth-login-3
 ```
 
-If collision handling is configured as `block`, Codeflow stops. The `short-sha`
-policy is reserved for later work and is not implemented by `/flow-start` yet.
+If collision handling is configured as `block`, Codeflow stops.
 
 ## Reserved branches
 

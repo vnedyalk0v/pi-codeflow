@@ -154,10 +154,6 @@
   },
   "safety": {
     "blockDirectWorkOnReservedBranches": true,
-    "allowDestructiveGitOperations": false,
-    "allowForcePush": false,
-    "allowDirectPushToRemote": false,
-    "requireCleanWorkingTreeForStart": true,
-    "redactSecretsFromReports": true
+    "requireCleanWorkingTreeForStart": true
   }
 }

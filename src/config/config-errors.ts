@@ -3,7 +3,6 @@ export type CodeflowConfigLoadErrorCode =
   | 'project_config_not_found'
   | 'invalid_json'
   | 'unreadable_file'
-  | 'unsupported_extends'
   | 'validation_failed';
 
 export interface CodeflowConfigValidationError {

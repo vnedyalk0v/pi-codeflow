@@ -83,7 +83,7 @@ Common errors:
   `baseBranches.fallback`;
 - `pullRequest.baseBranch` outside `baseBranches.allowed`;
 - malformed `checks` entry;
-- unsupported `extends` in loaded config.
+- unknown config keys.
 
 Fix the JSON, then rerun the command that failed. For a package clone, run:
 

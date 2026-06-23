@@ -37,7 +37,6 @@ import {
   updateSessionStateWithReviewFix,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
 import {
   parsePositiveInteger,
   readFlagValue,
@@ -493,7 +492,7 @@ export async function readReviewFixPayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowReviewFixPayload;
+    return JSON.parse(text) as CodeflowReviewFixPayload;
   } catch (error) {
     throw new CodeflowReviewFixError({
       code: 'invalid_payload_json',

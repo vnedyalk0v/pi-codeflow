@@ -34,7 +34,7 @@ export function validateReviewCommentTriage(
     return invalidResult(mapJsonSchemaValidationErrors(validator.errors ?? []));
   }
 
-  const triage = JSON.parse(JSON.stringify(input)) as CodeflowReviewCommentTriage;
+  const triage = structuredClone(input) as CodeflowReviewCommentTriage;
   const semanticErrors = validateSemanticRules(triage, options);
 
   if (semanticErrors.length > 0) {

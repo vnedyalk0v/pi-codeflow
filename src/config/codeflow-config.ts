@@ -1,5 +1,3 @@
-import type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
-
 export type { CodeflowLifecyclePhase } from '../lifecycle/lifecycle-phase';
 
 export type CodeflowBranchType =
@@ -26,8 +24,6 @@ export type CodeflowReviewAutoResolveClassification = Exclude<
   CodeflowReviewClassification,
   'needs_human'
 >;
-
-export type CodeflowReviewProvider = 'github-graphql';
 
 export type CodeflowEmergencyPath = 'hotfix_branch' | 'human_only';
 
@@ -56,9 +52,7 @@ export type CodeflowPrTitleLengthPolicy = 'error' | 'warning';
 
 export interface CodeflowCommitsConfig {
   template: string;
-  conventional: boolean;
   allowedTypes: CodeflowBranchType[];
-  requireStructuredPayload: boolean;
   performCommit: boolean;
   requireBody: boolean;
   requireVerification: boolean;
@@ -100,7 +94,6 @@ export interface CodeflowCheckConfig {
 
 export interface CodeflowReviewCommentsConfig {
   enabled: boolean;
-  provider: CodeflowReviewProvider;
   includeAuthors: string[];
   excludeAuthors: string[];
   unresolvedOnly: boolean;
@@ -110,7 +103,6 @@ export interface CodeflowReviewCommentsConfig {
   autoResolveClassifications: CodeflowReviewAutoResolveClassification[];
   requireChecksBeforeResolve: boolean;
   requireHumanForInvalid: boolean;
-  requireHumanForNeedsHuman: boolean;
   maxThreadsPerRun: number;
   replyTemplate: string;
 }
@@ -119,10 +111,8 @@ export interface CodeflowEmergencyConfig {
   enabled: boolean;
   defaultPath: CodeflowEmergencyPath;
   allowReservedBranchWork: boolean;
-  requireReason: boolean;
   requireFinalReport: boolean;
   requireStructuredCommitAndPr: boolean;
-  documentBackportToDev: boolean;
 }
 
 export interface CodeflowTemplatesConfig {
@@ -137,7 +127,6 @@ export interface CodeflowGuidanceConfig {
   requireStructuredPayloads: boolean;
   renderOutputsFromTemplates: boolean;
   stopForHumanDecisions: boolean;
-  trackedPhases: CodeflowLifecyclePhase[];
 }
 
 export interface CodeflowSafetyConfig {

@@ -50,8 +50,8 @@ The default config lives in `config/default.codeflow.json`. It is conservative:
 - emergency flow requires a final report;
 - GitHub checks watching defaults to required checks only, a 10 second polling
   interval, a 900 second timeout, and fail-fast disabled;
-- review comments use GitHub GraphQL as the `/flow-comments` and
-  `/flow-fix-comments` provider;
+- review comments use GitHub GraphQL for `/flow-comments` and
+  `/flow-fix-comments`;
 - review-comment auto-reply and auto-resolution both default to disabled;
 - `/flow-fix-comments` mutates only with explicit apply flags unless a project
   deliberately enables auto-reply or auto-resolution;
@@ -147,7 +147,6 @@ The default review-comments config is conservative:
 {
   "reviewComments": {
     "enabled": true,
-    "provider": "github-graphql",
     "unresolvedOnly": true,
     "includeOutdated": false,
     "autoReply": false,
@@ -155,7 +154,6 @@ The default review-comments config is conservative:
     "autoResolveClassifications": ["stale", "already_fixed"],
     "requireChecksBeforeResolve": true,
     "requireHumanForInvalid": true,
-    "requireHumanForNeedsHuman": true,
     "maxThreadsPerRun": 50,
     "replyTemplate": "templates/review-reply.md"
   }
@@ -329,7 +327,7 @@ Pull request base outside allowed base branches:
 | `commits` | Commit template and structured payload rules. |
 | `pullRequest` | PR title/body templates, base branch, draft, checks, GitHub checks watcher defaults, push, and payload policy. |
 | `checks` | Ordered local checks. |
-| `reviewComments` | Review-thread provider/filter policy plus safe reply/resolution policy. |
+| `reviewComments` | Review-thread filters plus safe reply/resolution policy. |
 | `emergency` | Emergency override and hotfix policy. |
 | `templates` | Named template paths. |
 | `guidance` | Proactive guidance and structured-output behavior. |
@@ -354,9 +352,7 @@ rendering, and local commit safety.
 | Field | Purpose |
 | --- | --- |
 | `template` | Commit template path used when it differs from the package default. |
-| `conventional` | Declares Conventional Commit-compatible title rendering. |
 | `allowedTypes` | Commit types accepted in structured payloads. |
-| `requireStructuredPayload` | Requires model output to be a structured payload. |
 | `performCommit` | Allows `/flow-commit` to run `git commit` in normal mode. |
 | `requireBody` | Requires rendered messages to include a body. |
 | `requireVerification` | Requires payload `verification` to contain at least one item. |
@@ -545,7 +541,6 @@ threads are never resolved.
 | Field | Purpose |
 | --- | --- |
 | `enabled` | Enables `/flow-comments` and `/flow-fix-comments`. When false, review-thread triage and mutation are blocked. |
-| `provider` | Review-thread provider. The only supported value is `github-graphql`. |
 | `includeAuthors` | Optional allow-list of GitHub logins to include by default in `/flow-comments`. Empty means no allow-list. |
 | `excludeAuthors` | Optional deny-list of GitHub logins to exclude by default. |
 | `unresolvedOnly` | Lists unresolved review threads by default. |
@@ -555,7 +550,6 @@ threads are never resolved.
 | `autoResolveClassifications` | Classification allow-list for automatic resolution. Defaults to `stale` and `already_fixed`; add `valid` only when valid findings may be auto-resolved without explicit `--apply-resolutions`/`--apply`. |
 | `requireChecksBeforeResolve` | Requires passed latest `/flow-check` evidence or acceptable explicit verification evidence before resolution. Defaults to true. |
 | `requireHumanForInvalid` | Blocks `invalid` thread resolution by default unless explicit policy/user override allows it. |
-| `requireHumanForNeedsHuman` | Ensures `needs_human` remains a human-decision blocker and is never resolved. |
 | `maxThreadsPerRun` | Bounds review-thread GraphQL reads, summaries, and stored state. Defaults to 50. If the bound is reached before GitHub pagination ends, `/flow-comments` reports an incomplete blocked scan; use a larger config value or `--max-threads`. |
 | `replyTemplate` | Template path used by `/flow-fix-comments` to render deterministic review-thread replies. |
 
@@ -624,7 +618,6 @@ payload.
   },
   "commits": {
     "template": "templates/commit-message.md",
-    "conventional": true,
     "allowedTypes": [
       "feat",
       "fix",
@@ -638,7 +631,6 @@ payload.
       "build",
       "revert"
     ],
-    "requireStructuredPayload": true,
     "performCommit": true,
     "requireBody": true,
     "requireVerification": true,
@@ -671,7 +663,6 @@ payload.
   "checks": [],
   "reviewComments": {
     "enabled": true,
-    "provider": "github-graphql",
     "includeAuthors": [],
     "excludeAuthors": [],
     "unresolvedOnly": true,
@@ -681,7 +672,6 @@ payload.
     "autoResolveClassifications": ["stale", "already_fixed"],
     "requireChecksBeforeResolve": true,
     "requireHumanForInvalid": true,
-    "requireHumanForNeedsHuman": true,
     "maxThreadsPerRun": 50,
     "replyTemplate": "templates/review-reply.md"
   },
@@ -689,10 +679,8 @@ payload.
     "enabled": true,
     "defaultPath": "hotfix_branch",
     "allowReservedBranchWork": false,
-    "requireReason": true,
     "requireFinalReport": true,
-    "requireStructuredCommitAndPr": true,
-    "documentBackportToDev": true
+    "requireStructuredCommitAndPr": true
   },
   "templates": {
     "branchName": "templates/branch-name.md",
@@ -704,27 +692,7 @@ payload.
     "proactive": true,
     "requireStructuredPayloads": true,
     "renderOutputsFromTemplates": true,
-    "stopForHumanDecisions": true,
-    "trackedPhases": [
-      "idle",
-      "initialized",
-      "branch_prepared",
-      "planning",
-      "implementing",
-      "local_checks",
-      "self_review",
-      "fixing_local_findings",
-      "ready_to_commit",
-      "committed",
-      "pr_opened",
-      "ci_waiting",
-      "review_triage",
-      "fixing_review_findings",
-      "verified",
-      "final_reported",
-      "blocked",
-      "emergency"
-    ]
+    "stopForHumanDecisions": true
   },
   "safety": {
     "blockDirectWorkOnReservedBranches": true,

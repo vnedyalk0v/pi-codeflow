@@ -25,6 +25,6 @@ and latest-check policy. The defaults require structured payloads,
 verification, self-review, and draft PRs while refusing reserved head branches,
 base=head PRs, and failed checks by default.
 
-`reviewComments` declares the review-thread provider and safety policy. The
-defaults prefer GitHub GraphQL, list unresolved threads, and keep auto-reply and
-auto-resolution disabled.
+`reviewComments` declares review-thread safety policy. The defaults list
+unresolved GitHub review threads and keep auto-reply and auto-resolution
+disabled.

@@ -320,4 +320,48 @@ describe('validateCodeflowConfig', () => {
       );
     }
   });
+
+  it.each([
+    ['commits.conventional', { commits: { conventional: true } }, '/commits/conventional'],
+    [
+      'commits.requireStructuredPayload',
+      { commits: { requireStructuredPayload: true } },
+      '/commits/requireStructuredPayload',
+    ],
+    [
+      'reviewComments.provider',
+      { reviewComments: { provider: 'github-graphql' } },
+      '/reviewComments/provider',
+    ],
+    [
+      'reviewComments.requireHumanForNeedsHuman',
+      { reviewComments: { requireHumanForNeedsHuman: true } },
+      '/reviewComments/requireHumanForNeedsHuman',
+    ],
+    ['emergency.requireReason', { emergency: { requireReason: true } }, '/emergency/requireReason'],
+    [
+      'emergency.documentBackportToDev',
+      { emergency: { documentBackportToDev: true } },
+      '/emergency/documentBackportToDev',
+    ],
+    ['guidance.trackedPhases', { guidance: { trackedPhases: ['idle'] } }, '/guidance/trackedPhases'],
+  ])('rejects removed no-op config flag %s', (_name, projectConfig, path) => {
+    const config = mergeCodeflowConfig(
+      getDefaultCodeflowConfig(),
+      projectConfig as Record<string, unknown>,
+    );
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path,
+            keyword: 'additionalProperties',
+          }),
+        ]),
+      );
+    }
+  });
 });

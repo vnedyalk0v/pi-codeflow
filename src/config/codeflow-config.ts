@@ -47,7 +47,7 @@ export interface CodeflowBranchingConfig {
     case: 'kebab';
     maxLength: number;
     ticketPrefixAllowed: boolean;
-    collisionSuffix: 'increment' | 'short-sha' | 'block';
+    collisionSuffix: 'increment' | 'block';
   };
 }
 
@@ -95,7 +95,6 @@ export interface CodeflowCheckConfig {
   command: string;
   cwd?: string;
   timeoutMs?: number;
-  timeoutSeconds?: number;
   required?: boolean;
 }
 
@@ -144,16 +143,11 @@ export interface CodeflowGuidanceConfig {
 
 export interface CodeflowSafetyConfig {
   blockDirectWorkOnReservedBranches: boolean;
-  allowDestructiveGitOperations: boolean;
-  allowForcePush: boolean;
-  allowDirectPushToRemote: boolean;
   requireCleanWorkingTreeForStart: boolean;
-  redactSecretsFromReports: boolean;
 }
 
 export interface CodeflowConfig {
   $schema?: string;
-  extends?: string;
   reservedBranches: string[];
   baseBranches: CodeflowBaseBranchesConfig;
   branching: CodeflowBranchingConfig;

@@ -9,7 +9,6 @@ import Ajv2020, {
 import type { CodeflowConfig } from './codeflow-config';
 import type { CodeflowConfigValidationError } from './config-errors';
 import { getCodeflowSchemaPath } from './config-paths';
-import { cloneJson, isPlainObject, parseJson } from '../utils/json';
 
 export type CodeflowConfigValidationResult =
   | {
@@ -34,7 +33,7 @@ export function validateCodeflowConfig(input: unknown): CodeflowConfigValidation
     };
   }
 
-  const config = cloneJson(input) as CodeflowConfig;
+  const config = structuredClone(input) as CodeflowConfig;
   const semanticErrors = validateSemanticConfigRules(config);
 
   if (semanticErrors.length > 0) {
@@ -47,7 +46,7 @@ export function validateCodeflowConfig(input: unknown): CodeflowConfigValidation
   return {
     valid: true,
     config,
-    warnings: collectValidationWarnings(input),
+    warnings: [],
   };
 }
 
@@ -58,7 +57,7 @@ function getCodeflowConfigValidator(): ValidateFunction {
 
 function createCodeflowConfigValidator(): ValidateFunction {
   const schemaText = readFileSync(getCodeflowSchemaPath(), 'utf8');
-  const schema = parseJson(schemaText);
+  const schema = JSON.parse(schemaText);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
 
   return ajv.compile(schema as AnySchema);
@@ -170,14 +169,4 @@ function validateSemanticConfigRules(
   }
 
   return errors;
-}
-
-function collectValidationWarnings(input: unknown): string[] {
-  if (!isPlainObject(input) || !('extends' in input)) {
-    return [];
-  }
-
-  return [
-    'The extends field is reserved for a future Codeflow milestone and is not resolved by schema validation.',
-  ];
 }

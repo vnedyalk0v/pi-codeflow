@@ -12,7 +12,6 @@ import {
   type CodeflowReviewCommentTriageResult,
   type CodeflowReviewCommentTriageValidationIssue,
 } from './review-thread-triage';
-import { parseJson } from '../utils/json';
 
 export interface ValidateReviewCommentTriageOptions {
   fetchedThreads?: CodeflowReviewThread[];
@@ -61,7 +60,7 @@ function createReviewCommentTriageValidator(): ValidateFunction {
     new URL('../../schemas/review-comment-triage.schema.json', import.meta.url),
     'utf8',
   );
-  const schema = parseJson(schemaText);
+  const schema = JSON.parse(schemaText);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
 
   return ajv.compile(schema as AnySchema);

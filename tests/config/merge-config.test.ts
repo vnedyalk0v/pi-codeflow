@@ -57,7 +57,6 @@ describe('mergeCodeflowConfig', () => {
     expect(merged.pullRequest.draftByDefault).toBe(false);
     expect(merged.pullRequest.baseBranch).toBe('dev');
     expect(merged.safety.requireCleanWorkingTreeForStart).toBe(false);
-    expect(merged.safety.allowForcePush).toBe(false);
   });
 
   it('keeps unknown properties so validation can reject them', () => {

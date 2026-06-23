@@ -20,7 +20,11 @@ import {
   updateSessionStateWithReviewComments,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
+import {
+  parsePositiveInteger,
+  readFlagValue,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowCommentsOptions {
   cwd?: string;
@@ -181,7 +185,7 @@ export async function runFlowComments(
 }
 
 export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(args, '/flow-comments', invalidFlowCommentsArguments);
   let dryRun = false;
   let json = false;
   let pr: number | undefined;
@@ -226,18 +230,22 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
     }
 
     if (token === '--pr') {
-      pr = parsePositiveInteger(readFlagValue(tokens, index, '--pr'), '--pr');
+      pr = parsePositiveInteger(
+        readFlagValue(tokens, index, '--pr', invalidFlowCommentsArguments),
+        '--pr',
+        invalidFlowCommentsArguments,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--pr=')) {
-      pr = parsePositiveInteger(token.slice('--pr='.length), '--pr');
+      pr = parsePositiveInteger(token.slice('--pr='.length), '--pr', invalidFlowCommentsArguments);
       continue;
     }
 
     if (token === '--author') {
-      authors.push(readFlagValue(tokens, index, '--author'));
+      authors.push(readFlagValue(tokens, index, '--author', invalidFlowCommentsArguments));
       index += 1;
       continue;
     }
@@ -248,7 +256,7 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
     }
 
     if (token === '--path') {
-      paths.push(readFlagValue(tokens, index, '--path'));
+      paths.push(readFlagValue(tokens, index, '--path', invalidFlowCommentsArguments));
       index += 1;
       continue;
     }
@@ -259,18 +267,31 @@ export function parseFlowCommentsArguments(args: string): ParsedFlowCommentsArgu
     }
 
     if (token === '--max-threads') {
-      maxThreads = parsePositiveInteger(readFlagValue(tokens, index, '--max-threads'), '--max-threads');
+      maxThreads = parsePositiveInteger(
+        readFlagValue(tokens, index, '--max-threads', invalidFlowCommentsArguments),
+        '--max-threads',
+        invalidFlowCommentsArguments,
+      );
       index += 1;
       continue;
     }
 
     if (token.startsWith('--max-threads=')) {
-      maxThreads = parsePositiveInteger(token.slice('--max-threads='.length), '--max-threads');
+      maxThreads = parsePositiveInteger(
+        token.slice('--max-threads='.length),
+        '--max-threads',
+        invalidFlowCommentsArguments,
+      );
       continue;
     }
 
     if (token === '--triage-payload') {
-      triagePayloadPath = readFlagValue(tokens, index, '--triage-payload');
+      triagePayloadPath = readFlagValue(
+        tokens,
+        index,
+        '--triage-payload',
+        invalidFlowCommentsArguments,
+      );
       index += 1;
       continue;
     }
@@ -371,7 +392,7 @@ export async function readReviewCommentTriagePayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowReviewCommentTriage;
+    return JSON.parse(text) as CodeflowReviewCommentTriage;
   } catch (error) {
     throw new CodeflowReviewCommentsError({
       code: 'invalid_triage_payload_json',
@@ -562,94 +583,13 @@ function parseOptionalPrNumber(value: number | string | undefined): number | nul
     return null;
   }
 
-  return parsePositiveInteger(String(value), 'pr');
+  return parsePositiveInteger(String(value), 'pr', invalidFlowCommentsArguments);
 }
 
-function parsePositiveInteger(value: string, flagName: string): number {
-  const parsed = Number.parseInt(value, 10);
-
-  if (!/^\d+$/.test(value) || !Number.isInteger(parsed) || parsed <= 0) {
-    throw new CodeflowReviewCommentsError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a positive integer value.`,
-      details: { flagName, value },
-    });
-  }
-
-  return parsed;
-}
-
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new CodeflowReviewCommentsError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
-}
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new CodeflowReviewCommentsError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-comments arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
+function invalidFlowCommentsArguments(message: string, details?: Record<string, unknown>): CodeflowReviewCommentsError {
+  return new CodeflowReviewCommentsError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }

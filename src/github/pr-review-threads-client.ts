@@ -7,7 +7,6 @@ import {
 import { normalizeReviewThreads } from '../review-comments/review-thread-normalizer';
 import type { CodeflowReviewThread } from '../review-comments/review-thread';
 import { CodeflowReviewCommentsError } from '../review-comments/review-comments-errors';
-import { parseJson } from '../utils/json';
 import { truncateText } from '../utils/text';
 
 const DEFAULT_MAX_THREADS = 50;
@@ -421,7 +420,7 @@ function parseJsonObject(stdout: string, message: string): Record<string, unknow
   let parsed: unknown;
 
   try {
-    parsed = parseJson(stdout);
+    parsed = JSON.parse(stdout) as unknown;
   } catch (error) {
     throw new CodeflowReviewCommentsError({
       code: 'unexpected_response',

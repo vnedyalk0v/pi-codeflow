@@ -16,7 +16,11 @@ import {
   updateSessionStateWithCommit,
   type CodeflowSessionState,
 } from '../state/session-state';
-import { parseJson } from '../utils/json';
+import {
+  readFlagValue,
+  resolveCommandBaseCwd,
+  splitCommandArguments,
+} from './command-args';
 
 export interface FlowCommitOptions {
   cwd?: string;
@@ -93,7 +97,7 @@ export async function runFlowCommit(
 }
 
 export function parseFlowCommitArguments(args: string): ParsedFlowCommitArguments {
-  const tokens = splitCommandArguments(args);
+  const tokens = splitCommandArguments(args, '/flow-commit', invalidFlowCommitArguments);
   let dryRun = false;
   let allowUnverified = false;
   let allowReservedBranch = false;
@@ -118,7 +122,7 @@ export function parseFlowCommitArguments(args: string): ParsedFlowCommitArgument
     }
 
     if (token === '--payload') {
-      payloadPath = readFlagValue(tokens, index, '--payload');
+      payloadPath = readFlagValue(tokens, index, '--payload', invalidFlowCommitArguments);
       index += 1;
       continue;
     }
@@ -176,7 +180,7 @@ export async function readFlowCommitPayloadFile(
   }
 
   try {
-    return parseJson(text) as CodeflowCommitPayload;
+    return JSON.parse(text) as CodeflowCommitPayload;
   } catch (error) {
     throw new CodeflowCommitError({
       code: 'invalid_payload_json',
@@ -213,14 +217,6 @@ export function formatFlowCommitResult(result: FlowCommitResult): string {
   return lines.join('\n');
 }
 
-function resolveCommandBaseCwd(cwd: string, configPath: string | null): string {
-  if (configPath === null) {
-    return cwd;
-  }
-
-  return path.dirname(path.dirname(configPath));
-}
-
 function getFlowCommitNextExpectedActions(
   phase: CodeflowLifecyclePhase,
   status: CodeflowCommitResult['status'],
@@ -242,77 +238,10 @@ function getFlowCommitNextExpectedActions(
   return ['Resolve the commit blocker, then rerun /flow-commit.'];
 }
 
-function readFlagValue(tokens: string[], index: number, flagName: string): string {
-  const value = tokens[index + 1];
-
-  if (!value || value.startsWith('--')) {
-    throw new CodeflowCommitError({
-      code: 'invalid_arguments',
-      message: `${flagName} requires a value.`,
-      details: { flagName },
-    });
-  }
-
-  return value;
-}
-
-function splitCommandArguments(args: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-  let escaping = false;
-
-  for (const character of args) {
-    if (escaping) {
-      current += character;
-      escaping = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      escaping = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      } else {
-        current += character;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
-    }
-
-    if (/\s/.test(character)) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += character;
-  }
-
-  if (escaping) {
-    current += '\\';
-  }
-
-  if (quote) {
-    throw new CodeflowCommitError({
-      code: 'invalid_arguments',
-      message: 'Unterminated quote in /flow-commit arguments.',
-    });
-  }
-
-  if (current.length > 0) {
-    tokens.push(current);
-  }
-
-  return tokens;
+function invalidFlowCommitArguments(message: string, details?: Record<string, unknown>): CodeflowCommitError {
+  return new CodeflowCommitError({
+    code: 'invalid_arguments',
+    message,
+    details,
+  });
 }

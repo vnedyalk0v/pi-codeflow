@@ -83,6 +83,16 @@ describe('renderCommitMessage', () => {
     expect(result.message).not.toMatch(/{{.*}}/);
   });
 
+  it('preserves literal placeholder syntax from payload fields', async () => {
+    const result = await renderCommitMessage(payload({
+      context: 'Document the {{context}} placeholder.',
+      changes: ['Keep {{changesList}} literal.'],
+    }));
+
+    expect(result.message).toContain('Document the &#123;&#123;context&#125;&#125; placeholder.');
+    expect(result.message).toContain('- Keep &#123;&#123;changesList&#125;&#125; literal.');
+  });
+
   it('uses the bundled default template when the configured template is missing', async () => {
     const cwd = await mkdtemp(path.join(os.tmpdir(), 'codeflow-missing-commit-template-'));
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {

@@ -7,7 +7,6 @@ import { findCodeflowConfigPath, resolveConfigPath } from './config-paths';
 import { mergeCodeflowConfig } from './merge-config';
 import { validateCodeflowConfig } from './validate-config';
 import { fileExists, readUtf8File } from '../utils/fs';
-import { isPlainObject, parseJson } from '../utils/json';
 
 export interface LoadCodeflowConfigOptions {
   cwd?: string;
@@ -52,15 +51,6 @@ export async function loadCodeflowConfig(
 
   const projectConfig = await readProjectConfig(configPath);
 
-  if (isPlainObject(projectConfig) && 'extends' in projectConfig) {
-    throw new CodeflowConfigLoadError({
-      code: 'unsupported_extends',
-      path: configPath,
-      message:
-        'Codeflow config extends is reserved for a future milestone and is not supported yet.',
-    });
-  }
-
   const mergedConfig = mergeCodeflowConfig(
     defaultConfig,
     projectConfig as Record<string, unknown>,
@@ -83,7 +73,7 @@ async function readProjectConfig(configPath: string): Promise<unknown> {
   }
 
   try {
-    return parseJson(text);
+    return JSON.parse(text) as unknown;
   } catch (error) {
     throw new CodeflowConfigLoadError({
       code: 'invalid_json',

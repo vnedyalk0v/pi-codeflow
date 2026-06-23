@@ -140,8 +140,7 @@ and [Usage](USAGE.md). Configuration examples live in [Examples](EXAMPLES.md).
   project values over defaults.
 - **Inputs:** package defaults and project config files.
 - **Outputs:** resolved config object with config path metadata.
-- **Must not:** mutate repository, resolve `extends`, inject guidance, or run
-  checks.
+- **Must not:** mutate repository, inject guidance, or run checks.
 
 ### Schema Validator
 

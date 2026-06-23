@@ -3,7 +3,6 @@ import { buildReviewThreadResolveMutationArgs } from './pr-review-thread-mutatio
 import { mapGithubMutationError } from './pr-review-thread-replies-client';
 import { CodeflowReviewFixError } from '../review-comments/review-fix-errors';
 import type { CodeflowReviewResolutionResult } from '../review-comments/review-fix-payload';
-import { parseJson } from '../utils/json';
 import { truncateText } from '../utils/text';
 
 export interface ResolveReviewThreadOptions {
@@ -97,7 +96,7 @@ function parseJsonObject(stdout: string, message: string): Record<string, unknow
   let parsed: unknown;
 
   try {
-    parsed = parseJson(stdout);
+    parsed = JSON.parse(stdout) as unknown;
   } catch (error) {
     throw new CodeflowReviewFixError({
       code: 'unexpected_response',

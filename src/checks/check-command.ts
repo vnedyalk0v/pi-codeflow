@@ -58,8 +58,7 @@ export function resolveCheckCwd(baseCwd: string, checkCwd?: string): string {
 }
 
 export function resolveTimeoutMs(check: CodeflowCheckConfig): number | undefined {
-  const timeoutMs = check.timeoutMs ??
-    (check.timeoutSeconds === undefined ? undefined : check.timeoutSeconds * 1000);
+  const timeoutMs = check.timeoutMs;
 
   if (
     timeoutMs !== undefined &&

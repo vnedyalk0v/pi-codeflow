@@ -4,7 +4,6 @@ import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from
 
 import type { CodeflowReviewCommentsConfig } from '../config/codeflow-config';
 import type { CodeflowStoredReviewCommentThread } from '../state/review-comments-state';
-import { parseJson } from '../utils/json';
 import {
   CODEFLOW_REVIEW_COMMENT_CLASSIFICATIONS,
   type CodeflowReviewCommentClassification,
@@ -65,7 +64,7 @@ function createReviewFixPayloadValidator(): ValidateFunction {
     new URL('../../schemas/review-comment-fix.schema.json', import.meta.url),
     'utf8',
   );
-  const schema = parseJson(schemaText);
+  const schema = JSON.parse(schemaText);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
 
   return ajv.compile(schema as AnySchema);

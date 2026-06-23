@@ -6,6 +6,7 @@ import {
   hasUnresolvedTemplatePlaceholders,
   listUnresolvedTemplatePlaceholders,
 } from '../utils/text';
+import { renderSimpleTemplate } from '../utils/template';
 import { CodeflowCommitError } from './commit-errors';
 import { normalizeCommitPayload } from './commit-payload-validation';
 import type { CodeflowCommitMessage, CodeflowCommitPayload } from './commit-payload';
@@ -82,13 +83,6 @@ export async function renderCommitMessage(
     usedDefaultTemplate: loadedTemplate.usedDefaultTemplate,
     warnings: loadedTemplate.warnings,
   };
-}
-
-function renderSimpleTemplate(templateText: string, values: Record<string, string>): string {
-  return Object.entries(values).reduce(
-    (current, [key, value]) => current.replaceAll(`{{${key}}}`, value),
-    templateText,
-  );
 }
 
 function assertNoUnresolvedPlaceholders(message: string): void {

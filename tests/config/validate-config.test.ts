@@ -29,7 +29,11 @@ describe('validateCodeflowConfig', () => {
     'config/example.python.codeflow.json',
     'config/example.monorepo.codeflow.json',
   ])('validates %s', (relativePath) => {
-    const result = validateCodeflowConfig(readJson(relativePath));
+    const config = mergeCodeflowConfig(
+      getDefaultCodeflowConfig(),
+      readJson(relativePath) as Record<string, unknown>,
+    );
+    const result = validateCodeflowConfig(config);
 
     expect(result.valid).toBe(true);
   });
@@ -234,13 +238,14 @@ describe('validateCodeflowConfig', () => {
       path: '/checks/0/timeoutMs',
     },
     {
-      name: 'check timeoutSeconds above 3600',
+      name: 'unsupported check timeoutSeconds',
       update(config: ReturnType<typeof cloneDefault>) {
-        config.checks = [{ name: 'slow', command: 'npm test', timeoutSeconds: 3_601 }];
+        config.checks = [{ name: 'slow', command: 'npm test', timeoutSeconds: 30 } as never];
       },
       path: '/checks/0/timeoutSeconds',
+      keyword: 'additionalProperties',
     },
-  ])('rejects $name', ({ update, path }) => {
+  ])('rejects $name', ({ update, path, keyword = 'maximum' }) => {
     const config = cloneDefault();
     update(config);
     const result = validateCodeflowConfig(config);
@@ -251,24 +256,68 @@ describe('validateCodeflowConfig', () => {
         expect.arrayContaining([
           expect.objectContaining({
             path,
-            keyword: 'maximum',
+            keyword,
           }),
         ]),
       );
     }
   });
 
-  it('returns a warning when a schema-valid config contains extends', () => {
+  it('rejects unsupported config inheritance', () => {
     const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
       extends: './base.codeflow.json',
     } as Record<string, unknown>);
     const result = validateCodeflowConfig(config);
 
-    expect(result.valid).toBe(true);
-    if (result.valid) {
-      expect(result.warnings).toEqual([
-        expect.stringContaining('extends field is reserved'),
-      ]);
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/extends',
+            keyword: 'additionalProperties',
+          }),
+        ]),
+      );
+    }
+  });
+
+  it('rejects unimplemented branch collision modes', () => {
+    const config = cloneDefault();
+    config.branching.slug.collisionSuffix = 'short-sha' as never;
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/branching/slug/collisionSuffix',
+            keyword: 'enum',
+          }),
+        ]),
+      );
+    }
+  });
+
+  it('rejects no-op safety flags', () => {
+    const config = mergeCodeflowConfig(getDefaultCodeflowConfig(), {
+      safety: {
+        allowForcePush: false,
+      },
+    } as Record<string, unknown>);
+    const result = validateCodeflowConfig(config);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/safety/allowForcePush',
+            keyword: 'additionalProperties',
+          }),
+        ]),
+      );
     }
   });
 });

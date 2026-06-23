@@ -42,7 +42,7 @@ describe('loadCodeflowConfig', () => {
       {
         name: 'unit tests',
         command: 'npm test',
-        timeoutSeconds: 120,
+        timeoutMs: 120000,
       },
     ]);
   });
@@ -95,14 +95,14 @@ describe('loadCodeflowConfig', () => {
     });
   });
 
-  it('throws a typed error when extends is used', async () => {
+  it('throws a validation error when extends is used', async () => {
     const projectDir = await makeTempProject('{ "extends": "./base.json" }');
 
     await expect(loadCodeflowConfig({ cwd: projectDir })).rejects.toBeInstanceOf(
       CodeflowConfigLoadError,
     );
     await expect(loadCodeflowConfig({ cwd: projectDir })).rejects.toMatchObject({
-      code: 'unsupported_extends',
+      code: 'validation_failed',
     });
   });
 });

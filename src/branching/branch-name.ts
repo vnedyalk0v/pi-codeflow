@@ -133,14 +133,6 @@ async function resolveBranchNameCollision(
     });
   }
 
-  if (collisionSuffix !== 'increment') {
-    throw new BranchPolicyError({
-      code: 'branch_name_collision',
-      message: `Branch collision policy ${collisionSuffix} is not implemented for /flow-start yet.`,
-      details: { branchName: baseBranchName, collisionSuffix },
-    });
-  }
-
   for (let suffix = 2; suffix < 1000; suffix += 1) {
     const candidate = `${baseBranchName}-${suffix}`;
 

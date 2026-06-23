@@ -15,7 +15,7 @@ The security model keeps `/flow-pr` and `/flow-commit` away from CI watching,
 review actions, and merge actions. `/flow-watch` is the only planned command
 that may observe remote checks, and it must stay read-only.
 
-A spike in `spike/flow-watch/` checked GitHub CLI version 2.95.0. The installed
+A local GitHub CLI check against version 2.95.0 confirmed that
 `gh pr checks --help` documents JSON fields `bucket`, `completedAt`,
 `description`, `event`, `link`, `name`, `startedAt`, `state`, and `workflow`.
 It also documents the full `bucket` set as `pass`, `fail`, `pending`,
@@ -234,5 +234,5 @@ text is rendered.
 - Canceled or unknown states block instead of being treated as failures or
   passes. This prevents false verification and avoids implying a local fix when
   CI did not complete.
-- The retained spike under `spike/flow-watch/` is reference material only and
-  must not be imported by `src/` or `extensions/`.
+- The GitHub CLI observations above are reference material only and should not
+  be treated as product documentation.

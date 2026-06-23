@@ -13,7 +13,6 @@ const MIN_LINE_COUNTS = new Map([
   ['.github/pull_request_template.md', 25],
   ['AGENTS.md', 40],
   ['skills/codeflow/SKILL.md', 25],
-  ['templates/final-report.md', 20],
   ['templates/pull-request.md', 20],
 ]);
 

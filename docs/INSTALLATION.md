@@ -132,6 +132,6 @@ checks passed or that GitHub was mutated.
 
 - Read [Usage](USAGE.md) for the command lifecycle.
 - Add project configuration from [Configuration](CONFIGURATION.md).
-- Copy a starter config from [Examples](EXAMPLES.md).
+- Copy a starter config from [Configuration](CONFIGURATION.md#starter-examples).
 - Keep [Troubleshooting](TROUBLESHOOTING.md) nearby for install and command
   issues.

@@ -68,7 +68,8 @@ Create:
 .pi/codeflow.json
 ```
 
-Start from [Examples](EXAMPLES.md) and keep the file committed with the project.
+Start from [Configuration](CONFIGURATION.md#starter-examples) and keep the
+file committed with the project.
 
 ## Invalid config
 

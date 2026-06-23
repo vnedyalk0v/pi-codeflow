@@ -38,7 +38,7 @@ resolution.
 
 2. Add `.pi/codeflow.json` to the project.
 
-   Start from [Examples](EXAMPLES.md) or [Configuration](CONFIGURATION.md).
+   Start from [Configuration](CONFIGURATION.md#starter-examples).
 
 3. Start a task:
 

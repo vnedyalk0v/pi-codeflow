@@ -1,15 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
-import Ajv2020, {
-  type AnySchema,
-  type ErrorObject,
-  type ValidateFunction,
-} from 'ajv/dist/2020.js';
+import type { ValidateFunction } from 'ajv/dist/2020.js';
 
 import type { CodeflowConfig } from '../config/codeflow-config';
 import { getDefaultCodeflowConfig } from '../config/default-config';
-import { isPlainObject } from '../utils/json';
+import {
+  createJsonSchemaValidator,
+  mapJsonSchemaValidationErrors,
+} from '../utils/schema-validation';
 import { buildCommitTitle } from './commit-summary';
 import type {
   CodeflowCommitPayload,
@@ -35,7 +31,7 @@ export function validateCommitPayload(
   if (!validator(input)) {
     return {
       valid: false,
-      errors: mapValidationErrors(validator.errors ?? []),
+      errors: mapJsonSchemaValidationErrors(validator.errors ?? []),
       warnings: [],
     };
   }
@@ -224,89 +220,5 @@ function getCommitPayloadValidator(): ValidateFunction {
 }
 
 function createCommitPayloadValidator(): ValidateFunction {
-  const schemaText = readFileSync(getCommitPayloadSchemaPath(), 'utf8');
-  const schema = JSON.parse(schemaText);
-  const ajv = new Ajv2020({ allErrors: true, strict: false });
-
-  return ajv.compile(schema as AnySchema);
-}
-
-function getCommitPayloadSchemaPath(): string {
-  return fileURLToPath(new URL('../../schemas/commit-payload.schema.json', import.meta.url));
-}
-
-function mapValidationErrors(errors: ErrorObject[]): CodeflowCommitValidationIssue[] {
-  return errors.map((error) => {
-    const path = getErrorPath(error);
-    const allowedValues = getAllowedValues(error);
-    const mappedError: CodeflowCommitValidationIssue = {
-      path,
-      keyword: error.keyword,
-      message: getErrorMessage(error, path),
-      details: structuredClone(error.params) as Record<string, unknown>,
-    };
-
-    if (allowedValues.length > 0) {
-      mappedError.allowedValues = allowedValues;
-    }
-
-    return mappedError;
-  });
-}
-
-function getErrorPath(error: ErrorObject): string {
-  const params = error.params as Record<string, unknown>;
-
-  if (error.keyword === 'required' && typeof params.missingProperty === 'string') {
-    return joinJsonPointer(error.instancePath, params.missingProperty);
-  }
-
-  if (
-    error.keyword === 'additionalProperties' &&
-    typeof params.additionalProperty === 'string'
-  ) {
-    return joinJsonPointer(error.instancePath, params.additionalProperty);
-  }
-
-  return error.instancePath || '/';
-}
-
-function joinJsonPointer(basePath: string, segment: string): string {
-  const escapedSegment = segment.replaceAll('~', '~0').replaceAll('/', '~1');
-  return `${basePath || ''}/${escapedSegment}`;
-}
-
-function getAllowedValues(error: ErrorObject): unknown[] {
-  const params = error.params as Record<string, unknown>;
-
-  if (Array.isArray(params.allowedValues)) {
-    return params.allowedValues;
-  }
-
-  if ('allowedValue' in params) {
-    return [params.allowedValue];
-  }
-
-  return [];
-}
-
-function getErrorMessage(error: ErrorObject, path: string): string {
-  const params = error.params as Record<string, unknown>;
-
-  if (error.keyword === 'required' && typeof params.missingProperty === 'string') {
-    return `${path} is required`;
-  }
-
-  if (
-    error.keyword === 'additionalProperties' &&
-    typeof params.additionalProperty === 'string'
-  ) {
-    return `${path} is not allowed`;
-  }
-
-  if (isPlainObject(error.params) && typeof params.limit === 'number') {
-    return `${path} ${error.message ?? 'is invalid'}`;
-  }
-
-  return error.message ?? `${path} is invalid`;
+  return createJsonSchemaValidator(new URL('../../schemas/commit-payload.schema.json', import.meta.url));
 }

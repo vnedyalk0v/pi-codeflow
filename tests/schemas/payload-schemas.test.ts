@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -104,39 +104,14 @@ describe('payload schemas', () => {
     );
   });
 
-  it('rejects empty emergency audit fields when emergency override is used', () => {
-    const result = validateSchema('schemas/final-report.schema.json', {
-      summary: 'Emergency fix shipped.',
-      finalPhase: 'emergency',
-      changedFiles: ['src/example.ts'],
-      checks: [
-        {
-          name: 'tests',
-          result: 'passed',
-        },
-      ],
-      issues: ['#123'],
-      risks: ['Backport still required.'],
-      emergencyOverride: {
-        used: true,
-        reason: '',
-        backportPlan: '',
-      },
-    });
-
-    expect(result.valid).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          instancePath: '/emergencyOverride/reason',
-          keyword: 'minLength',
-        }),
-        expect.objectContaining({
-          instancePath: '/emergencyOverride/backportPlan',
-          keyword: 'minLength',
-        }),
-      ]),
-    );
+  it('does not ship final-report artifacts before a /flow-report command exists', () => {
+    for (const relativePath of [
+      'schemas/final-report.schema.json',
+      'templates/final-report.md',
+      'prompts/flow-final-report.md',
+    ]) {
+      expect(existsSync(path.join(repoRoot, relativePath))).toBe(false);
+    }
   });
 
   it('accepts review thread triage payloads', () => {

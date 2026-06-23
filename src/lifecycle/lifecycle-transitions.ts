@@ -27,7 +27,7 @@ export function getNextExpectedActions(
     case 'branch_prepared':
       return [
         `Continue only on ${workBranch}; do not perform normal work on reserved branches.`,
-        'Move to planning with /flow-plan when available, or provide a structured plan if asked.',
+        'Provide a structured plan when the task is not straightforward.',
       ];
     case 'planning':
       return [
@@ -85,8 +85,8 @@ export function getNextExpectedActions(
       ];
     case 'verified':
       return [
-        'Prepare a structured final report payload with verification evidence.',
-        'Use /flow-report when available; otherwise explain that final report rendering is not implemented yet.',
+        'Prepare the final report with verification evidence.',
+        'Do not claim completion without fresh check output.',
       ];
     case 'final_reported':
       return [
@@ -148,38 +148,38 @@ export function getExpectedToolsForPhase(
 ): string[] {
   switch (phase) {
     case 'idle':
-      return ['/flow-status', '/flow-start'];
+      return ['/flow-start'];
     case 'initialized':
     case 'branch_prepared':
-      return ['/flow-start', '/flow-plan', '/flow-status'];
+      return ['/flow-start'];
     case 'planning':
-      return ['/flow-plan', '/flow-status'];
+      return [];
     case 'implementing':
     case 'fixing_local_findings':
-      return ['/flow-check', '/flow-review', '/flow-status'];
+      return ['/flow-check'];
     case 'local_checks':
-      return config.checks.length > 0 ? ['/flow-check', '/flow-status'] : ['/flow-status'];
+      return config.checks.length > 0 ? ['/flow-check'] : [];
     case 'self_review':
-      return ['/flow-review', '/flow-status'];
+      return [];
     case 'ready_to_commit':
-      return ['/flow-commit', '/flow-status'];
+      return ['/flow-commit'];
     case 'committed':
-      return ['/flow-pr', '/flow-status'];
+      return ['/flow-pr'];
     case 'pr_opened':
     case 'ci_waiting':
-      return ['/flow-watch', '/flow-comments', '/flow-status'];
+      return ['/flow-watch', '/flow-comments'];
     case 'review_triage':
-      return ['/flow-comments', '/flow-fix-comments', '/flow-status'];
+      return ['/flow-comments', '/flow-fix-comments'];
     case 'fixing_review_findings':
-      return ['/flow-fix-comments', '/flow-check', '/flow-status'];
+      return ['/flow-fix-comments', '/flow-check'];
     case 'verified':
-      return ['/flow-report', '/flow-status'];
+      return [];
     case 'final_reported':
-      return ['/flow-status'];
+      return [];
     case 'blocked':
-      return ['/flow-status'];
+      return [];
     case 'emergency':
-      return ['/flow-start', '/flow-commit', '/flow-pr', '/flow-report', '/flow-status'];
+      return ['/flow-start', '/flow-commit', '/flow-pr'];
     default:
       return assertNever(phase);
   }

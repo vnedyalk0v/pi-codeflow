@@ -85,7 +85,6 @@ Project configuration lives at:
 See:
 
 - [Configuration](docs/CONFIGURATION.md)
-- [Examples](docs/EXAMPLES.md)
 - [Branching](docs/BRANCHING.md)
 - [Commits](docs/COMMITS.md)
 - [Pull Requests](docs/PULL_REQUESTS.md)
@@ -148,7 +147,6 @@ GitHub Actions runs the same package validation on PRs targeting `dev` or
 
 - [Installation](docs/INSTALLATION.md)
 - [Usage](docs/USAGE.md)
-- [Examples](docs/EXAMPLES.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Workflow](docs/WORKFLOW.md)

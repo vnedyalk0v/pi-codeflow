@@ -6,9 +6,12 @@ already exist in the target project.
 
 The maintained starter configs live in `config/`:
 
-- `config/example.node.codeflow.json` for Node projects.
-- `config/example.python.codeflow.json` for Python services.
-- `config/example.monorepo.codeflow.json` for monorepos.
+- `config/example.node.codeflow.json`: Node project starter with lint,
+  typecheck, test, and optional build checks.
+- `config/example.python.codeflow.json`: Python service starter with ruff, mypy,
+  and pytest.
+- `config/example.monorepo.codeflow.json`: monorepo starter for changed-workspace
+  lint, tests, and optional build.
 
 Use an empty `checks` array when a project has no local checks yet.
 `/flow-check` reports `no_checks`; do not treat that as verification evidence.
